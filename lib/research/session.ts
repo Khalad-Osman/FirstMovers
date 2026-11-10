@@ -50,7 +50,10 @@ function addUsage(usage: Json, extra: Record<string, number>): Record<string, nu
 
 // "Analyze sources": runs the analysis engine on the collected sources and
 // stores either a validated brief or the validation errors on the session.
-export async function analyzeSession(sessionId: string, deps: { provider: LLMProvider; model: string; today: string }) {
+export async function analyzeSession(
+  sessionId: string,
+  deps: { provider: LLMProvider; model: string; today: string; trigger?: string },
+) {
   const db = createAdminClient();
   const { data: session, error } = await db.from("research_sessions").select("*").eq("id", sessionId).single();
   if (error) throw new Error(`Could not load research session: ${error.message}`);
@@ -60,7 +63,7 @@ export async function analyzeSession(sessionId: string, deps: { provider: LLMPro
     const result = await analyzeCompany(
       {
         company: { name: await companyNameFor(db, session), knownAliases: [], ontarioConnectionNotes: null },
-        trigger: `Live Research: ${session.query}`,
+        trigger: deps.trigger ?? `Live Research: ${session.query}`,
         analysisDate: deps.today,
         sources,
       },
@@ -109,7 +112,13 @@ export function verifyAgainstSources(brief: BriefAnalysis, records: SourceRecord
 export type SaveResult = { ok: true; briefId: string } | { ok: false; error: string };
 
 // "Add to feed": saves the brief as a new version (never overwrites).
-export async function saveSessionToFeed(sessionId: string, userId: string): Promise<SaveResult> {
+export type SaveOptions = {
+  origin?: "live_research" | "discovered";
+  triggerSignalId?: string | null;
+  discoveryRunId?: string | null;
+};
+
+export async function saveSessionToFeed(sessionId: string, userId: string | null, opts: SaveOptions = {}): Promise<SaveResult> {
   const db = createAdminClient();
   const { data: session, error } = await db.from("research_sessions").select("*").eq("id", sessionId).single();
   if (error) return { ok: false, error: `Could not load research session: ${error.message}` };
@@ -157,8 +166,10 @@ export async function saveSessionToFeed(sessionId: string, userId: string): Prom
     .from("briefs")
     .insert({
       company_id: companyId,
-      origin: "live_research",
-      trigger_query: session.query,
+      origin: opts.origin ?? "live_research",
+      trigger_query: opts.triggerSignalId ? null : session.query,
+      trigger_signal_id: opts.triggerSignalId ?? null,
+      discovery_run_id: opts.discoveryRunId ?? null,
       rating: brief.rating,
       stage: brief.stage,
       analysis: brief as unknown as JsonObject,

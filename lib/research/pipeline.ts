@@ -41,6 +41,7 @@ export type PipelineDeps = {
   store: ResearchStore;
   today: string; // YYYY-MM-DD
   maxSources: number; // ≤ 5 (CLAUDE.md §8)
+  seedUrls?: string[]; // read first, e.g. the award notice that surfaced the company
 };
 
 function usageOf(deps: PipelineDeps) {
@@ -126,7 +127,7 @@ export async function runCompanyResearch(sessionId: string, companyName: string,
     if (results.length === 0) throw new Error(`All searches failed. ${searchErrors[0] ?? ""}`.trim());
 
     const candidates = rankCandidates(results, companyName);
-    if (candidates.length === 0) {
+    if (candidates.length === 0 && !deps.seedUrls?.length) {
       throw new Error(`No usable sources found for "${companyName}". Check the spelling or try the full legal name.`);
     }
 
@@ -135,7 +136,11 @@ export async function runCompanyResearch(sessionId: string, companyName: string,
     const progress = () =>
       store.update(sessionId, { status: "scraping", progress: `Reading sources (${collected.length} of up to ${max})`, usage: usageOf(deps) });
     await progress();
-    await scrapeSome(candidates, max > 1 ? max - 1 : max, seen, deps, collected, progress);
+    if (deps.seedUrls?.length) {
+      const seeds = deps.seedUrls.map((url) => ({ url: canonicalUrl(url), title: "", description: "", query: "seed", score: 0 }));
+      await scrapeSome(seeds, Math.min(seeds.length, max - 1 || 1), seen, deps, collected, progress);
+    }
+    await scrapeSome(candidates, Math.max(0, (max > 1 ? max - 1 : max) - collected.length), seen, deps, collected, progress);
 
     // 3. Follow-up: the main announcement is 12–24 months old and nothing recent was found
     const tiers = collected.map((c) => recencyTier({ publishedAt: c.source.publishedAt, eventAt: null }, today));

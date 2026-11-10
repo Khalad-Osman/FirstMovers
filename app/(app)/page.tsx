@@ -25,6 +25,12 @@ export default async function FeedPage({ searchParams }: PageProps<"/">) {
   return (
     <div className="grid gap-6">
       <PageHeader title="Opportunity Feed">
+        <div className="flex flex-wrap items-center gap-4">
+        {isAdmin && (
+          <Link href="/discovery" className="btn btn-primary">
+            Run discovery
+          </Link>
+        )}
         <Link
           href={showSamples ? "/" : "/?samples=1"}
           role="switch"
@@ -45,6 +51,7 @@ export default async function FeedPage({ searchParams }: PageProps<"/">) {
           </span>
           Show samples
         </Link>
+        </div>
       </PageHeader>
 
       {invalid.length > 0 && (

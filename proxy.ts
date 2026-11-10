@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/auth/callback"];
+// /api/discovery/step authenticates with DISCOVERY_JOB_SECRET instead of a session.
+const PUBLIC_PATHS = ["/login", "/signup", "/auth/callback", "/api/discovery/step"];
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
