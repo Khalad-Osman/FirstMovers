@@ -15,7 +15,8 @@
     "promote-admin": "node --env-file=.env.local scripts/promote-admin.mjs",
     "db:types": "supabase gen types typescript --local > lib/supabase/database.types.ts",
     "eval:analysis": "node scripts/run-vitest.mjs run --config vitest.eval.config.ts",
-    "test:db": "node scripts/run-vitest.mjs run --config vitest.db.config.ts"
+    "test:db": "node scripts/run-vitest.mjs run --config vitest.db.config.ts",
+    "ingest": "node scripts/ingest.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

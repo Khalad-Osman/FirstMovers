@@ -89,6 +89,15 @@ describe("permits", () => {
     ["SPRINKLERS", "other"],
   ])("strength %s -> %s", (text, strength) => expect(strengthFrom(text)).toBe(strength));
 
+  it.each([
+    // Cases seen in real data where description words used to override the work type
+    ["Interior Alterations", "Remove partitions; demolition of interior walls", "alteration"],
+    ["NEW BUILDING", "Demolish existing shed and construct new warehouse", "new_building"],
+    ["Site Service", "construction of new storm sewer and addition of catch basins", "other"],
+    ["Building Permit Related(MS)", "HVAC for addition", "other"],
+    ["ALTERATION TO EXISTING BLDG", "Change of use from office to warehouse", "change_of_use"],
+  ])("work %s + description -> %s", (work, desc, strength) => expect(strengthFrom(work, desc)).toBe(strength));
+
   it("maps a Mississauga permit and resolves a named occupier", () => {
     const item = mapMississauga(
       { BP_NO: "SGNBLD 26-1227", ADDRESS: "7045 BECKETT DR", DESCRIPTION: "ONE (1) FASCIA SIGN - GREAT SELL", SCOPE: "FASCIA SIGN", BLDG_TYPE: "MULTI-TENANT INDUSTRIAL", EST_CON_VALUE: 15000, ISSUE_DATE: 1780272000000 },

@@ -7,6 +7,15 @@ import { monthsBefore, type IngestSource, type SignalRow } from "./types";
 
 const BATCH = 500;
 
+// Some government servers reject Node's default user agent (CanadaBuys returns
+// 403). Use a generic client name; no personal or account details.
+const USER_AGENT = "FirstMovers-OpenDataIngest/1.0";
+export const ingestFetch: typeof fetch = (input, init) => {
+  const headers = new Headers(init?.headers);
+  if (!headers.has("User-Agent")) headers.set("User-Agent", USER_AGENT);
+  return fetch(input, { ...init, headers });
+};
+
 export type RunCounts = {
   fetched: number;
   inserted: number;
@@ -70,7 +79,7 @@ export async function runIngestionJob(runId: string, sourceType: string): Promis
       today,
       cutoff: monthsBefore(today, 12),
       canadabuysMinValue: Number(settings?.canadabuys_min_value ?? 100000),
-      fetchImpl: fetch,
+      fetchImpl: ingestFetch,
       progress: (message: string) => update({ progress: message }),
     };
     await update({ settings: { cutoff: ctx.cutoff, today, canadabuys_min_value: ctx.canadabuysMinValue } });

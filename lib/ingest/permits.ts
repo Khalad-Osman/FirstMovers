@@ -9,15 +9,21 @@ import { isoFromEpoch, money, type IngestContext, type IngestItem, type IngestSo
 
 const str = (v: unknown) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim() : v == null ? "" : String(v));
 
-export function strengthFrom(text: string): SignalStrength {
-  const t = text.toLowerCase();
-  if (/change of use/.test(t)) return "change_of_use";
-  if (/\bsign|billboard/.test(t)) return "sign";
-  if (/demoli/.test(t)) return "demolition";
-  if (/addition/.test(t)) return "addition";
-  if (/new (?:complete |shell )?building|^new$|new construction|new bldg/.test(t)) return "new_building";
-  if (/alteration|renovation|interior|unit finish|fit[- ]?out|tenant/.test(t)) return "alteration";
-  return "other";
+// Classify from the structured work/scope field. Free-text descriptions only
+// add an explicit "change of use" (they mention demolition, additions etc. in
+// passing, which would mislabel the permit).
+export function strengthFrom(work: string, description = ""): SignalStrength {
+  const w = work.toLowerCase().trim();
+  let s: SignalStrength = "other";
+  if (/building permit related|backflow|drain|sprinkler|fire alarm|plumbing|hvac|electromag|revision/.test(w)) s = "other";
+  else if (/change of use/.test(w)) s = "change_of_use";
+  else if (/new (?:complete |shell )?building|^new\b|new construction|new bldg/.test(w)) s = "new_building";
+  else if (/addition/.test(w)) s = "addition";
+  else if (/\bsigns?\b|billboard/.test(w)) s = "sign";
+  else if (/demoli/.test(w)) s = "demolition";
+  else if (/alteration|renovation|interior|unit finish|fit[- ]?out|multiple projects/.test(w)) s = "alteration";
+  if ((s === "alteration" || s === "other") && /change of use/i.test(description)) s = "change_of_use";
+  return s;
 }
 
 // ---------- Mississauga --------------------------------------------------------
@@ -44,7 +50,7 @@ export function mapMississauga(a: Record<string, unknown>, ctx: Pick<IngestConte
       raw_entity_name: occupier.name,
       entity_key: occupier.entityKey,
       occupier_status: occupier.status,
-      signal_strength: strengthFrom(`${scope} ${description}`),
+      signal_strength: strengthFrom(scope, description),
       title: `Mississauga permit: ${scope || "permit"} at ${address || "unknown address"}`,
       summary: [description, str(a.BLDG_TYPE), value ? `Est. value ${money(value)}` : null, a.APPL_AREA ? `Area ${a.APPL_AREA} m²` : null]
         .filter(Boolean)
@@ -162,7 +168,7 @@ export function mapToronto(r: Record<string, unknown>, ctx: Pick<IngestContext, 
       raw_entity_name: occupier.name,
       entity_key: occupier.entityKey,
       occupier_status: occupier.status,
-      signal_strength: strengthFrom(`${work} ${description}`),
+      signal_strength: strengthFrom(work, description),
       title: `Toronto permit: ${work || str(r.PERMIT_TYPE) || "permit"} at ${address || "unknown address"}`,
       summary: [description, ...uses, cost ? `Est. cost ${money(cost)}` : null].filter(Boolean).join(". "),
       url: null,

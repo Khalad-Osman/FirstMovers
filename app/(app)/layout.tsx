@@ -18,6 +18,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               { href: "/research", label: "Live Research" },
               { href: "/watchlist", label: "Watchlist", count: watchlist.length },
               { href: "/chronology", label: "Chronology" },
+              { href: "/signals", label: "Signals" },
+              { href: "/sources", label: "Data sources" },
             ]}
           />
         </nav>

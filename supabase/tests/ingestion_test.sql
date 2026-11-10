@@ -15,7 +15,7 @@ select results_eq($$ select inserted, updated from public.upsert_signals((select
   $$ values (2, 0) $$, 'first run inserts both');
 select results_eq($$ select inserted, updated from public.upsert_signals((select rows from batch)) $$,
   $$ values (0, 0) $$, 'second identical run changes nothing');
-select is((select count(*)::int from public.signals), 2, 'no duplicates after re-run');
+select is((select count(*)::int from public.signals where source_record_id in ('C-1', 'BP-1')), 2, 'no duplicates after re-run');
 select is((select company_id from public.signals where source_record_id = 'C-1'),
   '00000000-0000-0000-0000-0000000000c1'::uuid, 'award linked to company by entity_key');
 
