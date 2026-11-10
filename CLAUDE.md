@@ -63,6 +63,12 @@ Sections in this order:
 
 Ask before adding any other dependency or service.
 
+**Approved and installed (Phase 1):** `next` 16, `react` 19, `typescript`, `tailwindcss` 4, `eslint` (create-next-app defaults), `@supabase/supabase-js`, `@supabase/ssr`, `zod` 4. Dev: `supabase` (CLI), `vitest` (pinned 4.1.12; 5.1.0 was days old at the time).
+
+**Next.js 16 notes:** this version differs from older training data. Read `node_modules/next/dist/docs/` before using an unfamiliar API (see `AGENTS.md`). Auth/session refresh lives in `proxy.ts` (the renamed `middleware`). `cacheComponents` is deliberately **off**: every page is session-gated and must show fresh data.
+
+**Windows:** run tests with `npm test` (wraps Vitest to normalize the `c:\` vs `C:\` drive letter, which otherwise breaks every suite).
+
 ## 4. Architecture: signals first
 
 Discovery must not depend on running web searches on every click. The pipeline:
@@ -104,9 +110,21 @@ Live Research reuses steps 4–6 for a user-supplied company or theme.
 
 URLs and formats change. Before building an ingestion job, fetch the source and confirm its current format and fields, then record what you found here.
 
-## 6. Data model (outline)
+## 6. Data model
 
-Propose the exact schema in Phase 1 for approval. Expected tables:
+**As built (Phase 1, approved):** `supabase/migrations/20261110195402_init.sql`, tests in `supabase/tests/rls_test.sql`. Generated types: `lib/supabase/database.types.ts` (`npm run db:types`).
+
+- Enums: `app_role`, `brief_origin`, `signal_rating`, `opportunity_stage` (incl. `undetermined`), `evidence_type`, `relevance`, `signal_source_type`, `run_status`.
+- `signals` is unique on `(source_type, source_record_id)`, so re-ingesting never duplicates. `sources.url` is unique.
+- `briefs`: `version` is auto-assigned per company (trigger) and unique per company. **Briefs are immutable**: a trigger rejects any update except `dismissed`, `dismissed_by`, `dismissed_at`. View `latest_briefs` (security invoker) gives the newest version per company.
+- `brief_sources.is_repeat_coverage_of` marks repeated coverage of one event (one signal, not corroboration).
+- `settings` is a single row with check constraints (discovery cap 1–8, sources per candidate 1–5).
+- New auth users get a `member` profile by trigger. Signed-in non-admins can't change any role.
+- **RLS / write model:** `anon` has no grants anywhere. All signed-in users read everything. Watchlist: any member adds/removes. Everything else is written only by admins through the user session. Pipeline writes (Live Research "Add to feed", discovery) run in server code that checks the caller's role (`lib/auth.ts`) and then uses the secret-key client (`lib/supabase/admin.ts`, server-only).
+- First admin: sign up in the app, then `npm run promote-admin -- you@example.com`.
+- Brief JSON shape: draft Zod schema in `lib/brief/schema.ts`, code-level rule checks in `lib/brief/integrity.ts` (Phase 2 refines both).
+
+Original outline:
 
 - `profiles`: user id, name, role (admin | member)
 - `companies`: id, full display name, normalized key, aliases, parent company, Ontario connection notes
@@ -181,7 +199,7 @@ These rules apply on top of `docs/intelligence-model.md`.
 
 ## 10. UI guidance
 
-- Professional, clean design suited to brokers reviewing evidence. The visual direction is not decided: propose two or three options in Phase 1 before building any UI.
+- Professional, clean design suited to brokers reviewing evidence. **Chosen direction (Phase 1): B. Operations console.** Dark slate sidebar, white work area, table-style rows separated by rules, IBM Plex Sans for text and IBM Plex Mono for dates, IDs and badges, blue accent. Tokens and badge classes live in `app/globals.css`. Every badge pair was checked at 6.7:1 or better. Dates display as YYYY-MM-DD (Toronto time for timestamps).
 - **Readability first:** labels, dates and metadata must be legible on a projector. Every badge's text must contrast strongly with its own background (dark text only on bright fills; light text on dark or outlined badges). Check this for every badge and tag.
 - Don't repeat a section's heading inside its body text (for example, no "What changed:" under the "What changed" heading).
 - Clear loading, empty and error states everywhere. Never show placeholder data as if it were real.
@@ -214,6 +232,14 @@ Work one phase per session. Propose a plan, wait for approval, build, test, comm
 - Ask before: adding dependencies, creating paid resources, running anything that spends Firecrawl or LLM credits beyond a single test, deleting data, or changing the schema of existing tables.
 - When unsure about a source's format or a product decision, ask rather than guess.
 - Update this file when decisions change.
+
+### Local development
+1. Docker running, then `npm run db:start` (local Supabase; Studio at http://127.0.0.1:54323, email inbox at http://127.0.0.1:54324).
+2. Copy `.env.example` to `.env.local` and fill the Supabase values from `npx supabase status`.
+3. `npm run dev`, sign up at http://localhost:3000/signup, then `npm run promote-admin -- <email>`.
+4. Checks: `npm run typecheck`, `npm run lint`, `npm test`, `npm run db:test` (RLS), `npm run build`.
+
+Sign-up is open (any visitor with the URL can create a member account). Email confirmation is off locally; turn it on in the hosted project. A hosted Supabase project is not linked yet: when one exists, `npx supabase link` then `npx supabase db push`.
 
 ## 13. Out of scope for the MVP
 
