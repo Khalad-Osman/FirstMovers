@@ -74,6 +74,15 @@ Ask before adding any other dependency or service.
 - Rule checks in code: `lib/brief/integrity.ts`. A brief is returned only if schema, source join and rules all pass; otherwise one retry with the error list, then an error result.
 - Live evaluation: `npm run eval:analysis` (spends credits; uses `EVAL_MODELS` or `LLM_ANALYSIS_MODEL`; `EVAL_FIXTURES` to run a subset). Six fictional fixtures in `lib/analysis/fixtures.ts`. Reports go to `eval-results/` (gitignored).
 
+**Live Research (Phase 3):**
+- Firecrawl v2 (checked 2026-11-10, docs.firecrawl.dev): `POST /v2/search` (`query`, `limit`, `tbs`, `country`, `location`, `excludeDomains`; response `data.web[]` with `url`, `title`, `description`, plus `creditsUsed`) and `POST /v2/scrape` (`formats`, `onlyMainContent`; response `data.markdown`, `data.rawHtml`, `data.metadata` with `url`, `statusCode`, `title` and any page meta tags). Costs: search 2 credits per 10 results, scrape 1 credit per page, failed requests 0. Client: `lib/firecrawl/client.ts` (2-request gate, retry 429/408/5xx, stop on 402).
+- Pipeline (`lib/research/pipeline.ts`): 3 searches (last 24 months, Canada/Ontario targeted, 5 results each), rank and de-duplicate, scrape up to `settings.sources_per_candidate` (max 5), one follow-up search when the main announcement is 12–24 months old. About 10–13 credits per company. Theme mode: 1 search, results only (~2 credits); the user picks the company.
+- Dates without AI (`lib/research/dates.ts`): page metadata → JSON-LD → URL → "Published" line; otherwise undated. Method stored in `sources.date_method`.
+- Jobs run in `after()` from server actions (`maxDuration = 300`); progress is read from `research_sessions`; sessions with no progress for 10 minutes show as stopped.
+- "Add to feed" (`saveSessionToFeed`) re-verifies the brief against the stored source rows, refuses unverified entities, finds or creates the company by normalized name, inserts a new brief version and links `brief_sources` (including repeat coverage).
+- Tests: `npm run test:db` runs the full flow against local Supabase with Firecrawl and the model faked.
+- **Pending:** live verification with a real company needs `FIRECRAWL_API_KEY` and `OPENAI_API_KEY` (about 10–13 Firecrawl credits plus one or two LLM calls). Ask before running it. The Phase 2 model evaluation is deferred until then too.
+
 **Windows:** run tests with `npm test` (wraps Vitest to normalize the `c:\` vs `C:\` drive letter, which otherwise breaks every suite).
 
 ## 4. Architecture: signals first
@@ -246,7 +255,7 @@ Work one phase per session. Propose a plan, wait for approval, build, test, comm
 1. Docker running, then `npm run db:start` (local Supabase; Studio at http://127.0.0.1:54323, email inbox at http://127.0.0.1:54324).
 2. Copy `.env.example` to `.env.local` and fill the Supabase values from `npx supabase status`.
 3. `npm run dev`, sign up at http://localhost:3000/signup, then `npm run promote-admin -- <email>`.
-4. Checks: `npm run typecheck`, `npm run lint`, `npm test`, `npm run db:test` (RLS), `npm run build`.
+4. Checks: `npm run typecheck`, `npm run lint`, `npm test`, `npm run db:test` (RLS), `npm run test:db` (Live Research flow), `npm run build`.
 
 Sign-up is open (any visitor with the URL can create a member account). Email confirmation is off locally; turn it on in the hosted project. A hosted Supabase project is not linked yet: when one exists, `npx supabase link` then `npx supabase db push`.
 
