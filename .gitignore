@@ -37,3 +37,6 @@ npm-debug.log*
 # supabase local state
 supabase/.temp
 supabase/.branches
+
+# live evaluation reports
+/eval-results

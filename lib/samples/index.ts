@@ -24,6 +24,7 @@ const norvale: SampleBrief = {
       name: "Norvale Precision Castings Ltd.",
       entityNotes: "Privately held operating company. No parent identified in the sources.",
       localConnection: "Operates a steel foundry and finishing plant in Brampton, Ontario.",
+      entityStatus: "verified",
     },
     chain: {
       whatChanged: {
@@ -60,6 +61,7 @@ const norvale: SampleBrief = {
         title: "Contract award: cast steel components, five-year standing offer",
         publishedAt: "2026-09-18",
         eventAt: "2026-09-12",
+        recencyTier: "recent",
         evidenceType: "fact",
         relevance: "signal",
         finding: "Five-year supply contract awarded to the company, first deliveries scheduled for Q3 2027.",
@@ -72,6 +74,7 @@ const norvale: SampleBrief = {
         title: "Norvale wins federal casting contract",
         publishedAt: "2026-09-20",
         eventAt: "2026-09-12",
+        recencyTier: "recent",
         evidenceType: "fact",
         relevance: "signal",
         finding: "Company announcement of the same award. Repeat coverage, not independent corroboration.",
@@ -84,6 +87,7 @@ const norvale: SampleBrief = {
         title: "Current openings, Brampton",
         publishedAt: "2026-10-22",
         eventAt: null,
+        recencyTier: "recent",
         evidenceType: "fact",
         relevance: "signal",
         finding: "Fourteen openings for moulders, CNC machinists and a second-shift supervisor for a new production cell.",
@@ -96,6 +100,7 @@ const norvale: SampleBrief = {
         title: "Plant profile: Norvale's Brampton foundry",
         publishedAt: "2025-06-10",
         eventAt: null,
+        recencyTier: "context",
         evidenceType: "fact",
         relevance: "context",
         finding: "Profile states the plant runs two shifts and has no expansion land on site. 17 months old.",
@@ -108,6 +113,8 @@ const norvale: SampleBrief = {
       "Finished-goods storage could move to a third-party logistics provider instead of new space.",
       "The no-expansion-land statement is 17 months old and may be out of date.",
     ],
+    alternativesAssessment: "alternatives_possible",
+    existingFacilityInvestment: false,
     workingHypothesis:
       "Norvale may need additional machining or storage space near Brampton before Q3 2027 deliveries begin.",
     unknowns: [
@@ -141,6 +148,7 @@ const kestrel: SampleBrief = {
       name: "Kestrel Bay Cold Chain Inc.",
       entityNotes: null,
       localConnection: "Operates a refrigerated warehouse in Mississauga, Ontario.",
+      entityStatus: "verified",
     },
     chain: {
       whatChanged: {
@@ -177,6 +185,7 @@ const kestrel: SampleBrief = {
         title: "Kestrel Bay lands frozen distribution deal",
         publishedAt: "2026-08-14",
         eventAt: null,
+        recencyTier: "recent",
         evidenceType: "fact",
         relevance: "signal",
         finding: "Multi-year agreement to handle frozen distribution for a national grocery customer in Ontario, starting 2027.",
@@ -189,6 +198,7 @@ const kestrel: SampleBrief = {
         title: "Interior alteration and refrigeration equipment permit",
         publishedAt: "2026-10-02",
         eventAt: null,
+        recencyTier: "recent",
         evidenceType: "fact",
         relevance: "signal",
         finding: "Permit issued for interior alterations and refrigeration equipment at the company's existing Mississauga warehouse.",
@@ -201,6 +211,7 @@ const kestrel: SampleBrief = {
         title: "We've opened our Mississauga facility",
         publishedAt: "2024-05-08",
         eventAt: null,
+        recencyTier: "historical",
         evidenceType: "fact",
         relevance: "not_relevant",
         finding: "Describes the 2024 opening of the current facility. Historical (30 months old), excluded from the chain.",
@@ -211,6 +222,8 @@ const kestrel: SampleBrief = {
       "The refrigeration permit is investment in the existing facility, which is evidence against an external move.",
       "Part of the new volume may be handled by other carriers or the customer's own network.",
     ],
+    alternativesAssessment: "alternatives_likely",
+    existingFacilityInvestment: true,
     workingHypothesis:
       "If the upgraded building cannot absorb the grocery volume, Kestrel Bay may look for overflow freezer space in Peel Region.",
     unknowns: [
@@ -242,6 +255,7 @@ const ardent: SampleBrief = {
       name: "Ardent Lumen Packaging Corp.",
       entityNotes: "Canadian subsidiary of a US packaging group.",
       localConnection: "Operates a packaging plant in Toronto, Ontario.",
+      entityStatus: "verified",
     },
     chain: {
       whatChanged: { status: "unknown", text: "No dated Ontario change found.", sourceIds: [] },
@@ -258,6 +272,7 @@ const ardent: SampleBrief = {
         title: "New Ohio plant to serve Midwest customers",
         publishedAt: "2026-07-15",
         eventAt: null,
+        recencyTier: "recent",
         evidenceType: "fact",
         relevance: "not_relevant",
         finding: "US parent announced a new plant in Ohio. No Ontario operations mentioned.",
@@ -270,6 +285,7 @@ const ardent: SampleBrief = {
         title: "Toronto plant recognized for safety record",
         publishedAt: "2026-09-03",
         eventAt: null,
+        recencyTier: "recent",
         evidenceType: "fact",
         relevance: "context",
         finding: "Toronto plant received an industry safety award. No change in operations reported.",
@@ -277,6 +293,8 @@ const ardent: SampleBrief = {
       },
     ],
     countercase: ["The only expansion found is in the United States, with no stated link to the Toronto plant."],
+    alternativesAssessment: "alternatives_possible",
+    existingFacilityInvestment: false,
     workingHypothesis: null,
     unknowns: ["Whether the Ohio plant shifts any volume into or away from Toronto."],
     commercialValue: null,

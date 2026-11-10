@@ -1,4 +1,4 @@
-import { CHAIN_STEPS, ORIGIN_LABEL, type BriefAnalysis, type Origin } from "@/lib/brief/schema";
+import { CHAIN_STEPS, ORIGIN_LABEL, RECENCY_LABEL, type BriefAnalysis, type Origin } from "@/lib/brief/schema";
 import { ledgerCounts } from "@/lib/brief/integrity";
 import { formatDate } from "@/lib/format";
 import {
@@ -144,7 +144,10 @@ export function BriefView({ analysis, companyName, isSample, analyzedAt, origin,
                       </a>
                       <div className="text-[0.8125rem] text-meta">{e.publisher}</div>
                     </Td>
-                    <Td className="mono whitespace-nowrap">{formatDate(e.publishedAt)}</Td>
+                    <Td className="mono whitespace-nowrap">
+                      {formatDate(e.publishedAt)}
+                      <div className="text-[0.75rem] text-meta">{RECENCY_LABEL[e.recencyTier]}</div>
+                    </Td>
                     <Td className="mono whitespace-nowrap">{e.eventAt ? formatDate(e.eventAt) : "Same"}</Td>
                     <Td>
                       {e.finding}

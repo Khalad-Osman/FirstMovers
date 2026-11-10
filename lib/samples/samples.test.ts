@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { briefAnalysisSchema } from "@/lib/brief/schema";
 import { checkBriefIntegrity } from "@/lib/brief/integrity";
+import { recencyTier } from "@/lib/analysis/recency";
 import { SAMPLE_BRIEFS } from "./index";
 
 describe("sample briefs", () => {
@@ -25,6 +26,10 @@ describe("sample briefs", () => {
         expect(checkBriefIntegrity(sample.analysis)).toEqual([]);
       });
 
+      it("recency tiers match the analysis date", () => {
+        for (const e of sample.analysis.ledger) expect(e.recencyTier, e.id).toBe(recencyTier(e, sample.analyzedAt));
+      });
+
       it("uses only example.com source links", () => {
         for (const e of sample.analysis.ledger) expect(new URL(e.url).hostname).toBe("example.com");
       });
@@ -40,7 +45,7 @@ describe("checkBriefIntegrity", () => {
       ...base,
       chain: { ...base.chain, whatChanged: { ...base.chain.whatChanged, sourceIds: ["S99"] } },
     };
-    expect(checkBriefIntegrity(bad).join()).toMatch(/missing ledger entry S99/);
+    expect(checkBriefIntegrity(bad).join()).toMatch(/cites S99, which is not in the ledger/);
   });
 
   it("rejects a Supported step backed only by Context sources", () => {
@@ -48,7 +53,7 @@ describe("checkBriefIntegrity", () => {
       ...base,
       chain: { ...base.chain, facilityPressure: { status: "supported" as const, text: "x", sourceIds: ["S4"] } },
     };
-    expect(checkBriefIntegrity(bad).join()).toMatch(/requires at least one Signal source/);
+    expect(checkBriefIntegrity(bad).join()).toMatch(/"Supported" requires at least one cited Signal source/);
   });
 
   it("rejects Strong Signal without a Supported What changed", () => {
@@ -56,6 +61,21 @@ describe("checkBriefIntegrity", () => {
       ...base,
       chain: { ...base.chain, whatChanged: { ...base.chain.whatChanged, status: "inferred" as const } },
     };
-    expect(checkBriefIntegrity(bad).join()).toMatch(/Strong Signal requires/);
+    expect(checkBriefIntegrity(bad).join()).toMatch(/Strong Signal: "What changed" must be Supported/);
+  });
+
+  it("rejects a 12–24 month source labelled Signal", () => {
+    const bad = { ...base, ledger: base.ledger.map((e) => (e.id === "S4" ? { ...e, relevance: "signal" as const } : e)) };
+    expect(checkBriefIntegrity(bad).join()).toMatch(/older than 12 months cannot be Signal/);
+  });
+
+  it("rejects a rating above No Meaningful Signal for an unverified entity", () => {
+    const bad = { ...base, company: { ...base.company, entityStatus: "not_verified" as const } };
+    expect(checkBriefIntegrity(bad).join()).toMatch(/unverified entity/);
+  });
+
+  it("rejects existing-facility investment with no alternatives identified", () => {
+    const bad = { ...base, existingFacilityInvestment: true, alternativesAssessment: "no_alternatives_identified" as const };
+    expect(checkBriefIntegrity(bad).join()).toMatch(/evidence against an external move/);
   });
 });
