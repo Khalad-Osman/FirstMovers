@@ -159,6 +159,44 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"research_sessions": {
+                  Row: {
+                    "analysis": Json | null,"analysis_errors": Json | null,"analysis_model": string | null,"brief_id": string | null,"company_id": string | null,"created_at": string,"created_by": string | null,"error": string | null,"id": string,"mode": Database["public"]['Enums']["research_mode"],"progress": string | null,"query": string,"source_ids": (string)[],"status": Database["public"]['Enums']["research_status"],"theme_results": NonNullable<Json>,"updated_at": string,"usage": NonNullable<Json>
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "analysis"?: Json | null,"analysis_errors"?: Json | null,"analysis_model"?: string | null,"brief_id"?: string | null,"company_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"id"?: string,"mode": Database["public"]['Enums']["research_mode"],"progress"?: string | null,"query": string,"source_ids"?: (string)[],"status"?: Database["public"]['Enums']["research_status"],"theme_results"?: NonNullable<Json>,"updated_at"?: string,"usage"?: NonNullable<Json>
+                  }
+                  Update: {
+                    "analysis"?: Json | null,"analysis_errors"?: Json | null,"analysis_model"?: string | null,"brief_id"?: string | null,"company_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"id"?: string,"mode"?: Database["public"]['Enums']["research_mode"],"progress"?: string | null,"query"?: string,"source_ids"?: (string)[],"status"?: Database["public"]['Enums']["research_status"],"theme_results"?: NonNullable<Json>,"updated_at"?: string,"usage"?: NonNullable<Json>
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "research_sessions_brief_id_fkey"
+      columns: ["brief_id"]
+isOneToOne: false
+      referencedRelation: "briefs"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "research_sessions_brief_id_fkey"
+      columns: ["brief_id"]
+isOneToOne: false
+      referencedRelation: "latest_briefs"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "research_sessions_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "research_sessions_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"settings": {
                   Row: {
                     "analysis_model": string | null,"discovery_cap": number,"id": boolean,"screening_model": string | null,"skip_window_days": number,"sources_per_candidate": number,"updated_at": string,"updated_by": string | null
@@ -201,14 +239,14 @@ isOneToOne: false
                   ]
                 },"sources": {
                   Row: {
-                    "content_hash": string | null,"event_at": string | null,"excerpt": string | null,"fetched_at": string,"id": string,"published_at": string | null,"publisher": string | null,"title": string | null,"url": string
+                    "content_hash": string | null,"date_method": Database["public"]['Enums']["date_method"],"event_at": string | null,"excerpt": string | null,"fetched_at": string,"first_seen_query": string | null,"id": string,"published_at": string | null,"publisher": string | null,"title": string | null,"url": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "content_hash"?: string | null,"event_at"?: string | null,"excerpt"?: string | null,"fetched_at"?: string,"id"?: string,"published_at"?: string | null,"publisher"?: string | null,"title"?: string | null,"url": string
+                    "content_hash"?: string | null,"date_method"?: Database["public"]['Enums']["date_method"],"event_at"?: string | null,"excerpt"?: string | null,"fetched_at"?: string,"first_seen_query"?: string | null,"id"?: string,"published_at"?: string | null,"publisher"?: string | null,"title"?: string | null,"url": string
                   }
                   Update: {
-                    "content_hash"?: string | null,"event_at"?: string | null,"excerpt"?: string | null,"fetched_at"?: string,"id"?: string,"published_at"?: string | null,"publisher"?: string | null,"title"?: string | null,"url"?: string
+                    "content_hash"?: string | null,"date_method"?: Database["public"]['Enums']["date_method"],"event_at"?: string | null,"excerpt"?: string | null,"fetched_at"?: string,"first_seen_query"?: string | null,"id"?: string,"published_at"?: string | null,"publisher"?: string | null,"title"?: string | null,"url"?: string
                   }
                   Relationships: [
                     
@@ -288,7 +326,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "app_role": "admin"|"member","brief_origin": "discovered"|"live_research","evidence_type": "fact"|"inference"|"hypothesis"|"unknown","opportunity_stage": "pre_shop"|"active_search"|"site_controlled"|"construction_fit_out"|"open"|"undetermined","relevance": "signal"|"context"|"not_relevant","run_status": "queued"|"running"|"completed"|"failed","signal_rating": "strong_signal"|"worth_monitoring"|"no_meaningful_signal","signal_source_type": "canadabuys_award"|"permit_mississauga"|"permit_brampton"|"permit_toronto"|"jobbank_posting"|"web"
+            "app_role": "admin"|"member","brief_origin": "discovered"|"live_research","date_method": "metadata"|"structured_data"|"url"|"text"|"none","evidence_type": "fact"|"inference"|"hypothesis"|"unknown","opportunity_stage": "pre_shop"|"active_search"|"site_controlled"|"construction_fit_out"|"open"|"undetermined","relevance": "signal"|"context"|"not_relevant","research_mode": "company"|"theme","research_status": "searching"|"scraping"|"ready"|"analyzing"|"analyzed"|"saved"|"failed","run_status": "queued"|"running"|"completed"|"failed","signal_rating": "strong_signal"|"worth_monitoring"|"no_meaningful_signal","signal_source_type": "canadabuys_award"|"permit_mississauga"|"permit_brampton"|"permit_toronto"|"jobbank_posting"|"web"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -408,7 +446,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "app_role": ["admin", "member"],"brief_origin": ["discovered", "live_research"],"evidence_type": ["fact", "inference", "hypothesis", "unknown"],"opportunity_stage": ["pre_shop", "active_search", "site_controlled", "construction_fit_out", "open", "undetermined"],"relevance": ["signal", "context", "not_relevant"],"run_status": ["queued", "running", "completed", "failed"],"signal_rating": ["strong_signal", "worth_monitoring", "no_meaningful_signal"],"signal_source_type": ["canadabuys_award", "permit_mississauga", "permit_brampton", "permit_toronto", "jobbank_posting", "web"]
+            "app_role": ["admin", "member"],"brief_origin": ["discovered", "live_research"],"date_method": ["metadata", "structured_data", "url", "text", "none"],"evidence_type": ["fact", "inference", "hypothesis", "unknown"],"opportunity_stage": ["pre_shop", "active_search", "site_controlled", "construction_fit_out", "open", "undetermined"],"relevance": ["signal", "context", "not_relevant"],"research_mode": ["company", "theme"],"research_status": ["searching", "scraping", "ready", "analyzing", "analyzed", "saved", "failed"],"run_status": ["queued", "running", "completed", "failed"],"signal_rating": ["strong_signal", "worth_monitoring", "no_meaningful_signal"],"signal_source_type": ["canadabuys_award", "permit_mississauga", "permit_brampton", "permit_toronto", "jobbank_posting", "web"]
           }
         }
 } as const
