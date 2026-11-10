@@ -67,6 +67,13 @@ Ask before adding any other dependency or service.
 
 **Next.js 16 notes:** this version differs from older training data. Read `node_modules/next/dist/docs/` before using an unfamiliar API (see `AGENTS.md`). Auth/session refresh lives in `proxy.ts` (the renamed `middleware`). `cacheComponents` is deliberately **off**: every page is session-gated and must show fresh data.
 
+**Analysis engine (Phase 2):**
+- `lib/llm/`: `LLMProvider` interface, OpenAI adapter (plain `fetch`, Chat Completions, strict JSON-schema output, retries 429/5xx), fake provider for tests. `LLM_PROVIDER` selects the adapter; models come from the `settings` table, else `LLM_SCREENING_MODEL` / `LLM_ANALYSIS_MODEL`. Adding Anthropic = one adapter file + one `case` in `lib/llm/index.ts`.
+- `lib/analysis/analyze.ts`: `analyzeCompany(input, { provider, model })`. System prompt = `docs/intelligence-model.md` + `docs/analysis-rules.md` + an output contract (`lib/analysis/prompt.ts`). Sources are passed in `<source>` delimiters as untrusted data, at most 5, excerpts capped at 6,000 characters.
+- The model cites sources by id only. URLs, publishers and dates are joined from our source records (`lib/analysis/build.ts`), so every FACT links to a collected source and dates match by construction. Recency tiers (`lib/analysis/recency.ts`) are computed in code from the event date, else the publication date.
+- Rule checks in code: `lib/brief/integrity.ts`. A brief is returned only if schema, source join and rules all pass; otherwise one retry with the error list, then an error result.
+- Live evaluation: `npm run eval:analysis` (spends credits; uses `EVAL_MODELS` or `LLM_ANALYSIS_MODEL`; `EVAL_FIXTURES` to run a subset). Six fictional fixtures in `lib/analysis/fixtures.ts`. Reports go to `eval-results/` (gitignored).
+
 **Windows:** run tests with `npm test` (wraps Vitest to normalize the `c:\` vs `C:\` drive letter, which otherwise breaks every suite).
 
 ## 4. Architecture: signals first
@@ -137,6 +144,8 @@ Original outline:
 - `settings`: discovery cap, sources per candidate, skip window, model names
 
 Row Level Security on every table. Members read shared data; only admins can dismiss, delete or run discovery.
+
+> `docs/analysis-rules.md` is a word-for-word copy of Section 7 and is what the analysis prompt uses. Edit both together; `lib/analysis/prompt.test.ts` fails if they differ.
 
 ## 7. Analysis rules (non-negotiable)
 
