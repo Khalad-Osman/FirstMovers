@@ -148,6 +148,8 @@ export async function saveSessionToFeed(sessionId: string, userId: string): Prom
         .single();
       if (cErr) return { ok: false, error: `Could not save company: ${cErr.message}` };
       companyId = created.id;
+      // Attach any ingested signals that already name this company.
+      await db.rpc("link_signals_to_companies");
     }
   }
 
