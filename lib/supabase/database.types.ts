@@ -127,14 +127,14 @@ isOneToOne: false
                   ]
                 },"discovery_runs": {
                   Row: {
-                    "analyzed": number,"candidates_found": number,"errors": NonNullable<Json>,"finished_at": string | null,"id": string,"settings": NonNullable<Json>,"skipped": NonNullable<Json>,"started_at": string,"started_by": string | null,"status": Database["public"]['Enums']["run_status"],"usage": NonNullable<Json>
+                    "analyzed": number,"candidates": NonNullable<Json>,"candidates_found": number,"errors": NonNullable<Json>,"finished_at": string | null,"id": string,"outcomes": NonNullable<Json>,"progress": string | null,"settings": NonNullable<Json>,"skipped": NonNullable<Json>,"started_at": string,"started_by": string | null,"status": Database["public"]['Enums']["run_status"],"usage": NonNullable<Json>
                   }
                   ComputedFields: never
                   Insert: {
-                    "analyzed"?: number,"candidates_found"?: number,"errors"?: NonNullable<Json>,"finished_at"?: string | null,"id"?: string,"settings"?: NonNullable<Json>,"skipped"?: NonNullable<Json>,"started_at"?: string,"started_by"?: string | null,"status"?: Database["public"]['Enums']["run_status"],"usage"?: NonNullable<Json>
+                    "analyzed"?: number,"candidates"?: NonNullable<Json>,"candidates_found"?: number,"errors"?: NonNullable<Json>,"finished_at"?: string | null,"id"?: string,"outcomes"?: NonNullable<Json>,"progress"?: string | null,"settings"?: NonNullable<Json>,"skipped"?: NonNullable<Json>,"started_at"?: string,"started_by"?: string | null,"status"?: Database["public"]['Enums']["run_status"],"usage"?: NonNullable<Json>
                   }
                   Update: {
-                    "analyzed"?: number,"candidates_found"?: number,"errors"?: NonNullable<Json>,"finished_at"?: string | null,"id"?: string,"settings"?: NonNullable<Json>,"skipped"?: NonNullable<Json>,"started_at"?: string,"started_by"?: string | null,"status"?: Database["public"]['Enums']["run_status"],"usage"?: NonNullable<Json>
+                    "analyzed"?: number,"candidates"?: NonNullable<Json>,"candidates_found"?: number,"errors"?: NonNullable<Json>,"finished_at"?: string | null,"id"?: string,"outcomes"?: NonNullable<Json>,"progress"?: string | null,"settings"?: NonNullable<Json>,"skipped"?: NonNullable<Json>,"started_at"?: string,"started_by"?: string | null,"status"?: Database["public"]['Enums']["run_status"],"usage"?: NonNullable<Json>
                   }
                   Relationships: [
                     {
