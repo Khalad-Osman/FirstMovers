@@ -58,6 +58,12 @@ export default async function BriefPage({ params }: PageProps<"/briefs/[id]">) {
                 pendingLabel="Adding…"
               />
             )}
+            <Link
+              href={`/research?company=${encodeURIComponent(brief.companyName)}&companyId=${brief.companyId}`}
+              className="btn"
+            >
+              Re-analyze
+            </Link>
             {user?.role === "admin" && !brief.dismissed && (
               <ActionButton
                 action={dismissBrief.bind(null, brief.id)}
