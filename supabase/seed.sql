@@ -1,0 +1,4 @@
+-- Local development seed. Intentionally empty: no placeholder data in the app.
+-- Sample briefs live in code (lib/samples), never in the database.
+-- To make a user an admin, sign up in the app, then run:
+--   npm run promote-admin -- you@example.com
