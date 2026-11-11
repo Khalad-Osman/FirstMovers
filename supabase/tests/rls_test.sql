@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(22);
+select plan(26);
 
 -- Fixtures (as postgres, bypassing RLS) ---------------------------------------
 insert into auth.users (id, email, raw_user_meta_data) values
@@ -102,6 +102,22 @@ reset role;
 select throws_ok(
   $$ update public.settings set discovery_cap = 9 $$,
   '23514', null, 'discovery cap is limited to 8');
+
+-- FK set-null maintenance is allowed; repointing a reference is not.
+insert into public.discovery_runs (id) values ('00000000-0000-0000-0000-0000000000d1'), ('00000000-0000-0000-0000-0000000000d2');
+insert into public.briefs (id, company_id, origin, rating, analysis, model, discovery_run_id, created_by)
+values ('00000000-0000-0000-0000-0000000000b9', '00000000-0000-0000-0000-0000000000c1', 'discovered', 'worth_monitoring', '{}', 'test-model',
+        '00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-00000000000b');
+select throws_ok(
+  $$ update public.briefs set discovery_run_id = '00000000-0000-0000-0000-0000000000d2' where id = '00000000-0000-0000-0000-0000000000b9' $$,
+  '42501', 'Briefs are immutable; insert a new version instead', 'a brief cannot be repointed to another run');
+select lives_ok(
+  $$ delete from public.discovery_runs where id = '00000000-0000-0000-0000-0000000000d1' $$,
+  'deleting a discovery run that produced a brief works (FK set null)');
+select is((select discovery_run_id from public.briefs where id = '00000000-0000-0000-0000-0000000000b9'), null, 'brief kept, run link cleared');
+select lives_ok(
+  $$ delete from auth.users where id = '00000000-0000-0000-0000-00000000000b' $$,
+  'deleting a user who created a brief works (FK set null)');
 
 select * from finish();
 rollback;

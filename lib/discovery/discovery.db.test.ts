@@ -194,9 +194,11 @@ describe("discovery run (local DB)", () => {
 });
 
 afterAll(async () => {
-  await db.from("discovery_runs").delete().in("id", runIds);
+  // Companies first (their briefs cascade), then the runs.
   const { data: companies } = await db.from("companies").select("id").like("display_name", `Zz Discovery Test %${stamp}%`);
   for (const c of companies ?? []) await db.from("companies").delete().eq("id", c.id);
+  const { error: runErr } = await db.from("discovery_runs").delete().in("id", runIds);
+  if (runErr) throw new Error(`cleanup failed: ${runErr.message}`);
   await db.from("research_sessions").delete().like("query", `Zz Discovery Test %${stamp}%`);
   await db.from("signals").delete().like("source_record_id", `ZZTEST-${stamp}-%`);
   await db.from("sources").delete().like("url", `https://example.com/disc-${stamp}/%`);
