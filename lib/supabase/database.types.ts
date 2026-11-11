@@ -127,14 +127,14 @@ isOneToOne: false
                   ]
                 },"discovery_runs": {
                   Row: {
-                    "analyzed": number,"candidates": NonNullable<Json>,"candidates_found": number,"errors": NonNullable<Json>,"finished_at": string | null,"id": string,"outcomes": NonNullable<Json>,"progress": string | null,"settings": NonNullable<Json>,"skipped": NonNullable<Json>,"started_at": string,"started_by": string | null,"status": Database["public"]['Enums']["run_status"],"usage": NonNullable<Json>
+                    "analyzed": number,"candidates": NonNullable<Json>,"candidates_found": number,"errors": NonNullable<Json>,"finished_at": string | null,"id": string,"outcomes": NonNullable<Json>,"progress": string | null,"settings": NonNullable<Json>,"skipped": NonNullable<Json>,"started_at": string,"started_by": string | null,"status": Database["public"]['Enums']["run_status"],"trigger": Database["public"]['Enums']["run_trigger"],"usage": NonNullable<Json>
                   }
                   ComputedFields: never
                   Insert: {
-                    "analyzed"?: number,"candidates"?: NonNullable<Json>,"candidates_found"?: number,"errors"?: NonNullable<Json>,"finished_at"?: string | null,"id"?: string,"outcomes"?: NonNullable<Json>,"progress"?: string | null,"settings"?: NonNullable<Json>,"skipped"?: NonNullable<Json>,"started_at"?: string,"started_by"?: string | null,"status"?: Database["public"]['Enums']["run_status"],"usage"?: NonNullable<Json>
+                    "analyzed"?: number,"candidates"?: NonNullable<Json>,"candidates_found"?: number,"errors"?: NonNullable<Json>,"finished_at"?: string | null,"id"?: string,"outcomes"?: NonNullable<Json>,"progress"?: string | null,"settings"?: NonNullable<Json>,"skipped"?: NonNullable<Json>,"started_at"?: string,"started_by"?: string | null,"status"?: Database["public"]['Enums']["run_status"],"trigger"?: Database["public"]['Enums']["run_trigger"],"usage"?: NonNullable<Json>
                   }
                   Update: {
-                    "analyzed"?: number,"candidates"?: NonNullable<Json>,"candidates_found"?: number,"errors"?: NonNullable<Json>,"finished_at"?: string | null,"id"?: string,"outcomes"?: NonNullable<Json>,"progress"?: string | null,"settings"?: NonNullable<Json>,"skipped"?: NonNullable<Json>,"started_at"?: string,"started_by"?: string | null,"status"?: Database["public"]['Enums']["run_status"],"usage"?: NonNullable<Json>
+                    "analyzed"?: number,"candidates"?: NonNullable<Json>,"candidates_found"?: number,"errors"?: NonNullable<Json>,"finished_at"?: string | null,"id"?: string,"outcomes"?: NonNullable<Json>,"progress"?: string | null,"settings"?: NonNullable<Json>,"skipped"?: NonNullable<Json>,"started_at"?: string,"started_by"?: string | null,"status"?: Database["public"]['Enums']["run_status"],"trigger"?: Database["public"]['Enums']["run_trigger"],"usage"?: NonNullable<Json>
                   }
                   Relationships: [
                     {
@@ -147,14 +147,14 @@ isOneToOne: false
                   ]
                 },"ingestion_runs": {
                   Row: {
-                    "errors": NonNullable<Json>,"fetched": number,"finished_at": string | null,"id": string,"inserted": number,"linked": number,"progress": string | null,"settings": NonNullable<Json>,"skip_reasons": NonNullable<Json>,"skipped": number,"source": Database["public"]['Enums']["signal_source_type"],"started_at": string,"started_by": string | null,"status": Database["public"]['Enums']["run_status"],"unchanged": number,"updated": number
+                    "errors": NonNullable<Json>,"fetched": number,"finished_at": string | null,"id": string,"inserted": number,"linked": number,"progress": string | null,"settings": NonNullable<Json>,"skip_reasons": NonNullable<Json>,"skipped": number,"source": Database["public"]['Enums']["signal_source_type"],"started_at": string,"started_by": string | null,"status": Database["public"]['Enums']["run_status"],"trigger": Database["public"]['Enums']["run_trigger"],"unchanged": number,"updated": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "errors"?: NonNullable<Json>,"fetched"?: number,"finished_at"?: string | null,"id"?: string,"inserted"?: number,"linked"?: number,"progress"?: string | null,"settings"?: NonNullable<Json>,"skip_reasons"?: NonNullable<Json>,"skipped"?: number,"source": Database["public"]['Enums']["signal_source_type"],"started_at"?: string,"started_by"?: string | null,"status"?: Database["public"]['Enums']["run_status"],"unchanged"?: number,"updated"?: number
+                    "errors"?: NonNullable<Json>,"fetched"?: number,"finished_at"?: string | null,"id"?: string,"inserted"?: number,"linked"?: number,"progress"?: string | null,"settings"?: NonNullable<Json>,"skip_reasons"?: NonNullable<Json>,"skipped"?: number,"source": Database["public"]['Enums']["signal_source_type"],"started_at"?: string,"started_by"?: string | null,"status"?: Database["public"]['Enums']["run_status"],"trigger"?: Database["public"]['Enums']["run_trigger"],"unchanged"?: number,"updated"?: number
                   }
                   Update: {
-                    "errors"?: NonNullable<Json>,"fetched"?: number,"finished_at"?: string | null,"id"?: string,"inserted"?: number,"linked"?: number,"progress"?: string | null,"settings"?: NonNullable<Json>,"skip_reasons"?: NonNullable<Json>,"skipped"?: number,"source"?: Database["public"]['Enums']["signal_source_type"],"started_at"?: string,"started_by"?: string | null,"status"?: Database["public"]['Enums']["run_status"],"unchanged"?: number,"updated"?: number
+                    "errors"?: NonNullable<Json>,"fetched"?: number,"finished_at"?: string | null,"id"?: string,"inserted"?: number,"linked"?: number,"progress"?: string | null,"settings"?: NonNullable<Json>,"skip_reasons"?: NonNullable<Json>,"skipped"?: number,"source"?: Database["public"]['Enums']["signal_source_type"],"started_at"?: string,"started_by"?: string | null,"status"?: Database["public"]['Enums']["run_status"],"trigger"?: Database["public"]['Enums']["run_trigger"],"unchanged"?: number,"updated"?: number
                   }
                   Relationships: [
                     {
@@ -181,14 +181,14 @@ isOneToOne: false
                   ]
                 },"research_sessions": {
                   Row: {
-                    "analysis": Json | null,"analysis_errors": Json | null,"analysis_model": string | null,"brief_id": string | null,"company_id": string | null,"created_at": string,"created_by": string | null,"error": string | null,"id": string,"mode": Database["public"]['Enums']["research_mode"],"progress": string | null,"query": string,"source_ids": (string)[],"status": Database["public"]['Enums']["research_status"],"theme_results": NonNullable<Json>,"updated_at": string,"usage": NonNullable<Json>
+                    "analysis": Json | null,"analysis_errors": Json | null,"analysis_model": string | null,"brief_id": string | null,"company_id": string | null,"created_at": string,"created_by": string | null,"discovery_run_id": string | null,"error": string | null,"id": string,"mode": Database["public"]['Enums']["research_mode"],"progress": string | null,"query": string,"source_ids": (string)[],"status": Database["public"]['Enums']["research_status"],"theme_results": NonNullable<Json>,"updated_at": string,"usage": NonNullable<Json>
                   }
                   ComputedFields: never
                   Insert: {
-                    "analysis"?: Json | null,"analysis_errors"?: Json | null,"analysis_model"?: string | null,"brief_id"?: string | null,"company_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"id"?: string,"mode": Database["public"]['Enums']["research_mode"],"progress"?: string | null,"query": string,"source_ids"?: (string)[],"status"?: Database["public"]['Enums']["research_status"],"theme_results"?: NonNullable<Json>,"updated_at"?: string,"usage"?: NonNullable<Json>
+                    "analysis"?: Json | null,"analysis_errors"?: Json | null,"analysis_model"?: string | null,"brief_id"?: string | null,"company_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"discovery_run_id"?: string | null,"error"?: string | null,"id"?: string,"mode": Database["public"]['Enums']["research_mode"],"progress"?: string | null,"query": string,"source_ids"?: (string)[],"status"?: Database["public"]['Enums']["research_status"],"theme_results"?: NonNullable<Json>,"updated_at"?: string,"usage"?: NonNullable<Json>
                   }
                   Update: {
-                    "analysis"?: Json | null,"analysis_errors"?: Json | null,"analysis_model"?: string | null,"brief_id"?: string | null,"company_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"id"?: string,"mode"?: Database["public"]['Enums']["research_mode"],"progress"?: string | null,"query"?: string,"source_ids"?: (string)[],"status"?: Database["public"]['Enums']["research_status"],"theme_results"?: NonNullable<Json>,"updated_at"?: string,"usage"?: NonNullable<Json>
+                    "analysis"?: Json | null,"analysis_errors"?: Json | null,"analysis_model"?: string | null,"brief_id"?: string | null,"company_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"discovery_run_id"?: string | null,"error"?: string | null,"id"?: string,"mode"?: Database["public"]['Enums']["research_mode"],"progress"?: string | null,"query"?: string,"source_ids"?: (string)[],"status"?: Database["public"]['Enums']["research_status"],"theme_results"?: NonNullable<Json>,"updated_at"?: string,"usage"?: NonNullable<Json>
                   }
                   Relationships: [
                     {
@@ -215,18 +215,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "research_sessions_discovery_run_id_fkey"
+      columns: ["discovery_run_id"]
+isOneToOne: false
+      referencedRelation: "discovery_runs"
+      referencedColumns: ["id"]
     }
                   ]
                 },"settings": {
                   Row: {
-                    "analysis_model": string | null,"canadabuys_min_value": number,"discovery_cap": number,"id": boolean,"screening_model": string | null,"skip_window_days": number,"sources_per_candidate": number,"updated_at": string,"updated_by": string | null
+                    "analysis_model": string | null,"canadabuys_min_value": number,"discovery_cap": number,"discovery_weekday": number,"firecrawl_monthly_budget": number,"id": boolean,"schedule_discovery_enabled": boolean,"schedule_ingestion_enabled": boolean,"screening_model": string | null,"skip_window_days": number,"sources_per_candidate": number,"updated_at": string,"updated_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "analysis_model"?: string | null,"canadabuys_min_value"?: number,"discovery_cap"?: number,"id"?: boolean,"screening_model"?: string | null,"skip_window_days"?: number,"sources_per_candidate"?: number,"updated_at"?: string,"updated_by"?: string | null
+                    "analysis_model"?: string | null,"canadabuys_min_value"?: number,"discovery_cap"?: number,"discovery_weekday"?: number,"firecrawl_monthly_budget"?: number,"id"?: boolean,"schedule_discovery_enabled"?: boolean,"schedule_ingestion_enabled"?: boolean,"screening_model"?: string | null,"skip_window_days"?: number,"sources_per_candidate"?: number,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Update: {
-                    "analysis_model"?: string | null,"canadabuys_min_value"?: number,"discovery_cap"?: number,"id"?: boolean,"screening_model"?: string | null,"skip_window_days"?: number,"sources_per_candidate"?: number,"updated_at"?: string,"updated_by"?: string | null
+                    "analysis_model"?: string | null,"canadabuys_min_value"?: number,"discovery_cap"?: number,"discovery_weekday"?: number,"firecrawl_monthly_budget"?: number,"id"?: boolean,"schedule_discovery_enabled"?: boolean,"schedule_ingestion_enabled"?: boolean,"screening_model"?: string | null,"skip_window_days"?: number,"sources_per_candidate"?: number,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -354,7 +360,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "app_role": "admin"|"member","brief_origin": "discovered"|"live_research","date_method": "metadata"|"structured_data"|"url"|"text"|"none","evidence_type": "fact"|"inference"|"hypothesis"|"unknown","occupier_status": "named"|"unresolved"|"not_applicable","opportunity_stage": "pre_shop"|"active_search"|"site_controlled"|"construction_fit_out"|"open"|"undetermined","relevance": "signal"|"context"|"not_relevant","research_mode": "company"|"theme","research_status": "searching"|"scraping"|"ready"|"analyzing"|"analyzed"|"saved"|"failed","run_status": "queued"|"running"|"completed"|"failed","signal_rating": "strong_signal"|"worth_monitoring"|"no_meaningful_signal","signal_source_type": "canadabuys_award"|"permit_mississauga"|"permit_brampton"|"permit_toronto"|"jobbank_posting"|"web","signal_strength": "award"|"new_building"|"addition"|"change_of_use"|"alteration"|"demolition"|"sign"|"other"
+            "app_role": "admin"|"member","brief_origin": "discovered"|"live_research","date_method": "metadata"|"structured_data"|"url"|"text"|"none","evidence_type": "fact"|"inference"|"hypothesis"|"unknown","occupier_status": "named"|"unresolved"|"not_applicable","opportunity_stage": "pre_shop"|"active_search"|"site_controlled"|"construction_fit_out"|"open"|"undetermined","relevance": "signal"|"context"|"not_relevant","research_mode": "company"|"theme","research_status": "searching"|"scraping"|"ready"|"analyzing"|"analyzed"|"saved"|"failed","run_status": "queued"|"running"|"completed"|"failed","run_trigger": "manual"|"scheduled","signal_rating": "strong_signal"|"worth_monitoring"|"no_meaningful_signal","signal_source_type": "canadabuys_award"|"permit_mississauga"|"permit_brampton"|"permit_toronto"|"jobbank_posting"|"web","signal_strength": "award"|"new_building"|"addition"|"change_of_use"|"alteration"|"demolition"|"sign"|"other"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -474,7 +480,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "app_role": ["admin", "member"],"brief_origin": ["discovered", "live_research"],"date_method": ["metadata", "structured_data", "url", "text", "none"],"evidence_type": ["fact", "inference", "hypothesis", "unknown"],"occupier_status": ["named", "unresolved", "not_applicable"],"opportunity_stage": ["pre_shop", "active_search", "site_controlled", "construction_fit_out", "open", "undetermined"],"relevance": ["signal", "context", "not_relevant"],"research_mode": ["company", "theme"],"research_status": ["searching", "scraping", "ready", "analyzing", "analyzed", "saved", "failed"],"run_status": ["queued", "running", "completed", "failed"],"signal_rating": ["strong_signal", "worth_monitoring", "no_meaningful_signal"],"signal_source_type": ["canadabuys_award", "permit_mississauga", "permit_brampton", "permit_toronto", "jobbank_posting", "web"],"signal_strength": ["award", "new_building", "addition", "change_of_use", "alteration", "demolition", "sign", "other"]
+            "app_role": ["admin", "member"],"brief_origin": ["discovered", "live_research"],"date_method": ["metadata", "structured_data", "url", "text", "none"],"evidence_type": ["fact", "inference", "hypothesis", "unknown"],"occupier_status": ["named", "unresolved", "not_applicable"],"opportunity_stage": ["pre_shop", "active_search", "site_controlled", "construction_fit_out", "open", "undetermined"],"relevance": ["signal", "context", "not_relevant"],"research_mode": ["company", "theme"],"research_status": ["searching", "scraping", "ready", "analyzing", "analyzed", "saved", "failed"],"run_status": ["queued", "running", "completed", "failed"],"run_trigger": ["manual", "scheduled"],"signal_rating": ["strong_signal", "worth_monitoring", "no_meaningful_signal"],"signal_source_type": ["canadabuys_award", "permit_mississauga", "permit_brampton", "permit_toronto", "jobbank_posting", "web"],"signal_strength": ["award", "new_building", "addition", "change_of_use", "alteration", "demolition", "sign", "other"]
           }
         }
 } as const
