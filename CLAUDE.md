@@ -91,6 +91,14 @@ Ask before adding any other dependency or service.
 - **UI:** Discovery page (admin "Run discovery" with a cost confirmation; summaries for everyone), and a Run discovery button on the feed (admin).
 - **Pending:** a real run needs `OPENAI_API_KEY`, `FIRECRAWL_API_KEY`, `LLM_SCREENING_MODEL` and `LLM_ANALYSIS_MODEL`. With the default cap of 3 it costs about 30–40 Firecrawl credits, 3 screening calls and 3–6 analysis calls. Ask before running it. On Vercel, set `DISCOVERY_JOB_SECRET` and check that deployment protection doesn't block the app's calls to its own step route (Phase 7).
 
+**Scheduling and cost controls (Phase 6):**
+- **Scheduler:** Vercel Cron (decided 2026-11-10). One daily entry in `vercel.json` calls `GET /api/cron/daily` at 14:00 UTC (9–10 am Toronto, after CanadaBuys' morning refresh), authenticated by `Authorization: Bearer $CRON_SECRET` and excluded from the sign-in redirect. Crons only fire on a Vercel deployment; locally, call the route with the header.
+- **Daily job** (`lib/schedule/daily.ts`): if `settings.schedule_ingestion_enabled`, ingests all sources in turn (skipping one already running). Then, if `schedule_discovery_enabled` and today (Toronto) is `discovery_weekday`, no run is active, and month-to-date Firecrawl credits plus the run's maximum (cap × 13) fit `firecrawl_monthly_budget`, it starts a discovery run (`trigger = 'scheduled'`, no user) via the chained step route. Every skip has a stated reason in the response.
+- **Defaults** (decided 2026-11-10): both schedules off until deployed with keys; discovery on Monday; budget 800 of the free plan's 1,000 credits. No monthly LLM cap for now; the per-run cap limits calls.
+- **Settings page** (`/settings`): admins edit the caps, models (blank = env default), CanadaBuys minimum, schedules and budget (Zod in `lib/settings.ts` plus RLS); members view.
+- **Usage page** (`/usage`): per Toronto month, Firecrawl credits/requests and LLM calls/tokens split by Live Research, manual discovery and scheduled discovery (`lib/schedule/usage.ts`). Discovery research sessions carry `discovery_run_id` and are counted only through their run. Firecrawl credits are our estimate; the actual balance (`GET /v2/team/credit-usage`) is fetched only when an admin clicks "Check Firecrawl balance".
+- **Brief immutability:** reference columns (`trigger_signal_id`, `discovery_run_id`, `created_by`) may be cleared by FK set-null on delete; nothing else on a brief can change except dismissal.
+
 **Windows:** run tests with `npm test` (wraps Vitest to normalize the `c:\` vs `C:\` drive letter, which otherwise breaks every suite).
 
 ## 4. Architecture: signals first
