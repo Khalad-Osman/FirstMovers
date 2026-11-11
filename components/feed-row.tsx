@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ORIGIN_LABEL } from "@/lib/brief/schema";
 import type { FeedEntry } from "@/lib/data/briefs";
-import { formatDate } from "@/lib/format";
+import { formatDate, stripLabel } from "@/lib/format";
 import { addToWatchlist, dismissBrief } from "@/app/(app)/actions";
 import { ActionButton } from "./action-button";
 import { RatingBadge, SampleBadge, StageBadge } from "./badges";
@@ -70,7 +70,7 @@ function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
       <dt className="label">{label}</dt>
-      <dd className="mt-0.5">{value}</dd>
+      <dd className="mt-0.5">{stripLabel(value, label)}</dd>
     </div>
   );
 }

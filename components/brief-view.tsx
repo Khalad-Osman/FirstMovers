@@ -1,6 +1,6 @@
 import { CHAIN_STEPS, ORIGIN_LABEL, RECENCY_LABEL, type BriefAnalysis, type Origin } from "@/lib/brief/schema";
 import { ledgerCounts } from "@/lib/brief/integrity";
-import { formatDate } from "@/lib/format";
+import { formatDate, stripLabel } from "@/lib/format";
 import {
   ChainStatusBadge,
   EvidenceBadge,
@@ -9,6 +9,9 @@ import {
   SampleBadge,
   StageBadge,
 } from "./badges";
+
+// Ledger columns from lg up: ID, type, relevance, source, published, event, finding.
+const LEDGER_COLS = "lg:grid-cols-[3rem_6.5rem_7.5rem_minmax(0,1.4fr)_8rem_7rem_minmax(0,2fr)] lg:items-start";
 
 const NEXT_ACTION_LABEL: Record<BriefAnalysis["nextStep"]["action"], string> = {
   validate: "Validate",
@@ -34,7 +37,7 @@ export function BriefView({ analysis, companyName, isSample, analyzedAt, origin,
   const ids = new Set(analysis.ledger.map((e) => e.id));
 
   return (
-    <article className="grid gap-8">
+    <article className="grid min-w-0 gap-8">
       {isSample && (
         <p className="border-l-4 border-[#4338ca] bg-[#eef2ff] px-4 py-3 text-[0.9375rem] text-ink">
           <strong>Sample brief.</strong> This company and its sources are fictional. It shows how a brief is laid out
@@ -91,7 +94,7 @@ export function BriefView({ analysis, companyName, isSample, analyzedAt, origin,
                   </span>
                   <ChainStatusBadge status={step.status} />
                 </div>
-                <p className="text-[0.9375rem]">{step.text}</p>
+                <p className="text-[0.9375rem]">{stripLabel(step.text, label)}</p>
                 {step.sourceIds.length > 0 && (
                   <p className="mono text-[0.8125rem] text-meta">
                     Sources:{" "}
@@ -119,59 +122,63 @@ export function BriefView({ analysis, companyName, isSample, analyzedAt, origin,
         {analysis.ledger.length === 0 ? (
           <p className="text-meta">No sources were collected for this brief.</p>
         ) : (
-          <div className="overflow-x-auto border border-line">
-            <table className="w-full min-w-[760px] border-collapse text-left text-[0.9375rem]">
-              <thead className="bg-panel">
-                <tr>
-                  <Th>ID</Th>
-                  <Th>Type</Th>
-                  <Th>Relevance</Th>
-                  <Th>Source</Th>
-                  <Th>Published</Th>
-                  <Th>Event</Th>
-                  <Th>Finding</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {analysis.ledger.map((e) => (
-                  <tr key={e.id} id={`source-${e.id}`} className="border-t border-line align-top">
-                    <Td className="mono">{e.id}</Td>
-                    <Td><EvidenceBadge type={e.evidenceType} /></Td>
-                    <Td><RelevanceBadge relevance={e.relevance} /></Td>
-                    <Td>
-                      <a href={e.url} target="_blank" rel="noopener noreferrer" className="link">
-                        {e.title}
-                      </a>
-                      <div className="text-[0.8125rem] text-meta">{e.publisher}</div>
-                    </Td>
-                    <Td className="mono whitespace-nowrap">
-                      {formatDate(e.publishedAt)}
-                      <div className="text-[0.75rem] text-meta">{RECENCY_LABEL[e.recencyTier]}</div>
-                    </Td>
-                    <Td className="mono whitespace-nowrap">{e.eventAt ? formatDate(e.eventAt) : "Same"}</Td>
-                    <Td>
-                      {e.finding}
-                      {e.repeatCoverageOf && (
-                        <div className="mt-1 text-[0.8125rem] font-semibold text-meta">
-                          Repeat coverage of {e.repeatCoverageOf}: counted as one signal.
-                        </div>
-                      )}
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          // One element per entry (chain links jump to #source-S1): stacked
+          // cards on phones, table-like columns from lg up.
+          <div className="border border-line text-[0.9375rem]" role="table" aria-label="Evidence ledger">
+            <div role="row" className={`${LEDGER_COLS} hidden bg-panel lg:grid`}>
+              {["ID", "Type", "Relevance", "Source", "Published", "Event", "Finding"].map((h) => (
+                <span key={h} role="columnheader" className="label px-3 py-2">
+                  {h}
+                </span>
+              ))}
+            </div>
+            {analysis.ledger.map((e) => (
+              <div key={e.id} id={`source-${e.id}`} role="row" className={`${LEDGER_COLS} grid gap-2 border-t border-line p-3 first:border-t-0 lg:gap-0 lg:p-0 lg:first:border-t`}>
+                <div role="cell" className="flex flex-wrap items-center gap-2 lg:contents">
+                  <span className="mono font-semibold lg:px-3 lg:py-2.5 lg:font-normal">{e.id}</span>
+                  <span className="lg:px-3 lg:py-2.5">
+                    <EvidenceBadge type={e.evidenceType} />
+                  </span>
+                  <span className="lg:px-3 lg:py-2.5">
+                    <RelevanceBadge relevance={e.relevance} />
+                  </span>
+                </div>
+                <div role="cell" className="min-w-0 lg:px-3 lg:py-2.5">
+                  <a href={e.url} target="_blank" rel="noopener noreferrer" className="link break-words">
+                    {e.title}
+                  </a>
+                  <div className="text-[0.8125rem] text-meta">{e.publisher}</div>
+                </div>
+                <div role="cell" className="mono text-[0.875rem] lg:px-3 lg:py-2.5">
+                  <span className="text-meta lg:hidden">Published </span>
+                  {formatDate(e.publishedAt)}
+                  <div className="text-[0.75rem] text-meta">{RECENCY_LABEL[e.recencyTier]}</div>
+                </div>
+                <div role="cell" className="mono text-[0.875rem] lg:px-3 lg:py-2.5">
+                  <span className="text-meta lg:hidden">Event </span>
+                  {e.eventAt ? formatDate(e.eventAt) : "Same as published"}
+                </div>
+                <div role="cell" className="min-w-0 lg:px-3 lg:py-2.5">
+                  {e.finding}
+                  {e.repeatCoverageOf && (
+                    <div className="mt-1 text-[0.8125rem] font-semibold text-meta">
+                      Repeat coverage of {e.repeatCoverageOf}: counted as one signal.
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </Section>
 
-      <div className="grid gap-8 lg:grid-cols-2">
+      <div className="grid min-w-0 gap-8 lg:grid-cols-2">
         <Section title="Countercase">
-          <List items={analysis.countercase} />
+          <List items={analysis.countercase.map((t) => stripLabel(t, "Countercase"))} />
         </Section>
         {analysis.workingHypothesis && (
           <Section title="Working hypothesis">
-            <p>{analysis.workingHypothesis}</p>
+            <p>{stripLabel(analysis.workingHypothesis, "Working hypothesis")}</p>
           </Section>
         )}
         {analysis.unknowns.length > 0 && (
@@ -203,7 +210,7 @@ export function BriefView({ analysis, companyName, isSample, analyzedAt, origin,
           <RatingBadge rating={analysis.rating} />
           <StageBadge stage={analysis.stage} />
         </div>
-        <p className="mt-2">{analysis.ratingReason}</p>
+        <p className="mt-2">{stripLabel(analysis.ratingReason, "Signal rating")}</p>
       </Section>
     </article>
   );
@@ -211,11 +218,11 @@ export function BriefView({ analysis, companyName, isSample, analyzedAt, origin,
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="grid content-start gap-3">
+    <section className="grid min-w-0 content-start gap-3">
       <h2 className="border-b border-line pb-1.5 text-[0.8125rem] font-semibold tracking-[0.06em] text-meta uppercase">
         {title}
       </h2>
-      <div>{children}</div>
+      <div className="min-w-0">{children}</div>
     </section>
   );
 }
@@ -237,11 +244,4 @@ function Count({ label, value }: { label: string; value: number }) {
       <dd className="mono text-base font-semibold">{value}</dd>
     </div>
   );
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-  return <th className="label px-3 py-2 font-semibold">{children}</th>;
-}
-function Td({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-3 py-2.5 ${className}`}>{children}</td>;
 }

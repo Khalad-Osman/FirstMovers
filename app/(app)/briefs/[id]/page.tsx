@@ -35,7 +35,7 @@ export default async function BriefPage({ params }: PageProps<"/briefs/[id]">) {
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid min-w-0 gap-4">
       <Link href="/" className="link w-fit text-[0.875rem]">
         ← Opportunity Feed
       </Link>

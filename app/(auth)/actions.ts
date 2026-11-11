@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { signupEnabled } from "@/lib/signup";
 
 export type AuthFormState = { error?: string; message?: string } | undefined;
 
@@ -37,6 +38,7 @@ const signUpSchema = credentials.extend({
 });
 
 export async function signUp(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  if (!signupEnabled()) return { error: "Public sign-up is off. Ask an admin for an account." };
   const parsed = signUpSchema.safeParse({
     fullName: formData.get("fullName"),
     email: formData.get("email"),

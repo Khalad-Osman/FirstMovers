@@ -18,7 +18,7 @@ export default async function SamplePage({ params }: PageProps<"/samples/[slug]"
   if (!sample) notFound();
 
   return (
-    <div className="grid gap-4">
+    <div className="grid min-w-0 gap-4">
       <Link href="/?samples=1" className="link w-fit text-[0.875rem]">
         ← Opportunity Feed
       </Link>

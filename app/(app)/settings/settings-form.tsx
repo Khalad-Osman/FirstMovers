@@ -44,7 +44,7 @@ export function SettingsForm({ values, envModels, canEdit }: Props) {
         <Group title="Schedule">
           <Check name="schedule_ingestion_enabled" label="Run ingestion every day" checked={values.schedule_ingestion_enabled} hint="All structured sources, after their morning refresh. Free." />
           <Check name="schedule_discovery_enabled" label="Run discovery every week" checked={values.schedule_discovery_enabled} hint="Spends Firecrawl and LLM credits within the caps above." />
-          <label className="grid gap-1">
+          <label className="grid content-start gap-1">
             <span className="field-label">Discovery day</span>
             <select name="discovery_weekday" defaultValue={values.discovery_weekday} className="input w-fit">
               {WEEKDAYS.map((d, i) => (

@@ -9,9 +9,10 @@ type Props = {
   action: (prev: AuthFormState, formData: FormData) => Promise<AuthFormState>;
   next?: string;
   initialError?: string;
+  signupEnabled?: boolean;
 };
 
-export function AuthForm({ mode, action, next, initialError }: Props) {
+export function AuthForm({ mode, action, next, initialError, signupEnabled = true }: Props) {
   const [state, formAction, pending] = useActionState(action, undefined);
   const isSignup = mode === "signup";
   const error = state?.error ?? (state ? undefined : initialError);
@@ -65,10 +66,12 @@ export function AuthForm({ mode, action, next, initialError }: Props) {
           <>
             Already have an account? <Link href="/login">Sign in</Link>
           </>
-        ) : (
+        ) : signupEnabled ? (
           <>
             New to First Movers? <Link href="/signup">Create an account</Link>
           </>
+        ) : (
+          <>Need access? Ask a First Movers admin for an account.</>
         )}
       </p>
     </form>

@@ -40,7 +40,6 @@ export default async function DiscoveryRunPage({ params }: PageProps<"/discovery
   const active = run.status === "queued" || run.status === "running";
   const stale = active && isStale(outcomes, run.started_at);
   const shortlisted = candidates.filter((c) => c.shortlisted);
-  const notVerified = outcomes.filter((o) => o.status === "not_verified");
 
   return (
     <div className="grid gap-6">
@@ -52,6 +51,7 @@ export default async function DiscoveryRunPage({ params }: PageProps<"/discovery
       <header className="grid gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <RunStatusBadge status={run.status} />
+          {run.trigger === "scheduled" && <span className="badge badge-stage">Scheduled</span>}
           <span className="mono text-[0.875rem] text-meta">
             Started {formatTime(run.started_at)}
             {run.finished_at ? ` · finished ${formatTime(run.finished_at)}` : ""}
@@ -78,7 +78,7 @@ export default async function DiscoveryRunPage({ params }: PageProps<"/discovery
           <Stat label="Firecrawl credits" value={`~${usage.firecrawl_credits ?? 0}`} />
           <Stat label="Firecrawl requests" value={usage.firecrawl_requests ?? 0} />
           <Stat label="LLM calls" value={usage.llm_calls ?? 0} />
-          <Stat label="Tokens in / out" value={`${usage.input_tokens ?? 0} / ${usage.output_tokens ?? 0}`} />
+          <Stat label="Tokens in / out" value={`${(usage.input_tokens ?? 0).toLocaleString("en-CA")} / ${(usage.output_tokens ?? 0).toLocaleString("en-CA")}`} />
         </dl>
         <p className="mono text-[0.8125rem] text-meta">
           Caps: {settings.discovery_cap ?? 3} companies · {settings.sources_per_candidate ?? 5} sources each · screened top {settings.screening_top_k ?? 30} · skip window {settings.skip_window_days ?? 7} days
@@ -135,13 +135,6 @@ export default async function DiscoveryRunPage({ params }: PageProps<"/discovery
           </ul>
         )}
       </section>
-
-      {notVerified.length > 0 && (
-        <section className="grid gap-1">
-          <h2 className="label border-b border-line pb-1.5">Entity not verified · {notVerified.length}</h2>
-          <p className="text-[0.875rem] text-meta">{notVerified.map((o) => o.displayName).join(", ")}</p>
-        </section>
-      )}
 
       <section className="grid gap-2">
         <h2 className="label border-b border-line pb-1.5">Screened candidates · {candidates.length}</h2>

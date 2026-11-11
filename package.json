@@ -16,7 +16,8 @@
     "db:types": "supabase gen types typescript --local > lib/supabase/database.types.ts",
     "eval:analysis": "node scripts/run-vitest.mjs run --config vitest.eval.config.ts",
     "test:db": "node scripts/run-vitest.mjs run --config vitest.db.config.ts",
-    "ingest": "node scripts/ingest.mjs"
+    "ingest": "node scripts/ingest.mjs",
+    "create-account": "node --env-file=.env.local scripts/create-account.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -33,6 +34,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
+    "playwright": "1.64.1",
     "supabase": "^3.1.0",
     "tailwindcss": "4.3.3",
     "typescript": "^5",

@@ -13,3 +13,10 @@ export function formatDate(value: string | null | undefined): string {
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? value : torontoDate.format(d);
 }
+
+// CLAUDE.md §10: never repeat a section's heading in its body. Strips a leading
+// "What changed:" / "Countercase -" style prefix the model may add.
+export function stripLabel(text: string, label: string): string {
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return text.replace(new RegExp(`^\\s*${escaped}\\s*[:\\-–—]\\s*`, "i"), "");
+}
