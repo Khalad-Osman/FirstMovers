@@ -99,6 +99,12 @@ Ask before adding any other dependency or service.
 - **Usage page** (`/usage`): per Toronto month, Firecrawl credits/requests and LLM calls/tokens split by Live Research, manual discovery and scheduled discovery (`lib/schedule/usage.ts`). Discovery research sessions carry `discovery_run_id` and are counted only through their run. Firecrawl credits are our estimate; the actual balance (`GET /v2/team/credit-usage`) is fetched only when an admin clicks "Check Firecrawl balance".
 - **Brief immutability:** reference columns (`trigger_signal_id`, `discovery_run_id`, `created_by`) may be cleared by FK set-null on delete; nothing else on a brief can change except dismissal.
 
+**Polish and deploy (Phase 7):**
+- **Screenshots:** Playwright 1.64.1 (dev only) photographs every page at 390 / 768 / 1280 px and flags horizontal overflow and text under 12 px. The brief's evidence ledger is one element per entry: stacked cards below 1024 px, table columns above (chain links still jump to `#source-S1`).
+- **Badge contrast** is enforced by `lib/ui/contrast.test.ts`, which reads `app/globals.css` (minimum 4.5:1). `stripLabel()` keeps section headings out of body text.
+- **Access (decided 2026-11-11):** on the hosted app, public sign-up is off (`SIGNUP_ENABLED=false` plus Supabase Auth sign-ups disabled). There is one shared demo **member** account for reviewers, and individual member accounts can be created as needed with `scripts/create-account.mjs`. This answers open question 2 in §14.
+- **Vercel limits (checked 2026-11-11):** Hobby with Fluid compute (default) allows functions to run up to 300 s, so a discovery step (about 2–3 min) fits. Hobby cron jobs run once per day with ±59 min timing; Vercel now calls Cron Jobs legacy (to migrate to "Schedules") but they still work. Vercel's Hobby plan is for personal, non-commercial use; move to Pro if First Movers becomes commercial.
+
 **Windows:** run tests with `npm test` (wraps Vitest to normalize the `c:\` vs `C:\` drive letter, which otherwise breaks every suite).
 
 ## 4. Architecture: signals first
