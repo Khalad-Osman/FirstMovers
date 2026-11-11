@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { startDiscovery, type StartDiscoveryState } from "./actions";
 
-export function StartDiscovery({ cap, sourcesPerCandidate, topK }: { cap: number; sourcesPerCandidate: number; topK: number }) {
+export function StartDiscovery({ cap, sourcesPerCandidate, topK, monthCredits, budget }: { cap: number; sourcesPerCandidate: number; topK: number; monthCredits: number; budget: number }) {
   const [state, action, pending] = useActionState<StartDiscoveryState, FormData>(startDiscovery, undefined);
   const [confirming, setConfirming] = useState(false);
   const firecrawlLow = cap * 10;
@@ -27,6 +27,10 @@ export function StartDiscovery({ cap, sourcesPerCandidate, topK }: { cap: number
             <li>Researches up to {cap} compan{cap === 1 ? "y" : "ies"}, at most {sourcesPerCandidate} sources each: about {firecrawlLow}–{firecrawlHigh} Firecrawl credits.</li>
             <li>Analyzes each researched company: {cap}–{cap * 2} strong-model calls.</li>
             <li>Skips companies analyzed in the skip window. Runs in the background; you can leave the page.</li>
+            <li>
+              This month so far: ~{monthCredits} of {budget} budget credits.{" "}
+              {monthCredits + firecrawlHigh > budget ? <strong>This run could exceed the monthly budget.</strong> : `About ${budget - monthCredits} left.`}
+            </li>
           </ul>
           <div className="flex flex-wrap gap-2">
             <button type="submit" disabled={pending} className="btn btn-primary">

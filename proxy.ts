@@ -1,8 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// /api/discovery/step authenticates with DISCOVERY_JOB_SECRET instead of a session.
-const PUBLIC_PATHS = ["/login", "/signup", "/auth/callback", "/api/discovery/step"];
+// /api/discovery/step (DISCOVERY_JOB_SECRET) and /api/cron/daily (CRON_SECRET)
+// authenticate with a shared secret instead of a session.
+const PUBLIC_PATHS = ["/login", "/signup", "/auth/callback", "/api/discovery/step", "/api/cron/daily"];
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

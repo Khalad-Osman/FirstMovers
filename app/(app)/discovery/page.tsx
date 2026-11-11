@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { SCREEN_TOP_K } from "@/lib/discovery/run";
+import { monthToDateCredits } from "@/lib/schedule/usage-db";
 import { PageHeader } from "@/components/page-header";
 import { StartDiscovery } from "./start-form";
 import { RunStatusBadge, formatTime } from "./ui";
@@ -14,9 +15,10 @@ export default async function DiscoveryPage() {
   const user = await getCurrentUser();
   const supabase = await createClient();
   const [{ data: runs, error }, { data: settings }] = await Promise.all([
-    supabase.from("discovery_runs").select("id, status, started_at, finished_at, candidates_found, analyzed, usage, profiles:started_by(full_name)").order("started_at", { ascending: false }).limit(30),
-    supabase.from("settings").select("discovery_cap, sources_per_candidate, skip_window_days").maybeSingle(),
+    supabase.from("discovery_runs").select("id, status, trigger, started_at, finished_at, candidates_found, analyzed, usage, profiles:started_by(full_name)").order("started_at", { ascending: false }).limit(30),
+    supabase.from("settings").select("discovery_cap, sources_per_candidate, skip_window_days, firecrawl_monthly_budget").maybeSingle(),
   ]);
+  const monthCredits = await monthToDateCredits(supabase);
   if (error) throw new Error(`Could not load discovery runs: ${error.message}`);
   const cap = settings?.discovery_cap ?? 3;
 
@@ -27,7 +29,7 @@ export default async function DiscoveryPage() {
         description={`Builds candidates from stored signals, screens them with the cheap model, then researches and analyzes up to ${cap} per run. Companies analyzed in the last ${settings?.skip_window_days ?? 7} days are skipped.`}
       />
       {user?.role === "admin" ? (
-        <StartDiscovery cap={cap} sourcesPerCandidate={settings?.sources_per_candidate ?? 5} topK={SCREEN_TOP_K} />
+        <StartDiscovery cap={cap} sourcesPerCandidate={settings?.sources_per_candidate ?? 5} topK={SCREEN_TOP_K} monthCredits={monthCredits} budget={settings?.firecrawl_monthly_budget ?? 800} />
       ) : (
         <p className="text-[0.9375rem] text-meta">Only admins can run discovery. Run summaries are visible to everyone.</p>
       )}
@@ -46,10 +48,11 @@ export default async function DiscoveryPage() {
                     {formatTime(r.started_at)}
                   </Link>
                   <RunStatusBadge status={r.status} />
+                  {r.trigger === "scheduled" && <span className="badge badge-stage">Scheduled</span>}
                   <span className="mono text-[0.8125rem] text-meta">
                     {r.candidates_found} candidates · {r.analyzed} briefs · ~{u.firecrawl_credits ?? 0} Firecrawl credits · {u.llm_calls ?? 0} LLM calls
                   </span>
-                  {r.profiles?.full_name && <span className="ml-auto text-[0.8125rem] text-meta">{r.profiles.full_name}</span>}
+                  <span className="ml-auto text-[0.8125rem] text-meta">{r.trigger === "scheduled" ? "Daily job" : (r.profiles?.full_name ?? "")}</span>
                 </li>
               );
             })}

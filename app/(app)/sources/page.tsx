@@ -135,6 +135,7 @@ export default async function SourcesPage() {
                   <th className="py-1 pr-3">Started</th>
                   <th className="py-1 pr-3">Source</th>
                   <th className="py-1 pr-3">Status</th>
+                  <th className="py-1 pr-3">Trigger</th>
                   <th className="py-1 pr-3">Read</th>
                   <th className="py-1 pr-3">New</th>
                   <th className="py-1 pr-3">Updated</th>
@@ -148,6 +149,7 @@ export default async function SourcesPage() {
                     <td className="py-1 pr-3">{formatTime(r.started_at)}</td>
                     <td className="py-1 pr-3">{INGEST_SOURCES.find((s) => s.source === r.source)?.label ?? r.source}</td>
                     <td className="py-1 pr-3">{r.status}</td>
+                    <td className="py-1 pr-3">{r.trigger}</td>
                     <td className="py-1 pr-3">{r.fetched}</td>
                     <td className="py-1 pr-3">{r.inserted}</td>
                     <td className="py-1 pr-3">{r.updated}</td>

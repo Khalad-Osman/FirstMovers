@@ -59,7 +59,7 @@ const addUsage = (a: Usage, b: Usage): Usage => {
 const asArray = <T>(v: Json | null): T[] => (Array.isArray(v) ? (v as unknown as T[]) : []);
 const asUsage = (v: Json | null): Usage => (v && typeof v === "object" && !Array.isArray(v) ? (v as Usage) : {});
 
-export async function createDiscoveryRun(db: Db, startedBy: string): Promise<string> {
+export async function createDiscoveryRun(db: Db, startedBy: string | null, trigger: "manual" | "scheduled" = "manual"): Promise<string> {
   const { data: s } = await db.from("settings").select("*").maybeSingle();
   const settings = {
     discovery_cap: s?.discovery_cap ?? 3,
@@ -69,7 +69,7 @@ export async function createDiscoveryRun(db: Db, startedBy: string): Promise<str
   };
   const { data, error } = await db
     .from("discovery_runs")
-    .insert({ started_by: startedBy, status: "queued", progress: "Queued", settings })
+    .insert({ started_by: startedBy, status: "queued", progress: "Queued", settings, trigger })
     .select("id")
     .single();
   if (error) throw new Error(`Could not start discovery: ${error.message}`);
@@ -168,7 +168,7 @@ async function processCandidate(runId: string, c: StoredCandidate, startedBy: st
   try {
     const { data: session, error } = await db
       .from("research_sessions")
-      .insert({ mode: "company", query: c.displayName, created_by: startedBy, status: "searching", progress: "Starting (discovery)" })
+      .insert({ mode: "company", query: c.displayName, created_by: startedBy, status: "searching", progress: "Starting (discovery)", discovery_run_id: runId })
       .select("id")
       .single();
     if (error) throw new Error(`Could not create research session: ${error.message}`);
