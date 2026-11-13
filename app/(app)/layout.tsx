@@ -18,12 +18,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               { href: "/research", label: "Live Research" },
               { href: "/watchlist", label: "Watchlist", count: watchlist.length },
               { href: "/chronology", label: "Chronology" },
-              { href: "/discovery", label: "Discovery" },
-              { href: "/signals", label: "Signals" },
-              { href: "/sources", label: "Data sources" },
-              { href: "/usage", label: "Usage" },
-              { href: "/settings", label: "Settings" },
             ]}
+            secondary={{
+              label: "Pipeline & admin",
+              items: [
+                { href: "/discovery", label: "Discovery" },
+                { href: "/signals", label: "Signals" },
+                { href: "/sources", label: "Data sources" },
+                { href: "/usage", label: "Usage" },
+                { href: "/settings", label: "Settings" },
+              ],
+            }}
           />
         </nav>
         <div className="mt-auto grid gap-2 border-t border-[var(--slate-2)] pt-4 text-[0.875rem]">
