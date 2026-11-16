@@ -32,6 +32,7 @@ export default async function SettingsPage() {
           sources_per_candidate: s.sources_per_candidate,
           skip_window_days: s.skip_window_days,
           canadabuys_min_value: Number(s.canadabuys_min_value),
+          grants_min_value: Number(s.grants_min_value),
           screening_model: s.screening_model,
           analysis_model: s.analysis_model,
           schedule_ingestion_enabled: s.schedule_ingestion_enabled,

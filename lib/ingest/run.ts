@@ -73,16 +73,17 @@ export async function runIngestionJob(runId: string, sourceType: string): Promis
   }
 
   try {
-    const { data: settings } = await db.from("settings").select("canadabuys_min_value").maybeSingle();
+    const { data: settings } = await db.from("settings").select("canadabuys_min_value, grants_min_value").maybeSingle();
     const today = todayInToronto();
     const ctx = {
       today,
       cutoff: monthsBefore(today, 12),
       canadabuysMinValue: Number(settings?.canadabuys_min_value ?? 100000),
+      grantsMinValue: Number(settings?.grants_min_value ?? 100000),
       fetchImpl: ingestFetch,
       progress: (message: string) => update({ progress: message }),
     };
-    await update({ settings: { cutoff: ctx.cutoff, today, canadabuys_min_value: ctx.canadabuysMinValue } });
+    await update({ settings: { cutoff: ctx.cutoff, today, canadabuys_min_value: ctx.canadabuysMinValue, grants_min_value: ctx.grantsMinValue } });
 
     const linkedBefore = await countLinked(db, source.source);
     const counts = await drive(

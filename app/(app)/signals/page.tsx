@@ -15,6 +15,7 @@ type Occupier = Database["public"]["Enums"]["occupier_status"];
 const PAGE = 50;
 const STRENGTH_LABEL: Record<Strength, string> = {
   award: "Award",
+  grant: "Grant",
   new_building: "New building",
   addition: "Addition",
   change_of_use: "Change of use",
@@ -25,6 +26,7 @@ const STRENGTH_LABEL: Record<Strength, string> = {
 };
 const STRENGTH_CLASS: Record<Strength, string> = {
   award: "badge-signal",
+  grant: "badge-signal",
   new_building: "badge-strong",
   addition: "badge-strong",
   change_of_use: "badge-worth",
@@ -110,10 +112,12 @@ export default async function SignalsPage({ searchParams }: PageProps<"/signals"
                 <span>Published {formatDate(s.published_at)}</span>
                 {s.event_at && s.event_at !== s.published_at && <span>Event {formatDate(s.event_at)}</span>}
                 {s.location && <span>{s.location}</span>}
-                {s.source_type !== "canadabuys_award" && (
+                {s.source_type.startsWith("permit_") && (
                   <span>{s.occupier_status === "named" ? `Occupier named: ${s.raw_entity_name}` : "Occupier unresolved"}</span>
                 )}
                 {s.source_type === "canadabuys_award" && s.raw_entity_name && <span>Supplier: {s.raw_entity_name}</span>}
+                {s.source_type === "federal_grant" && s.raw_entity_name && <span>Recipient: {s.raw_entity_name}</span>}
+                {s.source_type === "federal_grant" && <span>Date is the agreement start</span>}
                 {s.companies?.display_name && <span>Linked: {s.companies.display_name}</span>}
                 {s.url && (
                   <a href={s.url} target="_blank" rel="noopener noreferrer" className="link">

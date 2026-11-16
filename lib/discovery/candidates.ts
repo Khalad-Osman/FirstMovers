@@ -95,6 +95,13 @@ export function signalWeight(s: SignalForCandidate): { weight: number; label: st
       const v = awardValue(s.raw);
       return v >= 1_000_000 ? { weight: 3, label: "federal award ≥ $1M" } : { weight: 2, label: "federal award" };
     }
+    case "grant": {
+      // Read from the project description at ingestion (lib/ingest/grants.ts).
+      const kind = s.raw && typeof s.raw === "object" ? (s.raw as Record<string, unknown>).grant_kind : null;
+      if (kind === "facility") return { weight: 4, label: "federal grant: facility or capacity" };
+      if (kind === "equipment") return { weight: 2, label: "federal grant: equipment or automation" };
+      return { weight: 1, label: "federal grant" };
+    }
     case "alteration":
       if (isMajorFitOut(s.raw)) return { weight: 4, label: "major fit-out" };
       return EQUIPMENT.test(`${s.title} ${s.summary}`) ? { weight: 2, label: "alteration with equipment/racking" } : { weight: 1, label: "alteration permit" };
@@ -200,12 +207,34 @@ export function buildCandidates(
 // companies with physical permits always reach screening (awards are frequent
 // and score high, but measure sales, not space). An empty side's slots go to
 // the other side. Keeps score order within each side.
+export type CandidateFamily = "permit" | "grant" | "award";
+export function candidateFamily(c: Candidate): CandidateFamily {
+  if (c.signals.some((s) => s.source_type.startsWith("permit_"))) return "permit";
+  if (c.signals.some((s) => s.source_type === "federal_grant")) return "grant";
+  return "award";
+}
+
+// Fair shares of k per family (permit-led, grant-led, award-led), in score
+// order; slots a family can't fill go to the others.
 export function selectForScreening(candidates: Candidate[], k: number): Candidate[] {
-  const hasPermit = (c: Candidate) => c.signals.some((s) => s.source_type.startsWith("permit_"));
-  const permits = candidates.filter(hasPermit);
-  const awards = candidates.filter((c) => !hasPermit(c));
-  const half = Math.ceil(k / 2);
-  const p = permits.slice(0, Math.max(half, k - awards.length));
-  const a = awards.slice(0, k - p.length);
-  return [...p, ...a].sort((x, y) => y.score - x.score || x.displayName.localeCompare(y.displayName));
+  const families: CandidateFamily[] = ["permit", "grant", "award"];
+  const pools = new Map(families.map((f) => [f, candidates.filter((c) => candidateFamily(c) === f)]));
+  const taken = new Map(families.map((f) => [f, 0]));
+  let left = Math.min(k, candidates.length);
+  // Round-robin one slot at a time so shortfalls spread evenly.
+  while (left > 0) {
+    let progressed = false;
+    for (const f of families) {
+      if (left === 0) break;
+      if (taken.get(f)! < pools.get(f)!.length) {
+        taken.set(f, taken.get(f)! + 1);
+        left--;
+        progressed = true;
+      }
+    }
+    if (!progressed) break;
+  }
+  return families
+    .flatMap((f) => pools.get(f)!.slice(0, taken.get(f)))
+    .sort((x, y) => y.score - x.score || x.displayName.localeCompare(y.displayName));
 }

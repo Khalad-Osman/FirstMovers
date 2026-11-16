@@ -4,7 +4,7 @@ import { isTorontoIndustrial, mapBrampton, mapMississauga, mapToronto, strengthF
 import { drive } from "./run";
 import type { IngestSource, SignalRow } from "./types";
 
-const ctx = { today: "2026-11-10", cutoff: "2025-11-10", canadabuysMinValue: 100000 };
+const ctx = { today: "2026-11-10", cutoff: "2025-11-10", canadabuysMinValue: 100000, grantsMinValue: 100000 };
 
 // Shapes copied from real rows (values shortened).
 const award = (over: Record<string, string> = {}) => ({

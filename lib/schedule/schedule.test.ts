@@ -73,7 +73,7 @@ describe("settings form", () => {
   const form = (over: Record<string, string> = {}) => {
     const f = new FormData();
     const values = {
-      discovery_cap: "3", sources_per_candidate: "5", skip_window_days: "7", canadabuys_min_value: "100000",
+      discovery_cap: "3", sources_per_candidate: "5", skip_window_days: "7", canadabuys_min_value: "100000", grants_min_value: "100000",
       screening_model: "", analysis_model: "  my-model-1  ", discovery_weekday: "1", firecrawl_monthly_budget: "800",
       schedule_ingestion_enabled: "on", ...over,
     };

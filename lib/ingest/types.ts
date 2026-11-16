@@ -27,6 +27,7 @@ export type IngestContext = {
   today: string; // YYYY-MM-DD (Toronto)
   cutoff: string; // YYYY-MM-DD, 12 months before today
   canadabuysMinValue: number;
+  grantsMinValue: number;
   fetchImpl: typeof fetch;
   progress: (message: string) => Promise<void>;
 };

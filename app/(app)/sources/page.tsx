@@ -73,7 +73,7 @@ export default async function SourcesPage() {
 
               <dl className="mono grid grid-cols-3 gap-2 text-[0.875rem]">
                 <Stat label="Signals" value={st.total} />
-                <Stat label="Named occupier" value={s.source === "canadabuys_award" ? null : st.named} />
+                <Stat label="Named occupier" value={s.source.startsWith("permit_") ? st.named : null} />
                 <Stat label="Linked to company" value={st.linked} />
               </dl>
 

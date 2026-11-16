@@ -10,6 +10,7 @@ export type SettingsValues = {
   sources_per_candidate: number;
   skip_window_days: number;
   canadabuys_min_value: number;
+  grants_min_value: number;
   screening_model: string | null;
   analysis_model: string | null;
   schedule_ingestion_enabled: boolean;
@@ -35,6 +36,7 @@ export function SettingsForm({ values, envModels, canEdit }: Props) {
 
         <Group title="Ingestion">
           <NumberField name="canadabuys_min_value" label="CanadaBuys minimum contract value ($)" min={0} max={1_000_000_000} step={1000} value={values.canadabuys_min_value} hint="Awards below this are skipped. Applies from the next ingestion run." />
+          <NumberField name="grants_min_value" label="Federal grants minimum value ($)" min={0} max={1_000_000_000} step={1000} value={values.grants_min_value} hint="Grants below this are skipped. Applies from the next ingestion run." />
         </Group>
 
         <Group title="Models">

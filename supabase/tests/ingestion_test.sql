@@ -1,7 +1,7 @@
 -- Ingestion: idempotent upsert, change detection, company linking, privileges.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(12);
 
 insert into public.companies (id, display_name, normalized_key)
 values ('00000000-0000-0000-0000-0000000000c1', 'Halloway Switchgear Enclosures Inc.', 'halloway switchgear enclosures');
@@ -31,6 +31,7 @@ select is(public.link_signals_to_companies(), 1, 'link_signals_to_companies link
 select isnt((select company_id from public.signals where source_record_id = 'BP-1'), null, 'permit now linked');
 
 select is((select canadabuys_min_value from public.settings), 100000::numeric, 'CanadaBuys minimum defaults to 100,000');
+select is((select grants_min_value from public.settings), 100000::numeric, 'Federal grants minimum defaults to 100,000');
 
 set local role authenticated;
 select throws_ok($$ select public.upsert_signals('[]'::jsonb) $$, '42501', null, 'members cannot call upsert_signals');

@@ -26,10 +26,12 @@ const PUBLISHER: Record<string, string> = {
   permit_mississauga: "City of Mississauga – Building permits",
   permit_brampton: "City of Brampton – Building permits",
   permit_toronto: "City of Toronto – Building permits",
+  federal_grant: "Government of Canada – Grants and contributions",
 };
 
 const KIND: Record<string, string> = {
   canadabuys_award: "Federal contract award notice (CanadaBuys open data)",
+  federal_grant: "Federal grant or contribution agreement (Proactive Disclosure open data)",
   permit_mississauga: "Issued building permit (City of Mississauga open data)",
   permit_brampton: "Issued building permit (City of Brampton open data)",
   permit_toronto: "Issued building permit (City of Toronto open data)",
@@ -43,6 +45,7 @@ const STRENGTH_LABEL: Record<string, string> = {
   demolition: "Demolition",
   sign: "Sign",
   award: "Contract award",
+  grant: "Grant or contribution",
   other: "Other",
 };
 
@@ -61,6 +64,7 @@ export function recordUrl(s: RecordSignal): string | null {
   const id = permitNumber(s);
   switch (s.source_type) {
     case "canadabuys_award":
+    case "federal_grant":
       return s.url;
     case "permit_mississauga":
       return q(`${MISSISSAUGA}/query`, { where: `BP_NO='${id.replace(/'/g, "''")}'`, outFields: "*", f: "html" });
@@ -105,13 +109,34 @@ const AWARD_FIELDS: [string, string][] = [
   ["Regions of delivery", "regionsOfDelivery-regionsLivraison-eng"],
 ];
 
+const GRANT_FIELDS: [string, string][] = [
+  ["Recipient legal name", "recipient_legal_name"],
+  ["Recipient city", "recipient_city"],
+  ["Program", "prog_name_en"],
+  ["Program purpose", "prog_purpose_en"],
+  ["Agreement title", "agreement_title_en"],
+  ["Agreement value", "agreement_value"],
+  ["Agreement start date", "agreement_start_date"],
+  ["Agreement end date", "agreement_end_date"],
+  ["Project description", "description_en"],
+  ["Expected results", "expected_results_en"],
+  ["Industry (NAICS)", "naics_identifier"],
+  ["Department", "owner_org_title"],
+  ["Reference number", "ref_number"],
+  ["Amendment number", "amendment_number"],
+];
+
 // The excerpt: labelled fields copied from the record, no interpretation.
 export function recordExcerpt(s: RecordSignal): string {
   const r = raw(s);
   const head = [
     `Record type: ${KIND[s.source_type] ?? s.source_type}`,
     `Record number: ${permitNumber(s)}`,
-    s.published_at ? `${s.source_type === "canadabuys_award" ? "Published" : "Issued"}: ${s.published_at}` : null,
+    s.published_at
+      ? s.source_type === "federal_grant"
+        ? `Agreement start: ${s.published_at} (the disclosure data has no separate publication date)`
+        : `${s.source_type === "canadabuys_award" ? "Published" : "Issued"}: ${s.published_at}`
+      : null,
     s.event_at ? `Awarded: ${s.event_at}` : null,
     s.location ? `Location: ${s.location}` : null,
     `Work or record class: ${STRENGTH_LABEL[s.signal_strength] ?? s.signal_strength}`,
@@ -122,7 +147,9 @@ export function recordExcerpt(s: RecordSignal): string {
   const fields =
     s.source_type === "canadabuys_award"
       ? AWARD_FIELDS.map(([label, key]) => [label, str(r[key]).replace(/\*/g, "")] as const)
-      : Object.entries(r)
+      : s.source_type === "federal_grant"
+        ? GRANT_FIELDS.map(([label, key]) => [label, str(r[key]).replace(/\s*\|\s*/g, " / ")] as const)
+        : Object.entries(r)
           .filter(([k]) => !SKIP_FIELD.test(k))
           .map(([k, v]) => [k, fieldValue(k, v)] as const);
   const lines = fields.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`);
