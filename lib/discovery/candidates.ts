@@ -46,14 +46,40 @@ function awardValue(raw: unknown): number {
   return Math.max(Number(r["contractAmount-montantContrat"]) || 0, Number(r["totalContractValue-valeurTotaleContrat"]) || 0);
 }
 
-const EQUIPMENT = /\b(racking|mezzanine|production line|equipment|crane|spray booth|dock|loading|conveyor|automation|cold storage|freezer)\b/i;
+// Business types that are not industrial occupiers, recognisable from the name.
+export const NON_INDUSTRIAL =
+  /\b(law|legal|lawyers?|barristers?|solicitors?|notary|professional corporation|immigration|visa|dental|dentistry|tooth|orthodont\w*|clinic|physiotherap\w*|chiropract\w*|rehab\w*|pharmacy|optometr\w*|veterinar\w*|school|academy|tutoring|learning cent(?:re|er)|daycare|child ?care|montessori|dance|yoga|fitness|gym|martial arts|church|ministr(?:y|ies)|mosque|temple|restaurant|cafe|bakery caf[eé]|salon|spa|barber|insurance|accounting|cpa|tax services|travel|realty|real estate|mortgage|gas station|car wash)\b/i;
+
+const EQUIPMENT =/\b(racking|mezzanine|production line|equipment|crane|spray booth|dock|loading|conveyor|automation|cold storage|freezer)\b/i;
+
+// Permit size from the record: Mississauga EST_CON_VALUE / APPL_AREA (m²),
+// Toronto EST_CONST_COST. Null when the record doesn't say.
+function permitSize(raw: unknown): { value: number | null; area: number | null } {
+  if (!raw || typeof raw !== "object") return { value: null, area: null };
+  const r = raw as Record<string, unknown>;
+  const num = (v: unknown) => {
+    const n = typeof v === "number" ? v : Number(String(v ?? "").replace(/[^0-9.]/g, ""));
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  return { value: num(r.EST_CON_VALUE ?? r.EST_CONST_COST), area: num(r.APPL_AREA) };
+}
+
+// A "new building" or "addition" this small is an accessory structure (a fire
+// pump house, a canopy), not new capacity. Unknown size keeps the full weight.
+export const SMALL_WORKS_VALUE = 500_000;
+export const SMALL_WORKS_AREA_M2 = 300;
+export function isSmallWorks(raw: unknown): boolean {
+  const { value, area } = permitSize(raw);
+  if (value === null && area === null) return false;
+  return (value === null || value < SMALL_WORKS_VALUE) && (area === null || area < SMALL_WORKS_AREA_M2);
+}
 
 export function signalWeight(s: SignalForCandidate): { weight: number; label: string } {
   switch (s.signal_strength) {
     case "new_building":
-      return { weight: 5, label: "new building permit" };
+      return isSmallWorks(s.raw) ? { weight: 2, label: "small new structure" } : { weight: 5, label: "new building permit" };
     case "addition":
-      return { weight: 4, label: "addition permit" };
+      return isSmallWorks(s.raw) ? { weight: 2, label: "small addition" } : { weight: 4, label: "addition permit" };
     case "change_of_use":
       return { weight: 4, label: "change-of-use permit" };
     case "award": {
@@ -106,6 +132,11 @@ export function buildCandidates(
       skipped.push({ key, displayName, reason: "analyzed in the skip window" });
       continue;
     }
+    // Permits in industrial buildings also name offices, clinics and schools.
+    if (list.every((s) => s.source_type.startsWith("permit_")) && NON_INDUSTRIAL.test(displayName)) {
+      skipped.push({ key, displayName, reason: "not an industrial occupier (business type in the name)" });
+      continue;
+    }
     // Ontario connection: CanadaBuys signals are Ontario suppliers; permits are in Ontario cities.
     if (!list.some((s) => /ontario/i.test(s.location ?? ""))) {
       skipped.push({ key, displayName, reason: "no Ontario location in signals" });
@@ -114,7 +145,10 @@ export function buildCandidates(
 
     const sorted = [...list].sort((a, b) => (b.published_at ?? "").localeCompare(a.published_at ?? ""));
     const weighted = sorted.map((s) => ({ s, ...signalWeight(s) })).sort((a, b) => b.weight - a.weight);
-    const top = weighted.slice(0, 3);
+    // Awards measure sales, not space: only the single best award counts toward
+    // the score, so frequent government suppliers don't outrank physical permits.
+    const firstAward = weighted.findIndex((w) => w.s.signal_strength === "award");
+    const top = weighted.filter((w, i) => w.s.signal_strength !== "award" || i === firstAward).slice(0, 3);
     let score = top.reduce((sum, w) => sum + w.weight, 0);
     const parts = top.map((w) => `${w.label} (+${w.weight})`);
 
@@ -150,4 +184,18 @@ export function buildCandidates(
 
   candidates.sort((a, b) => b.score - a.score || a.displayName.localeCompare(b.displayName));
   return { candidates, skipped };
+}
+
+// Screening depth is split between permit-led and award-led candidates so that
+// companies with physical permits always reach screening (awards are frequent
+// and score high, but measure sales, not space). An empty side's slots go to
+// the other side. Keeps score order within each side.
+export function selectForScreening(candidates: Candidate[], k: number): Candidate[] {
+  const hasPermit = (c: Candidate) => c.signals.some((s) => s.source_type.startsWith("permit_"));
+  const permits = candidates.filter(hasPermit);
+  const awards = candidates.filter((c) => !hasPermit(c));
+  const half = Math.ceil(k / 2);
+  const p = permits.slice(0, Math.max(half, k - awards.length));
+  const a = awards.slice(0, k - p.length);
+  return [...p, ...a].sort((x, y) => y.score - x.score || x.displayName.localeCompare(y.displayName));
 }

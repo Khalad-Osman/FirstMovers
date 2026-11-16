@@ -13,8 +13,17 @@ const checkbox = z
   .union([z.literal("on"), z.literal("true"), z.literal(""), z.null(), z.undefined()])
   .transform((v) => v === "on" || v === "true");
 
+// The database allows up to 8, but each company is one chained step and Vercel
+// stops long self-call chains (HTTP 508). Keep runs at 3 until steps are
+// triggered from outside the app (decided 2026-11-16).
+export const DISCOVERY_CAP_MAX = 3;
+
 export const settingsFormSchema = z.object({
-  discovery_cap: z.coerce.number().int().min(1, "Discovery cap is at least 1.").max(8, "Discovery cap is at most 8."),
+  discovery_cap: z.coerce
+    .number()
+    .int()
+    .min(1, "Discovery cap is at least 1.")
+    .max(DISCOVERY_CAP_MAX, `Discovery cap is at most ${DISCOVERY_CAP_MAX} for now: longer runs are stopped by the host.`),
   sources_per_candidate: z.coerce.number().int().min(1).max(5, "At most 5 sources per candidate."),
   skip_window_days: z.coerce.number().int().min(0).max(365),
   canadabuys_min_value: z.coerce.number().min(0).max(1_000_000_000),

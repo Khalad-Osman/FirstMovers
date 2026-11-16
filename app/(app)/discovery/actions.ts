@@ -8,7 +8,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { jobSecret, realDiscoveryDeps, triggerStep } from "@/lib/discovery/job";
-import { createDiscoveryRun, STALE_STEP_MS } from "@/lib/discovery/run";
+import { appendRunError, createDiscoveryRun, PAUSED_PREFIX, STALE_STEP_MS } from "@/lib/discovery/run";
 
 async function origin(): Promise<string> {
   const h = await headers();
@@ -54,6 +54,11 @@ export async function resumeDiscovery(runId: string) {
     return { error: "A step is still running. Try again in a few minutes." };
   }
   const base = await origin();
-  after(() => triggerStep(base, id));
+  await db.from("discovery_runs").update({ progress: "Resuming" }).eq("id", id); // clears a "Paused" state
+  after(() =>
+    triggerStep(base, id).catch((e) =>
+      appendRunError(db, id, `${e instanceof Error ? e.message : String(e)}. Use Resume run to continue.`, { progress: `${PAUSED_PREFIX}: could not start the next step` }),
+    ),
+  );
   revalidatePath(`/discovery/${id}`);
 }

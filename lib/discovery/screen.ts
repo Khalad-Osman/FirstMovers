@@ -117,10 +117,17 @@ export async function screenCandidates(
   return { verdicts, errors, usage };
 }
 
-// Shortlist: recommended by screening, strongest physical signal first, then rule score.
+// Shortlist: recommended by screening; confirmed industrial occupiers before
+// "unclear" ones, then strongest physical signal, then rule score.
 export function shortlist(candidates: Candidate[], verdicts: Map<string, ScreenVerdict>, cap: number): Candidate[] {
+  const occupierRank = (c: Candidate) => (verdicts.get(c.key)!.industrialOccupier === "yes" ? 1 : 0);
   return candidates
     .filter((c) => verdicts.get(c.key)?.research)
-    .sort((a, b) => verdicts.get(b.key)!.physicalSignal - verdicts.get(a.key)!.physicalSignal || b.score - a.score)
+    .sort(
+      (a, b) =>
+        occupierRank(b) - occupierRank(a) ||
+        verdicts.get(b.key)!.physicalSignal - verdicts.get(a.key)!.physicalSignal ||
+        b.score - a.score,
+    )
     .slice(0, cap);
 }

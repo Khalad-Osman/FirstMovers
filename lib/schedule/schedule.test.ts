@@ -89,7 +89,7 @@ describe("settings form", () => {
   });
 
   it.each([
-    [{ discovery_cap: "9" }, /at most 8/],
+    [{ discovery_cap: "4" }, /at most 3/], // limited to 3 until steps are triggered from outside the app
     [{ discovery_cap: "0" }, /at least 1/],
     [{ sources_per_candidate: "6" }, /At most 5/],
     [{ discovery_weekday: "7" }, /.+/],

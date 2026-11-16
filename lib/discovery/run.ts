@@ -7,7 +7,8 @@ import { runCompanyResearch } from "@/lib/research/pipeline";
 import { createDbStore } from "@/lib/research/store";
 import { attachRecords } from "@/lib/research/records-db";
 import { analyzeSession, saveSessionToFeed } from "@/lib/research/session";
-import { buildCandidates, groupKey, type Candidate, type SignalForCandidate } from "./candidates";
+import { DISCOVERY_CAP_MAX } from "@/lib/settings";
+import { buildCandidates, groupKey, selectForScreening, type Candidate, type SignalForCandidate } from "./candidates";
 import { screenCandidates, shortlist, type ScreenVerdict } from "./screen";
 
 // Discovery pipeline (CLAUDE.md §4 steps 2–6), run one step per invocation:
@@ -135,7 +136,7 @@ function toStored(c: Candidate, verdict: ScreenVerdict | null, screened: boolean
 async function buildAndScreen(runId: string, run: { settings: Json }, deps: DiscoveryDeps) {
   const { db } = deps;
   const settings = (run.settings ?? {}) as Record<string, number>;
-  const cap = Math.min(8, Math.max(1, settings.discovery_cap ?? 3));
+  const cap = Math.min(DISCOVERY_CAP_MAX, Math.max(1, settings.discovery_cap ?? 3));
 
   await db.from("discovery_runs").update({ status: "running", progress: "Building candidates from signals" }).eq("id", runId);
   const signals = await loadSignals(db, monthsBefore(deps.today, 12));
@@ -144,7 +145,7 @@ async function buildAndScreen(runId: string, run: { settings: Json }, deps: Disc
     skipKeys: await recentlyAnalyzedKeys(db, settings.skip_window_days ?? 7),
   });
 
-  const top = candidates.slice(0, settings.screening_top_k ?? SCREEN_TOP_K);
+  const top = selectForScreening(candidates, settings.screening_top_k ?? SCREEN_TOP_K);
   await db.from("discovery_runs").update({ progress: `Screening ${top.length} of ${candidates.length} candidates`, candidates_found: candidates.length }).eq("id", runId);
   const screening = await screenCandidates(top, deps.screening);
   const chosen = new Set(shortlist(top, screening.verdicts, cap).map((c) => c.key));
@@ -160,6 +161,7 @@ async function buildAndScreen(runId: string, run: { settings: Json }, deps: Disc
       progress: chosen.size ? `Shortlisted ${chosen.size} for research` : "No candidates recommended for research",
     })
     .eq("id", runId);
+  return chosen.size;
 }
 
 // ---- step n -------------------------------------------------------------------
@@ -229,7 +231,11 @@ export async function stepDiscovery(runId: string, deps: DiscoveryDeps): Promise
       // Claim step 1: only one worker moves queued -> running.
       const { data: claimed } = await db.from("discovery_runs").update({ status: "running", progress: "Starting" }).eq("id", runId).eq("status", "queued").select("id");
       if (!claimed?.length) return { done: true };
-      await buildAndScreen(runId, run, deps);
+      const shortlisted = await buildAndScreen(runId, run, deps);
+      if (shortlisted === 0) {
+        await finalize(db, runId, []);
+        return { done: true };
+      }
       return { done: false };
     }
 
@@ -247,11 +253,7 @@ export async function stepDiscovery(runId: string, deps: DiscoveryDeps): Promise
 
     const next = candidates[outcomes.length];
     if (!next) {
-      const briefs = outcomes.filter((o) => o.status === "brief").length;
-      await db
-        .from("discovery_runs")
-        .update({ status: "completed", progress: null, finished_at: new Date().toISOString(), analyzed: briefs })
-        .eq("id", runId);
+      await finalize(db, runId, outcomes);
       return { done: true };
     }
 
@@ -286,13 +288,37 @@ export async function stepDiscovery(runId: string, deps: DiscoveryDeps): Promise
         progress: `Finished ${finalOutcomes.length} of ${candidates.length}`,
       })
       .eq("id", runId);
+    // Finish in this step when nothing is left: one fewer chained request
+    // (Vercel answers long self-call chains with 508 Loop Detected).
+    if (finalOutcomes.length >= candidates.length) {
+      await finalize(db, runId, finalOutcomes);
+      return { done: true };
+    }
     return { done: false };
   } catch (e) {
-    await db
-      .from("discovery_runs")
-      .update({ status: "failed", progress: null, finished_at: new Date().toISOString(), errors: [e instanceof Error ? e.message : String(e)] })
-      .eq("id", runId);
+    await failRun(db, runId, e instanceof Error ? e.message : String(e));
     return { done: true };
   }
 }
+
+async function finalize(db: Db, runId: string, outcomes: Outcome[]) {
+  await db
+    .from("discovery_runs")
+    .update({ status: "completed", progress: null, finished_at: new Date().toISOString(), analyzed: outcomes.filter((o) => o.status === "brief").length })
+    .eq("id", runId)
+    .in("status", ["queued", "running"]);
+}
+
+// Add a message to the run's errors without losing earlier ones.
+export async function appendRunError(db: Db, runId: string, message: string, patch: Record<string, unknown> = {}) {
+  const { data } = await db.from("discovery_runs").select("errors").eq("id", runId).maybeSingle();
+  const errors = [...asArray<string>(data?.errors ?? null), message];
+  await db.from("discovery_runs").update({ ...patch, errors }).eq("id", runId).in("status", ["queued", "running"]);
+}
+
+export async function failRun(db: Db, runId: string, message: string) {
+  await appendRunError(db, runId, message, { status: "failed", progress: null, finished_at: new Date().toISOString() });
+}
+
+export const PAUSED_PREFIX = "Paused";
 

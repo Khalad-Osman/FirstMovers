@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { DISCOVERY_CAP_MAX } from "@/lib/settings";
 import { WEEKDAYS } from "@/lib/schedule/plan";
 import { saveSettings, type SettingsState } from "./actions";
 
@@ -27,7 +28,7 @@ export function SettingsForm({ values, envModels, canEdit }: Props) {
     <form action={action} className="grid gap-6">
       <fieldset disabled={disabled} className="grid gap-6">
         <Group title="Discovery caps">
-          <NumberField name="discovery_cap" label="Companies researched per run" min={1} max={8} value={values.discovery_cap} hint="1–8. Each costs up to about 13 Firecrawl credits." />
+          <NumberField name="discovery_cap" label="Companies researched per run" min={1} max={DISCOVERY_CAP_MAX} value={values.discovery_cap} hint={`1–${DISCOVERY_CAP_MAX} for now (longer runs are stopped by the host). Each costs up to about 13 Firecrawl credits.`} />
           <NumberField name="sources_per_candidate" label="Sources per company" min={1} max={5} value={values.sources_per_candidate} hint="1–5, including the follow-up search." />
           <NumberField name="skip_window_days" label="Skip window (days)" min={0} max={365} value={values.skip_window_days} hint="Companies analyzed this recently are skipped by discovery." />
         </Group>

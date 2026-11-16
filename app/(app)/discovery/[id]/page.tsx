@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { STALE_STEP_MS, type Outcome, type StoredCandidate } from "@/lib/discovery/run";
+import { PAUSED_PREFIX, STALE_STEP_MS, type Outcome, type StoredCandidate } from "@/lib/discovery/run";
 import { RATING_LABEL, type Rating } from "@/lib/brief/schema";
 import { RatingBadge } from "@/components/badges";
 import { ActionButton } from "@/components/action-button";
@@ -38,7 +38,8 @@ export default async function DiscoveryRunPage({ params }: PageProps<"/discovery
   const usage = (run.usage ?? {}) as Record<string, number>;
   const settings = (run.settings ?? {}) as Record<string, number>;
   const active = run.status === "queued" || run.status === "running";
-  const stale = active && isStale(outcomes, run.started_at);
+  const paused = active && (run.progress ?? "").startsWith(PAUSED_PREFIX);
+  const stale = active && (paused || isStale(outcomes, run.started_at));
   const shortlisted = candidates.filter((c) => c.shortlisted);
 
   return (
@@ -66,7 +67,11 @@ export default async function DiscoveryRunPage({ params }: PageProps<"/discovery
         )}
         {stale && (
           <div role="alert" className="grid gap-2 border-l-4 border-[#b45309] bg-[#fffbeb] px-4 py-2 text-[0.9375rem]">
-            <p>This run hasn&apos;t made progress for over 15 minutes.</p>
+            <p>
+              {paused
+                ? "This run paused: the server could not start its next step. The work so far is saved."
+                : "This run hasn't made progress for over 15 minutes."}
+            </p>
             {user?.role === "admin" && <ActionButton action={resumeDiscovery.bind(null, run.id)} label="Resume run" pendingLabel="Resuming…" className="btn w-fit" />}
           </div>
         )}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createFakeProvider } from "@/lib/llm/fake";
-import { buildCandidates, groupKey, signalWeight, type SignalForCandidate } from "./candidates";
-import { buildScreeningMessage, screenCandidates, shortlist } from "./screen";
+import { buildCandidates, groupKey, isSmallWorks, selectForScreening, signalWeight, type Candidate, type SignalForCandidate } from "./candidates";
+import { buildScreeningMessage, screenCandidates, shortlist, type ScreenVerdict } from "./screen";
 
 const TODAY = "2026-11-10";
 let n = 0;
@@ -128,5 +128,72 @@ describe("screening", () => {
     const msg = buildScreeningMessage(c);
     expect(msg.match(/<\/candidate>/g)).toHaveLength(1);
     expect(msg.match(/<candidate key=/g)).toHaveLength(1);
+  });
+});
+
+describe("candidate rules (2026-11-16 review)", () => {
+  const build = (signals: SignalForCandidate[]) => buildCandidates(signals, { today: TODAY, skipKeys: new Set() });
+
+  it("treats small new structures and additions as minor works", () => {
+    // Petro-Canada's two fire-pump buildings: $225,000, 85 m²
+    const pump = sig({ signal_strength: "new_building", raw: { EST_CON_VALUE: 225000, APPL_AREA: 85 } });
+    expect(isSmallWorks(pump.raw)).toBe(true);
+    expect(signalWeight(pump)).toEqual({ weight: 2, label: "small new structure" });
+    // Crown Distributors: $14.3M, 4,015 m²
+    expect(signalWeight(sig({ signal_strength: "new_building", raw: { EST_CON_VALUE: 14261813, APPL_AREA: 4015.15 } })).weight).toBe(5);
+    // Large by value or by area is enough; unknown size keeps the full weight
+    expect(signalWeight(sig({ signal_strength: "addition", raw: { EST_CON_VALUE: 5714371, APPL_AREA: 100 } })).weight).toBe(4);
+    expect(signalWeight(sig({ signal_strength: "addition", raw: { EST_CON_VALUE: 200000, APPL_AREA: 1200 } })).weight).toBe(4);
+    expect(signalWeight(sig({ signal_strength: "addition", raw: { EST_CONST_COST: "$90,000" } })).weight).toBe(2);
+    expect(signalWeight(sig({ signal_strength: "new_building", raw: {} })).weight).toBe(5);
+  });
+
+  it("counts only the best award toward the score", () => {
+    const award = (v: string) => sig({ raw_entity_name: "Reseller Inc.", entity_key: "reseller", source_type: "canadabuys_award", signal_strength: "award", raw: { "contractAmount-montantContrat": v }, location: "Ottawa, Ontario" });
+    const { candidates } = build([award("2000000"), award("3000000"), award("1500000")]);
+    expect(candidates[0].scoreParts.filter((p) => p.startsWith("federal award"))).toEqual(["federal award ≥ $1M (+3)"]);
+    expect(candidates[0].score).toBe(4); // 3 for the best award + 1 for a signal in the last 90 days (was 3+3+3+1)
+  });
+
+  it("skips permit-only names that are clearly not industrial occupiers", () => {
+    const named = (name: string) => sig({ raw_entity_name: name, entity_key: name.toLowerCase() });
+    const { candidates, skipped } = build([
+      named("TUNG LAW PROFESSIONAL CORPORATION"),
+      named("CAN PLUS IMMIGRATION INC."),
+      named("JUNE LAWRENCE SCHOOL OF DANCE INC."),
+      named("TOOTH & CO"),
+      named("STELUMAR ADVANCED MANUFACTURING INC."),
+      named("ACME MEDICAL DEVICES INC."),
+      named("PHYSIOSUPPLIES CANADA"),
+      named("BVD GAS STATION"),
+    ]);
+    expect(candidates.map((c) => c.displayName).sort()).toEqual(["ACME MEDICAL DEVICES INC.", "PHYSIOSUPPLIES CANADA", "STELUMAR ADVANCED MANUFACTURING INC."]);
+    expect(skipped).toHaveLength(5);
+    expect(skipped.every((s) => s.reason.startsWith("not an industrial occupier"))).toBe(true);
+  });
+
+  it("splits screening depth between permit-led and award-led candidates", () => {
+    const c = (name: string, score: number, permit: boolean) =>
+      ({ key: name, displayName: name, aliases: [], score, scoreParts: [], topSignalId: "x", signals: [sig({ source_type: permit ? "permit_mississauga" : "canadabuys_award" })] }) as Candidate;
+    const awards = Array.from({ length: 10 }, (_, i) => c(`award${i}`, 11 - i * 0.1, false));
+    const permits = Array.from({ length: 10 }, (_, i) => c(`permit${i}`, 7 - i * 0.1, true));
+    const picked = selectForScreening([...awards, ...permits], 6);
+    expect(picked.filter((x) => x.key.startsWith("permit"))).toHaveLength(3);
+    expect(picked.filter((x) => x.key.startsWith("award"))).toHaveLength(3);
+    expect(picked[0].key).toBe("award0"); // still in score order
+    // When one side runs short, the other side fills the slots
+    expect(selectForScreening([...awards.slice(0, 1), ...permits], 6).filter((x) => x.key.startsWith("permit"))).toHaveLength(5);
+    expect(selectForScreening(awards, 6)).toHaveLength(6);
+  });
+
+  it("shortlists confirmed occupiers before unclear ones", () => {
+    const c = (key: string, score: number) => ({ key, displayName: key, aliases: [], score, scoreParts: [], topSignalId: "x", signals: [] }) as Candidate;
+    const v = (industrialOccupier: "yes" | "unclear", physicalSignal: number): ScreenVerdict => ({ key: "", industrialOccupier, physicalSignal, reason: "", research: true });
+    const verdicts = new Map<string, ScreenVerdict>([
+      ["systems", v("unclear", 4)],
+      ["rampart", v("yes", 4)],
+      ["vwr", v("yes", 5)],
+    ]);
+    expect(shortlist([c("systems", 11.5), c("rampart", 8.5), c("vwr", 8.5)], verdicts, 3).map((x) => x.key)).toEqual(["vwr", "rampart", "systems"]);
   });
 });
