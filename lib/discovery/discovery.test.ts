@@ -206,3 +206,26 @@ describe("major fit-outs", () => {
     expect(signalWeight(sig({ signal_strength: "alteration", raw: { EST_CON_VALUE: 46950, APPL_AREA: 33.56 } })).weight).toBe(1);
   });
 });
+
+describe("discovery fixes (2026-11-17 review)", () => {
+  it("counts only the strongest grant toward the score", () => {
+    const grant = (kind: string, n: number) =>
+      sig({ raw_entity_name: "Mariposa Dairy Ltd.", entity_key: "mariposa dairy", source_type: "federal_grant", signal_strength: "grant", raw: { grant_kind: kind }, location: `Lindsay, Ontario ${n}` });
+    const { candidates } = buildCandidates([grant("equipment", 1), grant("equipment", 2), grant("facility", 3)], { today: TODAY, skipKeys: new Set() });
+    expect(candidates[0].scoreParts.filter((p) => p.startsWith("federal grant"))).toEqual(["federal grant: facility or capacity (+4)"]);
+  });
+
+  it("shortlists GTA before the rest of Ontario when occupier and space signal tie", () => {
+    const c = (key: string, score: number, location: string) => ({ key, displayName: key, aliases: [], score, scoreParts: [], topSignalId: "x", signals: [sig({ location })] }) as Candidate;
+    const v: ScreenVerdict = { key: "", industrialOccupier: "yes", physicalSignal: 5, reason: "", research: true };
+    const verdicts = new Map<string, ScreenVerdict>([["lindsay", v], ["georgetown", v]]);
+    expect(shortlist([c("lindsay", 8, "Lindsay, Ontario"), c("georgetown", 6, "Georgetown, Ontario")], verdicts, 2).map((x) => x.key)).toEqual(["georgetown", "lindsay"]);
+  });
+
+  it("screening instructions score the space consequence and cover grants", async () => {
+    const { SCREENING_SYSTEM } = await import("./screen");
+    expect(SCREENING_SYSTEM).toMatch(/federal grants and contributions/);
+    expect(SCREENING_SYSTEM).toMatch(/5 = a new site, new building or new facility/);
+    expect(SCREENING_SYSTEM).toMatch(/2 = equipment, automation, racking or modernisation in existing premises/);
+  });
+});

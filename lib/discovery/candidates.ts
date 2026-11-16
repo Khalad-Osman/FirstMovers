@@ -30,6 +30,7 @@ export type Candidate = {
 };
 
 const GTA = /\b(toronto|north york|scarborough|etobicoke|york|mississauga|brampton|caledon|bolton|vaughan|concord|woodbridge|maple|markham|richmond hill|aurora|newmarket|stouffville|pickering|ajax|whitby|oshawa|oakville|milton|burlington|halton hills|georgetown|hamilton|peel|durham|halton)\b/i;
+export const isGta = (c: { signals: { location: string | null }[] }) => c.signals.some((s) => GTA.test(s.location ?? ""));
 
 // Merge variants such as "Thermo Fisher Scientific (Mississauga) Inc." and
 // "Thermo Fisher Scientific Inc.", or "Wesco Aircraft Canada Inc." and "Wesco Aircraft Inc.".
@@ -162,10 +163,14 @@ export function buildCandidates(
 
     const sorted = [...list].sort((a, b) => (b.published_at ?? "").localeCompare(a.published_at ?? ""));
     const weighted = sorted.map((s) => ({ s, ...signalWeight(s) })).sort((a, b) => b.weight - a.weight);
-    // Awards measure sales, not space: only the single best award counts toward
-    // the score, so frequent government suppliers don't outrank physical permits.
+    // Only the single best award and the single best grant count toward the
+    // score: awards measure sales, not space, and several small equipment grants
+    // shouldn't outrank one facility grant (Mariposa vs Saputo, 2026-11-17).
     const firstAward = weighted.findIndex((w) => w.s.signal_strength === "award");
-    const top = weighted.filter((w, i) => w.s.signal_strength !== "award" || i === firstAward).slice(0, 3);
+    const firstGrant = weighted.findIndex((w) => w.s.signal_strength === "grant");
+    const top = weighted
+      .filter((w, i) => (w.s.signal_strength !== "award" || i === firstAward) && (w.s.signal_strength !== "grant" || i === firstGrant))
+      .slice(0, 3);
     let score = top.reduce((sum, w) => sum + w.weight, 0);
     const parts = top.map((w) => `${w.label} (+${w.weight})`);
 

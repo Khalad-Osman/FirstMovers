@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { toStrictJsonSchema, type ChatMessage, type LLMProvider } from "@/lib/llm";
-import type { Candidate } from "./candidates";
+import { isGta, type Candidate } from "./candidates";
 
 // Step 3 (CLAUDE.md §4): cheap-model screening using only stored signals.
 // Batches of candidates per call; output validated with Zod; one retry.
@@ -24,10 +24,17 @@ export type ScreenVerdict = z.infer<typeof screeningResultSchema>["results"][num
 
 export const SCREENING_SYSTEM = `You screen candidates for an industrial commercial-real-estate intelligence tool covering the GTA and Ontario.
 
-For each candidate you get only stored public-record signals (federal contract awards, building permits). Decide whether it is worth spending research credits on.
+For each candidate you get only stored public-record signals (federal contract awards, federal grants and contributions, building permits). Decide whether it is worth spending research credits on. The tool looks for companies whose change could create a real-estate decision: a need for space beyond their current premises, or premises they are likely to leave.
 
 - industrialOccupier: "yes" if the signals indicate a company that manufactures, warehouses, distributes or handles physical goods in Ontario; "no" for software, IT, consulting, staffing, professional services, resellers without physical operations, landlords, developers, property companies, retail stores, restaurants, schools and public bodies; otherwise "unclear".
-- physicalSignal (0–5): how strongly the signals point to a change in physical capacity or facility use in Ontario (new building, addition, change of use, racking/equipment, a large goods or construction contract). 0 = none, 5 = specific and recent.
+- physicalSignal (0–5): how strongly the signals point to a change in the company's need for space in Ontario, recent and specific:
+  5 = a new site, new building or new facility for the company, a relocation or consolidation, or expansion beyond what the current site can hold.
+  4 = a major addition, change of use or large fit-out (possibly a new tenancy).
+  3 = expansion or added capacity within an existing facility.
+  2 = equipment, automation, racking or modernisation in existing premises (investment in place, which usually argues against a move).
+  1 = minor or routine work, or a goods contract with no facility consequence.
+  0 = none.
+  Score the space consequence, not the amount of money or activity.
 - research: true only if industrialOccupier is "yes" or "unclear" AND physicalSignal ≥ 2.
 - reason: one short sentence citing the signal that drove the decision. Do not invent facts.
 
@@ -118,15 +125,18 @@ export async function screenCandidates(
 }
 
 // Shortlist: recommended by screening; confirmed industrial occupiers before
-// "unclear" ones, then strongest physical signal, then rule score.
+// "unclear" ones, then strongest space signal, then GTA before the rest of
+// Ontario, then rule score.
 export function shortlist(candidates: Candidate[], verdicts: Map<string, ScreenVerdict>, cap: number): Candidate[] {
   const occupierRank = (c: Candidate) => (verdicts.get(c.key)!.industrialOccupier === "yes" ? 1 : 0);
+  const gtaRank = (c: Candidate) => (isGta(c) ? 1 : 0);
   return candidates
     .filter((c) => verdicts.get(c.key)?.research)
     .sort(
       (a, b) =>
         occupierRank(b) - occupierRank(a) ||
         verdicts.get(b.key)!.physicalSignal - verdicts.get(a.key)!.physicalSignal ||
+        gtaRank(b) - gtaRank(a) ||
         b.score - a.score,
     )
     .slice(0, cap);
