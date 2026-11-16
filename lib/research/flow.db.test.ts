@@ -8,6 +8,7 @@ import type { ScrapeResult } from "@/lib/firecrawl/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runCompanyResearch } from "./pipeline";
 import { createDbStore } from "./store";
+import { attachRecords } from "./records-db";
 import { analyzeSession, saveSessionToFeed } from "./session";
 
 const TODAY = "2026-11-10";
@@ -15,7 +16,7 @@ const stamp = Date.now();
 const COMPANY = `Testbed Fabrication ${stamp} Inc.`;
 const urls = [1, 2, 3].map((n) => `https://example.com/flow-${stamp}/item-${n}`);
 const db = createAdminClient();
-const created: { sessions: string[]; users: string[] } = { sessions: [], users: [] };
+const created: { sessions: string[]; users: string[]; signals: string[] } = { sessions: [], users: [], signals: [] };
 
 function fakeFirecrawl() {
   const usage = { requests: 0, credits: 0 };
@@ -154,7 +155,66 @@ describe("Live Research flow (local DB)", () => {
     expect(s?.usage).toMatchObject({ llm_calls: 2, firecrawl_credits: 9 }); // 3 searches x 2 + 3 scrapes
   });
 
+  it("uses the company's stored permits as public record sources", async () => {
+    const key = `testbed fabrication ${stamp}`;
+    const permit = (n: number, strength: "addition" | "alteration", issued: string) => ({
+      source_type: "permit_mississauga" as const,
+      source_record_id: `BP TEST ${stamp}-${n}`,
+      raw_entity_name: COMPANY.toUpperCase(),
+      entity_key: key,
+      occupier_status: "named" as const,
+      signal_strength: strength,
+      title: `Mississauga permit: ${strength} at ${n} TEST DR`,
+      summary: `${strength.toUpperCase()} - ${COMPANY.toUpperCase()}. Est. value $1,000,000`,
+      published_at: issued,
+      location: `${n} TEST DR, Mississauga, Ontario`,
+      raw: { BP_NO: `BP TEST ${stamp}-${n}`, ADDRESS: `${n} TEST DR`, BUILDER: "Not The Occupier Ltd" },
+    });
+    const { data: sigs, error } = await db
+      .from("signals")
+      .insert([permit(1, "addition", "2026-09-01"), permit(2, "alteration", "2026-10-01")])
+      .select("id");
+    if (error) throw error;
+    created.signals.push(...sigs.map((s) => s.id));
+
+    const recordIds = await attachRecords(db, { names: [COMPANY], today: TODAY });
+    expect(recordIds).toHaveLength(2);
+    expect(await attachRecords(db, { names: [COMPANY], today: TODAY })).toEqual(recordIds); // one source per signal
+
+    const { data: recs } = await db.from("sources").select("id, url, publisher, published_at, date_method, signal_id, excerpt").in("id", recordIds);
+    const first = recs!.find((r) => r.id === recordIds[0])!;
+    expect(first).toMatchObject({ publisher: "City of Mississauga – Building permits", published_at: "2026-09-01", date_method: "public_record", signal_id: sigs[0].id });
+    expect(first.url).toContain("services6.arcgis.com");
+    expect(first.excerpt).toContain(`Record number: BP TEST ${stamp}-1`);
+    expect(first.excerpt).not.toContain("Not The Occupier");
+
+    const id = await newSession(userId);
+    await runCompanyResearch(id, COMPANY, { firecrawl: fakeFirecrawl(), store: createDbStore(), today: TODAY, maxSources: 5, recordSourceIds: recordIds });
+    const out = modelOutput();
+    out.ledger = [
+      { sourceId: "S1", evidenceType: "fact", relevance: "signal", finding: "Addition permit at an occupied site.", repeatCoverageOf: null },
+      { sourceId: "S2", evidenceType: "fact", relevance: "signal", finding: "Alteration permit.", repeatCoverageOf: null },
+      ...out.ledger.map((e, i) => ({ ...e, sourceId: `S${i + 3}`, repeatCoverageOf: e.repeatCoverageOf ? "S3" : null })),
+    ];
+    out.chain.whatChanged = { status: "supported", text: "Building an addition.", sourceIds: ["S1"] };
+    out.existingFacilityInvestment = true;
+    const { provider, requests } = createFakeProvider([out]);
+    await analyzeSession(id, { provider, model: "fake-model", today: TODAY });
+    expect(JSON.stringify(requests[0])).toContain("City of Mississauga – Building permits");
+
+    const save = await saveSessionToFeed(id, userId);
+    expect(save.ok).toBe(true);
+    if (!save.ok) return;
+    const { data: links } = await db.from("brief_sources").select("sources(date_method, signal_id)").eq("brief_id", save.briefId);
+    expect(links).toHaveLength(5);
+    expect(links!.filter((l) => l.sources?.date_method === "public_record").map((l) => l.sources?.signal_id).sort()).toEqual(sigs.map((s) => s.id).sort());
+  });
+
   afterAll(async () => {
+    if (created.signals.length) {
+      await db.from("sources").delete().in("signal_id", created.signals);
+      await db.from("signals").delete().in("id", created.signals);
+    }
     const { data: companies } = await db.from("companies").select("id").eq("normalized_key", `testbed fabrication ${stamp}`);
     if (created.sessions.length) await db.from("research_sessions").delete().in("id", created.sessions);
     for (const c of companies ?? []) await db.from("companies").delete().eq("id", c.id);

@@ -107,6 +107,32 @@ describe("runCompanyResearch", () => {
     expect(m.last().error).toMatch(/credits are used up/);
     expect(fc.search).toHaveBeenCalledTimes(1);
   });
+
+  it("puts public records first and still collects up to 5 web sources", async () => {
+    const all = Array.from({ length: 6 }, (_, i) => result(i + 1));
+    const fc = fakeFirecrawl(() => all, Object.fromEntries(all.map((r) => [r.url, { date: "2026-10-01" }])));
+    const m = memoryStore();
+    await runCompanyResearch("s1", "Acme Ltd.", { firecrawl: fc, store: m.store, today: TODAY, maxSources: 5, recordSourceIds: ["rec-1", "rec-2", "rec-3"] });
+    const final = m.last();
+    expect(final.status).toBe("ready");
+    expect(final.source_ids).toEqual(["rec-1", "rec-2", "rec-3", "uuid-1", "uuid-2", "uuid-3", "uuid-4", "uuid-5"]);
+    expect(final.progress).toBe("Collected 3 public records and 5 web sources");
+  });
+
+  it("is ready with public records alone when the web finds nothing", async () => {
+    const m = memoryStore();
+    await runCompanyResearch("s1", "Quiet Fabrication Inc.", { firecrawl: fakeFirecrawl(() => [], {}), store: m.store, today: TODAY, maxSources: 5, recordSourceIds: ["rec-1"] });
+    expect(m.last()).toMatchObject({ status: "ready", source_ids: ["rec-1"], error: null, progress: "Collected 1 public record" });
+  });
+
+  it("still stops on used-up credits when public records exist", async () => {
+    const fc = fakeFirecrawl(() => [], {});
+    fc.search.mockRejectedValueOnce(new FirecrawlError("Firecrawl credits are used up for this month.", 402));
+    const m = memoryStore();
+    await runCompanyResearch("s1", "Acme Ltd.", { firecrawl: fc, store: m.store, today: TODAY, maxSources: 5, recordSourceIds: ["rec-1"] });
+    expect(m.last()).toMatchObject({ status: "failed", source_ids: ["rec-1"] });
+    expect(m.last().error).toMatch(/credits are used up/);
+  });
 });
 
 describe("runThemeSearch", () => {

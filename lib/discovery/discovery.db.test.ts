@@ -14,7 +14,7 @@ const stamp = Date.now();
 const NAME = (x: string) => `Zz Discovery Test ${x} ${stamp} Inc.`;
 const A = NAME("Alpha"); // verified -> brief
 const B = NAME("Bravo"); // analysis says entity not verified
-const C = NAME("Charlie"); // research finds nothing -> failed
+const C = NAME("Charlie"); // web finds nothing (records only), then the model call fails -> failed
 const db = createAdminClient();
 let userId = "";
 const runIds: string[] = [];
@@ -67,6 +67,7 @@ const analysis: LLMProvider = {
     const msg = req.messages[0].content;
     const name = /Company under review: ([^\n]+)/.exec(msg)![1];
     const count = Number(/Number of sources: (\d+)/.exec(msg)![1]);
+    if (name === C) throw new Error("Simulated provider outage for Charlie");
     return respond(req, briefFor(name, count, name !== B));
   },
 };
@@ -160,6 +161,18 @@ describe("discovery run (local DB)", () => {
     expect(run!.analyzed).toBe(1);
     expect((run!.errors as string[]).join()).toMatch(/Charlie/);
 
+    // Each company's stored permits went in as public record sources, first.
+    const sessionOf = async (name: string) =>
+      (await db.from("research_sessions").select("source_ids, progress, status").eq("query", name).eq("discovery_run_id", runId).single()).data!;
+    const alpha = await sessionOf(A);
+    const { data: alphaSources } = await db.from("sources").select("id, date_method").in("id", alpha.source_ids);
+    const methodOf = new Map(alphaSources!.map((s) => [s.id, s.date_method]));
+    expect(alpha.source_ids.map((id: string) => methodOf.get(id))).toEqual(["public_record", "public_record", "metadata", "metadata"]);
+    // Charlie: no web results, but research is ready from its records alone (it failed later, at the model call).
+    const charlie = await sessionOf(C);
+    expect(charlie.source_ids).toHaveLength(2);
+    expect(by[C].status === "failed" && by[C].error).toMatch(/Simulated provider outage/);
+
     const usageTotals = run!.usage as Record<string, number>;
     expect(usageTotals.screening_llm_calls).toBeGreaterThanOrEqual(1);
     expect(usageTotals.llm_calls).toBe(usageTotals.screening_llm_calls + 2); // one analysis each for Alpha and Bravo
@@ -200,6 +213,8 @@ afterAll(async () => {
   const { error: runErr } = await db.from("discovery_runs").delete().in("id", runIds);
   if (runErr) throw new Error(`cleanup failed: ${runErr.message}`);
   await db.from("research_sessions").delete().like("query", `Zz Discovery Test %${stamp}%`);
+  const { data: testSignals } = await db.from("signals").select("id").like("source_record_id", `ZZTEST-${stamp}-%`);
+  if (testSignals?.length) await db.from("sources").delete().in("signal_id", testSignals.map((s) => s.id));
   await db.from("signals").delete().like("source_record_id", `ZZTEST-${stamp}-%`);
   await db.from("sources").delete().like("url", `https://example.com/disc-${stamp}/%`);
   if (userId) await db.auth.admin.deleteUser(userId);

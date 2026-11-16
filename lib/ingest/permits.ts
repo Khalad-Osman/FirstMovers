@@ -30,7 +30,7 @@ export function strengthFrom(work: string, description = ""): SignalStrength {
 // services6.arcgis.com …/Issued_Building_Permits/FeatureServer/0 (checked 2026-11-10:
 // 35,390 permits, latest issued 2026-10-30). FILE_TYPE = 'INDUSTRIAL' selects
 // industrial buildings (single- and multi-tenant).
-const MISSISSAUGA =
+export const MISSISSAUGA =
   "https://services6.arcgis.com/hM5ymMLbxIyWTjn2/arcgis/rest/services/Issued_Building_Permits/FeatureServer/0";
 
 export function mapMississauga(a: Record<string, unknown>, ctx: Pick<IngestContext, "today">): IngestItem {
@@ -83,7 +83,7 @@ async function* runMississauga(ctx: IngestContext): AsyncGenerator<IngestItem> {
 // 2026-11-10: 224k permits, current despite the old portal date). Industrial
 // permits use Ontario Building Code group F (F1/F2/F3) in SUBDESC. No free-text
 // description, so occupiers stay unresolved.
-const BRAMPTON = "https://maps1.brampton.ca/arcgis/rest/services/BuildingPermit/Building_Permits/MapServer/0";
+export const BRAMPTON = "https://maps1.brampton.ca/arcgis/rest/services/BuildingPermit/Building_Permits/MapServer/0";
 
 export function mapBrampton(a: Record<string, unknown>, ctx: Pick<IngestContext, "today">): IngestItem {
   const permit = str(a.PERMITNUMBER);
@@ -135,8 +135,8 @@ async function* runBrampton(ctx: IngestContext): AsyncGenerator<IngestItem> {
 // CKAN (checked 2026-11-10): "Building Permits - Active Permits" and "Cleared
 // Permits since 2017", both refreshed daily. SQL is disabled, so we page the
 // datastore newest-first by ISSUED_DATE and stop at the 12-month cutoff.
-const CKAN = "https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/datastore_search";
-const TORONTO_RESOURCES = [
+export const CKAN = "https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/datastore_search";
+export const TORONTO_RESOURCES = [
   { id: "6d0229af-bc54-46de-9c2b-26759b01dd05", name: "active" },
   { id: "a96c0ba4-3026-402b-b09d-5b1268b8f810", name: "cleared" },
 ];
@@ -147,7 +147,7 @@ export function isTorontoIndustrial(r: Record<string, unknown>): boolean {
   return INDUSTRIAL_USE.test(`${str(r.CURRENT_USE)} ${str(r.PROPOSED_USE)} ${str(r.STRUCTURE_TYPE)}`);
 }
 
-export function mapToronto(r: Record<string, unknown>, ctx: Pick<IngestContext, "today" | "cutoff">): IngestItem {
+export function mapToronto(r: Record<string, unknown>, ctx: Pick<IngestContext, "today" | "cutoff">, resourceId?: string): IngestItem {
   const permit = str(r.PERMIT_NUM);
   const issued = str(r.ISSUED_DATE).slice(0, 10) || null;
   if (!permit) return { skip: "no permit number" };
@@ -175,7 +175,7 @@ export function mapToronto(r: Record<string, unknown>, ctx: Pick<IngestContext, 
       published_at: issued,
       event_at: null,
       location: `${address ? `${address}, ` : ""}Toronto, Ontario${str(r.POSTAL) ? ` ${str(r.POSTAL)}` : ""}`,
-      raw: r,
+      raw: resourceId ? { ...r, _resource_id: resourceId } : r, // which dataset, for the record link
     },
   };
 }
@@ -195,7 +195,7 @@ async function* runToronto(ctx: IngestContext): AsyncGenerator<IngestItem> {
       for (const rec of records) {
         const issued = str(rec.ISSUED_DATE).slice(0, 10);
         if (issued && issued < ctx.cutoff) older++;
-        yield mapToronto(rec, ctx);
+        yield mapToronto(rec, ctx, res.id);
       }
       await ctx.progress(`Read ${(offset + records.length).toLocaleString("en-CA")} Toronto ${res.name} permits`);
       // Sorted newest first: once a whole page is older than the cutoff, stop.

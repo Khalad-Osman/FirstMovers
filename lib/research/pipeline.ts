@@ -41,7 +41,10 @@ export type PipelineDeps = {
   store: ResearchStore;
   today: string; // YYYY-MM-DD
   maxSources: number; // ≤ 5 (CLAUDE.md §8)
-  seedUrls?: string[]; // read first, e.g. the award notice that surfaced the company
+  seedUrls?: string[]; // scraped first
+  // Already-saved public record sources (permits, awards; lib/research/records.ts).
+  // They go first in the session and don't count toward maxSources (web pages).
+  recordSourceIds?: string[];
 };
 
 function usageOf(deps: PipelineDeps) {
@@ -108,6 +111,17 @@ export async function runCompanyResearch(sessionId: string, companyName: string,
   const { store, firecrawl, today } = deps;
   const max = Math.max(1, Math.min(5, deps.maxSources));
   const collected: { source: CollectedSource; id: string }[] = [];
+  const records = deps.recordSourceIds ?? [];
+  const allIds = () => [...records, ...collected.map((c) => c.id)];
+  const done = () => {
+    const parts = [
+      records.length ? `${records.length} public record${records.length === 1 ? "" : "s"}` : null,
+      collected.length || !records.length ? `${collected.length} web source${collected.length === 1 ? "" : "s"}` : null,
+    ].filter(Boolean);
+    return `Collected ${parts.join(" and ")}`;
+  };
+  // With public records in hand, a web search that finds nothing is not a failure.
+  class NoWebSources extends Error {}
 
   try {
     // 1. Search
@@ -124,10 +138,14 @@ export async function runCompanyResearch(sessionId: string, companyName: string,
         searchErrors.push(e instanceof Error ? e.message : String(e));
       }
     }
-    if (results.length === 0) throw new Error(`All searches failed. ${searchErrors[0] ?? ""}`.trim());
+    if (results.length === 0) {
+      if (records.length) throw new NoWebSources();
+      throw new Error(`All searches failed. ${searchErrors[0] ?? ""}`.trim());
+    }
 
     const candidates = rankCandidates(results, companyName);
     if (candidates.length === 0 && !deps.seedUrls?.length) {
+      if (records.length) throw new NoWebSources();
       throw new Error(`No usable sources found for "${companyName}". Check the spelling or try the full legal name.`);
     }
 
@@ -159,21 +177,19 @@ export async function runCompanyResearch(sessionId: string, companyName: string,
     // 4. Fill any remaining slot from the original candidates
     if (collected.length < max) await scrapeSome(candidates, max - collected.length, seen, deps, collected, progress);
 
-    if (collected.length === 0) throw new Error("Found search results, but none of the pages could be read.");
+    if (collected.length === 0 && !records.length) throw new Error("Found search results, but none of the pages could be read.");
 
-    await store.update(sessionId, {
-      status: "ready",
-      progress: `Collected ${collected.length} source${collected.length === 1 ? "" : "s"}`,
-      source_ids: collected.map((c) => c.id),
-      usage: usageOf(deps),
-      error: null,
-    });
+    await store.update(sessionId, { status: "ready", progress: done(), source_ids: allIds(), usage: usageOf(deps), error: null });
   } catch (e) {
+    if (e instanceof NoWebSources) {
+      await store.update(sessionId, { status: "ready", progress: done(), source_ids: allIds(), usage: usageOf(deps), error: null });
+      return;
+    }
     await store.update(sessionId, {
       status: "failed",
       progress: null,
       error: e instanceof Error ? e.message : String(e),
-      source_ids: collected.map((c) => c.id),
+      source_ids: allIds(),
       usage: usageOf(deps),
     });
   }

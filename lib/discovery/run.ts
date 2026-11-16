@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/database.types";
 import { runCompanyResearch } from "@/lib/research/pipeline";
 import { createDbStore } from "@/lib/research/store";
+import { attachRecords } from "@/lib/research/records-db";
 import { analyzeSession, saveSessionToFeed } from "@/lib/research/session";
 import { buildCandidates, groupKey, type Candidate, type SignalForCandidate } from "./candidates";
 import { screenCandidates, shortlist, type ScreenVerdict } from "./screen";
@@ -175,12 +176,17 @@ async function processCandidate(runId: string, c: StoredCandidate, startedBy: st
     sessionId = session.id;
 
     await db.from("discovery_runs").update({ progress: `Researching ${c.displayName}` }).eq("id", runId);
+    // The candidate's own stored records (incl. the signal that surfaced it) are
+    // evidence; a CanadaBuys award is read from the record, not scraped.
+    const recordSourceIds = await attachRecords(db, { names: [c.displayName, ...c.aliases], mustInclude: c.topSignal.id, today: deps.today }).catch(
+      () => [] as string[], // records are a bonus; web research still runs
+    );
     await runCompanyResearch(sessionId, c.displayName, {
       firecrawl: deps.firecrawl(),
       store: createDbStore(),
       today: deps.today,
       maxSources: Math.min(5, settings.sources_per_candidate ?? 5),
-      seedUrls: c.topSignal.source === "canadabuys_award" && c.topSignal.url ? [c.topSignal.url] : [],
+      recordSourceIds,
     });
     let { data: s } = await db.from("research_sessions").select("status, error, usage, analysis, analysis_errors").eq("id", sessionId).single();
     if (!s || s.status === "failed") {

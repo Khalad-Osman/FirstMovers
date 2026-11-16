@@ -265,17 +265,23 @@ isOneToOne: false
                   ]
                 },"sources": {
                   Row: {
-                    "content_hash": string | null,"date_method": Database["public"]['Enums']["date_method"],"event_at": string | null,"excerpt": string | null,"fetched_at": string,"first_seen_query": string | null,"id": string,"published_at": string | null,"publisher": string | null,"title": string | null,"url": string
+                    "content_hash": string | null,"date_method": Database["public"]['Enums']["date_method"],"event_at": string | null,"excerpt": string | null,"fetched_at": string,"first_seen_query": string | null,"id": string,"published_at": string | null,"publisher": string | null,"signal_id": string | null,"title": string | null,"url": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "content_hash"?: string | null,"date_method"?: Database["public"]['Enums']["date_method"],"event_at"?: string | null,"excerpt"?: string | null,"fetched_at"?: string,"first_seen_query"?: string | null,"id"?: string,"published_at"?: string | null,"publisher"?: string | null,"title"?: string | null,"url": string
+                    "content_hash"?: string | null,"date_method"?: Database["public"]['Enums']["date_method"],"event_at"?: string | null,"excerpt"?: string | null,"fetched_at"?: string,"first_seen_query"?: string | null,"id"?: string,"published_at"?: string | null,"publisher"?: string | null,"signal_id"?: string | null,"title"?: string | null,"url": string
                   }
                   Update: {
-                    "content_hash"?: string | null,"date_method"?: Database["public"]['Enums']["date_method"],"event_at"?: string | null,"excerpt"?: string | null,"fetched_at"?: string,"first_seen_query"?: string | null,"id"?: string,"published_at"?: string | null,"publisher"?: string | null,"title"?: string | null,"url"?: string
+                    "content_hash"?: string | null,"date_method"?: Database["public"]['Enums']["date_method"],"event_at"?: string | null,"excerpt"?: string | null,"fetched_at"?: string,"first_seen_query"?: string | null,"id"?: string,"published_at"?: string | null,"publisher"?: string | null,"signal_id"?: string | null,"title"?: string | null,"url"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "sources_signal_id_fkey"
+      columns: ["signal_id"]
+isOneToOne: false
+      referencedRelation: "signals"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"watchlist": {
                   Row: {
@@ -360,7 +366,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "app_role": "admin"|"member","brief_origin": "discovered"|"live_research","date_method": "metadata"|"structured_data"|"url"|"text"|"none","evidence_type": "fact"|"inference"|"hypothesis"|"unknown","occupier_status": "named"|"unresolved"|"not_applicable","opportunity_stage": "pre_shop"|"active_search"|"site_controlled"|"construction_fit_out"|"open"|"undetermined","relevance": "signal"|"context"|"not_relevant","research_mode": "company"|"theme","research_status": "searching"|"scraping"|"ready"|"analyzing"|"analyzed"|"saved"|"failed","run_status": "queued"|"running"|"completed"|"failed","run_trigger": "manual"|"scheduled","signal_rating": "strong_signal"|"worth_monitoring"|"no_meaningful_signal","signal_source_type": "canadabuys_award"|"permit_mississauga"|"permit_brampton"|"permit_toronto"|"jobbank_posting"|"web","signal_strength": "award"|"new_building"|"addition"|"change_of_use"|"alteration"|"demolition"|"sign"|"other"
+            "app_role": "admin"|"member","brief_origin": "discovered"|"live_research","date_method": "metadata"|"structured_data"|"url"|"text"|"none"|"public_record","evidence_type": "fact"|"inference"|"hypothesis"|"unknown","occupier_status": "named"|"unresolved"|"not_applicable","opportunity_stage": "pre_shop"|"active_search"|"site_controlled"|"construction_fit_out"|"open"|"undetermined","relevance": "signal"|"context"|"not_relevant","research_mode": "company"|"theme","research_status": "searching"|"scraping"|"ready"|"analyzing"|"analyzed"|"saved"|"failed","run_status": "queued"|"running"|"completed"|"failed","run_trigger": "manual"|"scheduled","signal_rating": "strong_signal"|"worth_monitoring"|"no_meaningful_signal","signal_source_type": "canadabuys_award"|"permit_mississauga"|"permit_brampton"|"permit_toronto"|"jobbank_posting"|"web","signal_strength": "award"|"new_building"|"addition"|"change_of_use"|"alteration"|"demolition"|"sign"|"other"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -480,7 +486,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "app_role": ["admin", "member"],"brief_origin": ["discovered", "live_research"],"date_method": ["metadata", "structured_data", "url", "text", "none"],"evidence_type": ["fact", "inference", "hypothesis", "unknown"],"occupier_status": ["named", "unresolved", "not_applicable"],"opportunity_stage": ["pre_shop", "active_search", "site_controlled", "construction_fit_out", "open", "undetermined"],"relevance": ["signal", "context", "not_relevant"],"research_mode": ["company", "theme"],"research_status": ["searching", "scraping", "ready", "analyzing", "analyzed", "saved", "failed"],"run_status": ["queued", "running", "completed", "failed"],"run_trigger": ["manual", "scheduled"],"signal_rating": ["strong_signal", "worth_monitoring", "no_meaningful_signal"],"signal_source_type": ["canadabuys_award", "permit_mississauga", "permit_brampton", "permit_toronto", "jobbank_posting", "web"],"signal_strength": ["award", "new_building", "addition", "change_of_use", "alteration", "demolition", "sign", "other"]
+            "app_role": ["admin", "member"],"brief_origin": ["discovered", "live_research"],"date_method": ["metadata", "structured_data", "url", "text", "none", "public_record"],"evidence_type": ["fact", "inference", "hypothesis", "unknown"],"occupier_status": ["named", "unresolved", "not_applicable"],"opportunity_stage": ["pre_shop", "active_search", "site_controlled", "construction_fit_out", "open", "undetermined"],"relevance": ["signal", "context", "not_relevant"],"research_mode": ["company", "theme"],"research_status": ["searching", "scraping", "ready", "analyzing", "analyzed", "saved", "failed"],"run_status": ["queued", "running", "completed", "failed"],"run_trigger": ["manual", "scheduled"],"signal_rating": ["strong_signal", "worth_monitoring", "no_meaningful_signal"],"signal_source_type": ["canadabuys_award", "permit_mississauga", "permit_brampton", "permit_toronto", "jobbank_posting", "web"],"signal_strength": ["award", "new_building", "addition", "change_of_use", "alteration", "demolition", "sign", "other"]
           }
         }
 } as const

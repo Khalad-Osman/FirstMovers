@@ -13,6 +13,8 @@ export const sourceRecordSchema = z.object({
 });
 export type SourceRecord = z.infer<typeof sourceRecordSchema>;
 
+export const MAX_ANALYSIS_SOURCES = 8;
+
 export const analysisInputSchema = z.object({
   company: z.object({
     name: z.string().min(1),
@@ -21,7 +23,8 @@ export const analysisInputSchema = z.object({
   }),
   trigger: z.string().min(1), // the signal or query that surfaced the company
   analysisDate: z.iso.date(),
-  sources: z.array(sourceRecordSchema).max(5, "At most 5 sources per candidate (CLAUDE.md §8)"),
+  // Up to 5 web sources plus up to 3 public records (CLAUDE.md §8, decided 2026-11-16).
+  sources: z.array(sourceRecordSchema).max(MAX_ANALYSIS_SOURCES, `At most ${MAX_ANALYSIS_SOURCES} sources per candidate (CLAUDE.md §8)`),
 });
 export type AnalysisInput = z.input<typeof analysisInputSchema>;
 export type ParsedAnalysisInput = z.output<typeof analysisInputSchema>;

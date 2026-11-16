@@ -29,6 +29,7 @@ const DATE_METHOD_LABEL = {
   url: "URL",
   text: "page text",
   none: "no date found",
+  public_record: "public record",
 } as const;
 
 function plainExcerpt(text: string | null, max = 280): string {

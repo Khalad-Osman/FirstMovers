@@ -110,9 +110,9 @@ describe("analyzeCompany", () => {
     expect(res).toMatchObject({ ok: false, errors: ["OpenAI error: invalid api key"], attempts: 1 });
   });
 
-  it("refuses more than 5 sources before calling the model", async () => {
+  it("refuses more than 8 sources (5 web + 3 records) before calling the model", async () => {
     const parsed = analysisInputSchema.parse(input);
-    const sources = Array.from({ length: 6 }, (_, i) => ({ ...parsed.sources[0], id: `S${i + 1}` }));
+    const sources = Array.from({ length: 9 }, (_, i) => ({ ...parsed.sources[0], id: `S${i + 1}` }));
     const { provider, requests } = createFakeProvider([]);
     const res = await analyzeCompany({ ...input, sources }, { provider, model: "m", systemPrompt: SYSTEM });
     expect(res.ok).toBe(false);
