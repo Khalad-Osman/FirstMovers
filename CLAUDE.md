@@ -294,7 +294,14 @@ Work one phase per session. Propose a plan, wait for approval, build, test, comm
 4. Checks: `npm run typecheck`, `npm run lint`, `npm test`, `npm run db:test` (RLS, ingestion SQL), `npm run test:db` (Live Research flow), `npm run build`.
 5. Load real signals (free, public data): `npm run ingest -- all`.
 
-Sign-up is open (any visitor with the URL can create a member account). Email confirmation is off locally; turn it on in the hosted project. A hosted Supabase project is not linked yet: when one exists, `npx supabase link` then `npx supabase db push`.
+Sign-up is open locally (any visitor with the URL can create a member account) and email confirmation is off.
+
+### Hosted (deployed 2026-11-12)
+- **App:** https://first-movers-ten.vercel.app (Vercel Hobby, deploys on push to `main` of `github.com/Khalad-Osman/FirstMovers`, private). Commits must be authored by the owner's personal account `Khalad-Osman` (set in this repo's local Git config, not the global one); Hobby blocks deploys from other commit authors.
+- **Database:** Supabase project `mkytsoydilnhepwszllm` (us-east-2), linked. This CLI version targets the local stack unless given `--remote`: use `npx supabase db push --remote` and `npx supabase db query --remote --read-only`.
+- Sign-up off (`SIGNUP_ENABLED=false` + Supabase Auth). Accounts: `node --env-file=.env.production.local scripts/create-account.mjs ...` (`.env.production.local` holds the hosted URL and secret key, gitignored).
+- Signals ingested on the hosted database 2026-11-13 (2,404 rows). Models chosen: screening `gpt-6-luna`, analysis `gpt-6.1-sol` (2026-11-16).
+- Don't add Vercel's Supabase integration: it would inject a second set of variables.
 
 ## 13. Out of scope for the MVP
 
