@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createFirecrawl, FirecrawlError } from "./client";
+import { createFirecrawl, FirecrawlError, PDF_MAX_PAGES, scrapeCredits } from "./client";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 const sleep = vi.fn(async () => {});
@@ -33,6 +33,21 @@ describe("Firecrawl client", () => {
     const page = await fc.scrape("https://a.ca/start");
     expect(page).toMatchObject({ url: "https://a.ca/final", markdown: "# Hi", rawHtml: "<html/>" });
     expect(fc.usage.credits).toBe(1);
+  });
+
+  it("caps PDF parsing at PDF_MAX_PAGES and counts PDF pages", async () => {
+    const fetchImpl = vi.fn(async () => json({ success: true, data: { markdown: "# Annual report", metadata: { url: "https://a.ca/report.pdf", statusCode: 200, numPages: 120 } } }));
+    const fc = createFirecrawl({ apiKey: "k", fetchImpl, sleep });
+    await fc.scrape("https://a.ca/report.pdf");
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(init.body as string).parsers).toEqual([{ type: "pdf", mode: "fast", maxPages: PDF_MAX_PAGES }]);
+    expect(fc.usage.credits).toBe(1 + PDF_MAX_PAGES); // not 121
+  });
+
+  it("estimates PDF credits", () => {
+    expect(scrapeCredits("https://a.ca/x", { contentType: "text/html" })).toBe(1);
+    expect(scrapeCredits("https://a.ca/x.pdf", { numPages: 2 })).toBe(3);
+    expect(scrapeCredits("https://a.ca/doc", { contentType: "application/pdf" })).toBe(1 + PDF_MAX_PAGES); // pages unknown: assume the cap
   });
 
   // Firecrawl returned a document (the 404 page), so the credit is likely charged: count it.

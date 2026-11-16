@@ -3,8 +3,12 @@ import "server-only";
 // Firecrawl v2 client using plain fetch (no SDK). Server-only.
 // Free plan: 2 concurrent requests, low rate limits. All requests from this
 // process go through one queue capped at 2 in flight, with backoff on 429/5xx.
-// Costs (docs.firecrawl.dev/billing): search = 2 credits per 10 results,
-// scrape = 1 credit per page, failed requests = 0.
+// Costs (docs.firecrawl.dev/billing, checked 2026-11-17): search = 2 credits per
+// 10 results; scrape = 1 credit per page, plus 1 credit per parsed PDF page; a
+// page that comes back with an error status still costs 1 if a document was
+// returned. PDF parsing is capped at PDF_MAX_PAGES (default would parse every
+// page: a 100-page annual report costs ~100 credits).
+export const PDF_MAX_PAGES = 5;
 
 const BASE = "https://api.firecrawl.dev/v2";
 const MAX_CONCURRENT = 2;
@@ -18,6 +22,16 @@ export type ScrapeResult = {
   metadata: Record<string, unknown>;
 };
 export type FirecrawlUsage = { requests: number; credits: number };
+
+// Our estimate of what one scrape cost: 1, plus parsed PDF pages (capped). When
+// the page count isn't reported we assume the cap, so the estimate errs high.
+export function scrapeCredits(url: string, metadata: Record<string, unknown>): number {
+  const type = String(metadata.contentType ?? metadata["content-type"] ?? "").toLowerCase();
+  const isPdf = type.includes("pdf") || /\.pdf(?:$|[?#])/i.test(String(metadata.url ?? url));
+  if (!isPdf) return 1;
+  const pages = Number(metadata.numPages ?? metadata.pages ?? NaN);
+  return 1 + (Number.isFinite(pages) && pages > 0 ? Math.min(pages, PDF_MAX_PAGES) : PDF_MAX_PAGES);
+}
 
 export class FirecrawlError extends Error {
   constructor(
@@ -124,12 +138,18 @@ export function createFirecrawl({ apiKey, fetchImpl = fetch, sleep = defaultSlee
     async scrape(url: string): Promise<ScrapeResult> {
       const json = await post(
         "/scrape",
-        { url, formats: [{ type: "markdown" }, { type: "rawHtml" }], onlyMainContent: true, timeout: 60_000 },
+        {
+          url,
+          formats: [{ type: "markdown" }, { type: "rawHtml" }],
+          onlyMainContent: true,
+          timeout: 60_000,
+          parsers: [{ type: "pdf", mode: "fast", maxPages: PDF_MAX_PAGES }], // the analysis reads ~6,000 characters anyway
+        },
         90_000,
       );
-      usage.credits += 1;
       const data = (json.data ?? {}) as Record<string, unknown>;
       const metadata = (data.metadata ?? {}) as Record<string, unknown>;
+      usage.credits += scrapeCredits(url, metadata);
       const status = typeof metadata.statusCode === "number" ? metadata.statusCode : 200;
       if (status >= 400) throw new FirecrawlError(`Page returned HTTP ${status}`, status);
       return {
