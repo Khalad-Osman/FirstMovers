@@ -157,6 +157,11 @@ describe("discovery run (local DB)", () => {
     const by = Object.fromEntries(outcomes.map((o) => [o.displayName, o]));
 
     expect(run!.status).toBe("completed");
+    const { data: notes } = await db.from("notifications").select("kind, title, body, link").eq("discovery_run_id", runId);
+    expect(notes).toEqual([
+      expect.objectContaining({ kind: "discovery_completed", title: "Discovery finished: 1 brief", link: `/discovery/${runId}` }),
+    ]);
+    expect(notes![0].body).toMatch(/1 Worth Monitoring · 1 not verified · 1 failed/);
     expect(by[A].status).toBe("brief");
     expect(by[B].status).toBe("not_verified");
     expect(by[C].status).toBe("failed");

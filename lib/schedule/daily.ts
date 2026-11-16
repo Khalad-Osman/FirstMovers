@@ -2,7 +2,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { INGEST_SOURCES } from "@/lib/ingest/sources";
 import { runIngestionJob } from "@/lib/ingest/run";
-import { createDiscoveryRun } from "@/lib/discovery/run";
+import { createDiscoveryRun, failRun } from "@/lib/discovery/run";
 import { jobSecret, realDiscoveryDeps, triggerStep } from "@/lib/discovery/job";
 import { decideScheduledDiscovery, torontoParts } from "./plan";
 import { monthToDateCredits } from "./usage-db";
@@ -62,8 +62,12 @@ export async function runDaily(origin: string, now = new Date()): Promise<DailyS
   const { data: active } = await db.from("discovery_runs").select("id").in("status", ["queued", "running"]).limit(1);
   const decision = decideScheduledDiscovery({
     enabled: Boolean(s?.schedule_discovery_enabled),
-    weekday: s?.discovery_weekday ?? 1,
-    todayWeekday: today.weekday,
+    schedule: {
+      frequency: (s?.discovery_frequency as "daily" | "weekly" | "monthly" | undefined) ?? "weekly",
+      weekdays: s?.discovery_weekdays ?? [1],
+      monthDay: s?.discovery_month_day ?? 1,
+    },
+    today,
     activeRun: Boolean(active?.length),
     monthCredits: await monthToDateCredits(db, now),
     budget: s?.firecrawl_monthly_budget ?? 800,
@@ -81,7 +85,14 @@ export async function runDaily(origin: string, now = new Date()): Promise<DailyS
     return summary;
   }
   const runId = await createDiscoveryRun(db, null, "scheduled");
-  await triggerStep(origin, runId);
+  try {
+    await triggerStep(origin, runId);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    await failRun(db, runId, msg); // also notifies the team
+    summary.discovery = { started: false, runId, reason: `Could not start the run: ${msg}` };
+    return summary;
+  }
   summary.discovery = { started: true, runId };
   return summary;
 }

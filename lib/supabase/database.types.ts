@@ -165,6 +165,52 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"notification_reads": {
+                  Row: {
+                    "notification_id": string,"read_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "notification_id": string,"read_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "notification_id"?: string,"read_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "notification_reads_notification_id_fkey"
+      columns: ["notification_id"]
+isOneToOne: false
+      referencedRelation: "notifications"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "notification_reads_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"notifications": {
+                  Row: {
+                    "body": string | null,"created_at": string,"discovery_run_id": string | null,"id": string,"kind": string,"link": string | null,"title": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body"?: string | null,"created_at"?: string,"discovery_run_id"?: string | null,"id"?: string,"kind": string,"link"?: string | null,"title": string
+                  }
+                  Update: {
+                    "body"?: string | null,"created_at"?: string,"discovery_run_id"?: string | null,"id"?: string,"kind"?: string,"link"?: string | null,"title"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "notifications_discovery_run_id_fkey"
+      columns: ["discovery_run_id"]
+isOneToOne: false
+      referencedRelation: "discovery_runs"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profiles": {
                   Row: {
                     "created_at": string,"full_name": string | null,"id": string,"role": Database["public"]['Enums']["app_role"]
@@ -225,14 +271,14 @@ isOneToOne: false
                   ]
                 },"settings": {
                   Row: {
-                    "analysis_model": string | null,"canadabuys_min_value": number,"discovery_cap": number,"discovery_weekday": number,"firecrawl_monthly_budget": number,"grants_min_value": number,"id": boolean,"schedule_discovery_enabled": boolean,"schedule_ingestion_enabled": boolean,"screening_model": string | null,"skip_window_days": number,"sources_per_candidate": number,"updated_at": string,"updated_by": string | null
+                    "analysis_model": string | null,"canadabuys_min_value": number,"discovery_cap": number,"discovery_frequency": string,"discovery_month_day": number,"discovery_weekdays": (number)[],"firecrawl_monthly_budget": number,"grants_min_value": number,"id": boolean,"schedule_discovery_enabled": boolean,"schedule_ingestion_enabled": boolean,"screening_model": string | null,"skip_window_days": number,"sources_per_candidate": number,"updated_at": string,"updated_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "analysis_model"?: string | null,"canadabuys_min_value"?: number,"discovery_cap"?: number,"discovery_weekday"?: number,"firecrawl_monthly_budget"?: number,"grants_min_value"?: number,"id"?: boolean,"schedule_discovery_enabled"?: boolean,"schedule_ingestion_enabled"?: boolean,"screening_model"?: string | null,"skip_window_days"?: number,"sources_per_candidate"?: number,"updated_at"?: string,"updated_by"?: string | null
+                    "analysis_model"?: string | null,"canadabuys_min_value"?: number,"discovery_cap"?: number,"discovery_frequency"?: string,"discovery_month_day"?: number,"discovery_weekdays"?: (number)[],"firecrawl_monthly_budget"?: number,"grants_min_value"?: number,"id"?: boolean,"schedule_discovery_enabled"?: boolean,"schedule_ingestion_enabled"?: boolean,"screening_model"?: string | null,"skip_window_days"?: number,"sources_per_candidate"?: number,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Update: {
-                    "analysis_model"?: string | null,"canadabuys_min_value"?: number,"discovery_cap"?: number,"discovery_weekday"?: number,"firecrawl_monthly_budget"?: number,"grants_min_value"?: number,"id"?: boolean,"schedule_discovery_enabled"?: boolean,"schedule_ingestion_enabled"?: boolean,"screening_model"?: string | null,"skip_window_days"?: number,"sources_per_candidate"?: number,"updated_at"?: string,"updated_by"?: string | null
+                    "analysis_model"?: string | null,"canadabuys_min_value"?: number,"discovery_cap"?: number,"discovery_frequency"?: string,"discovery_month_day"?: number,"discovery_weekdays"?: (number)[],"firecrawl_monthly_budget"?: number,"grants_min_value"?: number,"id"?: boolean,"schedule_discovery_enabled"?: boolean,"schedule_ingestion_enabled"?: boolean,"screening_model"?: string | null,"skip_window_days"?: number,"sources_per_candidate"?: number,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Relationships: [
                     {

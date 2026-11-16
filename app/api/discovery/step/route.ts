@@ -1,7 +1,7 @@
 import { after, NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { realDiscoveryDeps, secretMatches, SECRET_HEADER, triggerStep } from "@/lib/discovery/job";
-import { appendRunError, failRun, PAUSED_PREFIX, stepDiscovery } from "@/lib/discovery/run";
+import { failRun, pauseRun, stepDiscovery } from "@/lib/discovery/run";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Internal: runs ONE discovery step, then chains the next in a new invocation.
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       // The work so far is saved. Leave the run active so an admin can resume it.
       const msg = e instanceof Error ? e.message : String(e);
-      await appendRunError(db, runId, `${msg}. Use Resume run to continue.`, { progress: `${PAUSED_PREFIX}: could not start the next step` });
+      await pauseRun(db, runId, msg);
     }
   });
   return NextResponse.json({ accepted: true }, { status: 202 });

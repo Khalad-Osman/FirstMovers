@@ -8,6 +8,7 @@ import { createDbStore } from "@/lib/research/store";
 import { attachRecords } from "@/lib/research/records-db";
 import { analyzeSession, saveSessionToFeed } from "@/lib/research/session";
 import { DISCOVERY_CAP_MAX } from "@/lib/settings";
+import { notifyDiscoveryRun } from "@/lib/notifications";
 import { buildCandidates, groupKey, selectForScreening, type Candidate, type SignalForCandidate } from "./candidates";
 import { screenCandidates, shortlist, type ScreenVerdict } from "./screen";
 
@@ -302,11 +303,13 @@ export async function stepDiscovery(runId: string, deps: DiscoveryDeps): Promise
 }
 
 async function finalize(db: Db, runId: string, outcomes: Outcome[]) {
-  await db
+  const { data: changed } = await db
     .from("discovery_runs")
     .update({ status: "completed", progress: null, finished_at: new Date().toISOString(), analyzed: outcomes.filter((o) => o.status === "brief").length })
     .eq("id", runId)
-    .in("status", ["queued", "running"]);
+    .in("status", ["queued", "running"])
+    .select("id");
+  if (changed?.length) await notifyDiscoveryRun(db, runId, "discovery_completed");
 }
 
 // Add a message to the run's errors without losing earlier ones.
@@ -318,7 +321,14 @@ export async function appendRunError(db: Db, runId: string, message: string, pat
 
 export async function failRun(db: Db, runId: string, message: string) {
   await appendRunError(db, runId, message, { status: "failed", progress: null, finished_at: new Date().toISOString() });
+  await notifyDiscoveryRun(db, runId, "discovery_failed", message);
 }
 
 export const PAUSED_PREFIX = "Paused";
+
+// The next step couldn't be started: keep the run active so an admin can resume it.
+export async function pauseRun(db: Db, runId: string, message: string) {
+  await appendRunError(db, runId, `${message}. Use Resume run to continue.`, { progress: `${PAUSED_PREFIX}: could not start the next step` });
+  await notifyDiscoveryRun(db, runId, "discovery_paused");
+}
 

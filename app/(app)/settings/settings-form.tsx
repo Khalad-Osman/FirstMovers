@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { DISCOVERY_CAP_MAX } from "@/lib/settings";
 import { WEEKDAYS } from "@/lib/schedule/plan";
 import { saveSettings, type SettingsState } from "./actions";
@@ -15,7 +15,9 @@ export type SettingsValues = {
   analysis_model: string | null;
   schedule_ingestion_enabled: boolean;
   schedule_discovery_enabled: boolean;
-  discovery_weekday: number;
+  discovery_frequency: "daily" | "weekly" | "monthly";
+  discovery_weekdays: number[];
+  discovery_month_day: number;
   firecrawl_monthly_budget: number;
 };
 
@@ -24,6 +26,7 @@ type Props = { values: SettingsValues; envModels: { screening: string | null; an
 export function SettingsForm({ values, envModels, canEdit }: Props) {
   const [state, action, pending] = useActionState<SettingsState, FormData>(saveSettings, undefined);
   const disabled = !canEdit || pending;
+  const [frequency, setFrequency] = useState(values.discovery_frequency);
 
   return (
     <form action={action} className="grid gap-6">
@@ -46,17 +49,50 @@ export function SettingsForm({ values, envModels, canEdit }: Props) {
 
         <Group title="Schedule">
           <Check name="schedule_ingestion_enabled" label="Run ingestion every day" checked={values.schedule_ingestion_enabled} hint="All structured sources, after their morning refresh. Free." />
-          <Check name="schedule_discovery_enabled" label="Run discovery every week" checked={values.schedule_discovery_enabled} hint="Spends Firecrawl and LLM credits within the caps above." />
-          <label className="grid content-start gap-1">
-            <span className="field-label">Discovery day</span>
-            <select name="discovery_weekday" defaultValue={values.discovery_weekday} className="input w-fit">
-              {WEEKDAYS.map((d, i) => (
-                <option key={d} value={i}>
-                  {d}
-                </option>
+          <Check name="schedule_discovery_enabled" label="Run discovery automatically" checked={values.schedule_discovery_enabled} hint="Spends Firecrawl and LLM credits within the caps above. Everyone is notified in the app when a run finishes." />
+          <fieldset className="grid content-start gap-2 sm:col-span-2">
+            <legend className="field-label">Discovery frequency</legend>
+            <div className="flex flex-wrap gap-2">
+              {(["daily", "weekly", "monthly"] as const).map((f) => (
+                <label key={f} className={`btn ${frequency === f ? "btn-primary" : ""} cursor-pointer`}>
+                  <input type="radio" name="discovery_frequency" value={f} checked={frequency === f} onChange={() => setFrequency(f)} className="sr-only" />
+                  {f[0].toUpperCase() + f.slice(1)}
+                </label>
               ))}
-            </select>
-          </label>
+            </div>
+            {frequency === "weekly" && (
+              <div className="grid gap-1">
+                <span className="field-label">Days</span>
+                <div className="flex flex-wrap gap-2">
+                  {WEEKDAYS.map((d, i) => (
+                    <label key={d} className="inline-flex items-center gap-1.5 rounded-[3px] border border-line px-2.5 py-1.5">
+                      <input type="checkbox" name="discovery_weekdays" value={i} defaultChecked={values.discovery_weekdays.includes(i)} className="h-4 w-4" />
+                      <span>{d.slice(0, 3)}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+            {frequency === "monthly" && (
+              <label className="grid content-start gap-1">
+                <span className="field-label">Day of month</span>
+                <select name="discovery_month_day" defaultValue={values.discovery_month_day} className="input w-fit">
+                  {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+                <span className="field-hint">1–28, so every month has the day.</span>
+              </label>
+            )}
+            {/* Keep values for the frequencies not shown, so switching back doesn't lose them. */}
+            {frequency !== "weekly" && values.discovery_weekdays.map((d) => <input key={d} type="hidden" name="discovery_weekdays" value={d} />)}
+            {frequency !== "monthly" && <input type="hidden" name="discovery_month_day" value={values.discovery_month_day} />}
+            <span className="field-hint">
+              Time: about 9–10 am Toronto. The host (Vercel Hobby) allows one scheduled job per day at a fixed time, so a time of day can&apos;t be chosen yet.
+            </span>
+          </fieldset>
           <NumberField name="firecrawl_monthly_budget" label="Monthly Firecrawl budget (credits)" min={0} max={100_000} value={values.firecrawl_monthly_budget} hint="Scheduled discovery is skipped if a run could push this month's usage over the budget. Free plan: 1,000/month." />
         </Group>
       </fieldset>

@@ -8,7 +8,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { jobSecret, realDiscoveryDeps, triggerStep } from "@/lib/discovery/job";
-import { appendRunError, createDiscoveryRun, PAUSED_PREFIX, STALE_STEP_MS } from "@/lib/discovery/run";
+import { createDiscoveryRun, failRun, pauseRun, STALE_STEP_MS } from "@/lib/discovery/run";
 
 async function origin(): Promise<string> {
   const h = await headers();
@@ -36,9 +36,7 @@ export async function startDiscovery(): Promise<StartDiscoveryState> {
 
   const runId = await createDiscoveryRun(db, admin.id);
   const base = await origin();
-  after(() => triggerStep(base, runId).catch(async (e) => {
-    await db.from("discovery_runs").update({ status: "failed", errors: [String(e)], finished_at: new Date().toISOString() }).eq("id", runId);
-  }));
+  after(() => triggerStep(base, runId).catch((e) => failRun(db, runId, e instanceof Error ? e.message : String(e))));
   redirect(`/discovery/${runId}`);
 }
 
@@ -57,7 +55,7 @@ export async function resumeDiscovery(runId: string) {
   await db.from("discovery_runs").update({ progress: "Resuming" }).eq("id", id); // clears a "Paused" state
   after(() =>
     triggerStep(base, id).catch((e) =>
-      appendRunError(db, id, `${e instanceof Error ? e.message : String(e)}. Use Resume run to continue.`, { progress: `${PAUSED_PREFIX}: could not start the next step` }),
+      pauseRun(db, id, e instanceof Error ? e.message : String(e)),
     ),
   );
   revalidatePath(`/discovery/${id}`);

@@ -37,7 +37,9 @@ export default async function SettingsPage() {
           analysis_model: s.analysis_model,
           schedule_ingestion_enabled: s.schedule_ingestion_enabled,
           schedule_discovery_enabled: s.schedule_discovery_enabled,
-          discovery_weekday: s.discovery_weekday,
+          discovery_frequency: s.discovery_frequency as "daily" | "weekly" | "monthly",
+          discovery_weekdays: s.discovery_weekdays,
+          discovery_month_day: s.discovery_month_day,
           firecrawl_monthly_budget: s.firecrawl_monthly_budget,
         }}
       />

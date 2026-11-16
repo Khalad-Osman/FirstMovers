@@ -32,9 +32,17 @@ export const settingsFormSchema = z.object({
   analysis_model: optionalModel,
   schedule_ingestion_enabled: checkbox,
   schedule_discovery_enabled: checkbox,
-  discovery_weekday: z.coerce.number().int().min(0).max(6),
+  discovery_frequency: z.enum(["daily", "weekly", "monthly"], { message: "Choose daily, weekly or monthly." }),
+  discovery_weekdays: z
+    .array(z.coerce.number().int().min(0).max(6))
+    .transform((d) => [...new Set(d)].sort((a, b) => a - b)),
+  discovery_month_day: z.coerce.number().int().min(1, "Day of month is 1–28.").max(28, "Day of month is 1–28 (so every month has it)."),
   firecrawl_monthly_budget: z.coerce.number().int().min(0).max(100_000),
-});
+}).superRefine((v, ctx) => {
+  if (v.discovery_frequency === "weekly" && v.discovery_weekdays.length === 0) {
+    ctx.addIssue({ code: "custom", path: ["discovery_weekdays"], message: "Choose at least one day for weekly discovery." });
+  }
+}).transform((v) => ({ ...v, discovery_weekdays: v.discovery_weekdays.length ? v.discovery_weekdays : [1] }));
 export type SettingsForm = z.output<typeof settingsFormSchema>;
 
 export function parseSettingsForm(formData: FormData) {
@@ -52,7 +60,9 @@ export function parseSettingsForm(formData: FormData) {
     analysis_model: get("analysis_model") ?? "",
     schedule_ingestion_enabled: get("schedule_ingestion_enabled"),
     schedule_discovery_enabled: get("schedule_discovery_enabled"),
-    discovery_weekday: get("discovery_weekday"),
+    discovery_frequency: get("discovery_frequency") ?? "weekly",
+    discovery_weekdays: formData.getAll("discovery_weekdays").filter((v): v is string => typeof v === "string"),
+    discovery_month_day: get("discovery_month_day") ?? "1",
     firecrawl_monthly_budget: get("firecrawl_monthly_budget"),
   });
 }

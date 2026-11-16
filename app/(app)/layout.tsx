@@ -1,11 +1,15 @@
 import { requireUser } from "@/lib/auth";
 import { getWatchlist } from "@/lib/data/briefs";
+import { getUnreadCount } from "@/lib/data/notifications";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { signOut } from "../(auth)/actions";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
-  const watchlist = await getWatchlist(); // same query the Watchlist page uses
+  const [watchlist, unread] = await Promise.all([
+    getWatchlist(), // same query the Watchlist page uses
+    getUnreadCount(user.id),
+  ]);
 
   return (
     <div className="min-h-screen md:grid md:grid-cols-[232px_minmax(0,1fr)]">
@@ -18,6 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               { href: "/research", label: "Live Research" },
               { href: "/watchlist", label: "Watchlist", count: watchlist.length },
               { href: "/chronology", label: "Chronology" },
+              { href: "/notifications", label: "Notifications", count: unread, countLabel: `${unread} unread`, highlight: unread > 0 },
             ]}
             secondary={{
               label: "Pipeline & admin",

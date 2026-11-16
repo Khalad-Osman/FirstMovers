@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-type Item = { href: string; label: string; count?: number };
+type Item = { href: string; label: string; count?: number; countLabel?: string; highlight?: boolean };
 
 function isActive(href: string, pathname: string) {
   return href === "/"
@@ -29,7 +29,14 @@ function NavList({ items, pathname }: { items: Item[]; pathname: string }) {
             >
               <span>{item.label}</span>
               {item.count !== undefined && (
-                <span className="mono text-[0.8125rem] text-[var(--slate-muted)]" aria-label={`${item.count} companies`}>
+                <span
+                  className={
+                    item.highlight
+                      ? "mono rounded-full bg-[var(--accent)] px-2 text-[0.8125rem] font-semibold text-white"
+                      : "mono text-[0.8125rem] text-[var(--slate-muted)]"
+                  }
+                  aria-label={item.countLabel ?? `${item.count} companies`}
+                >
                   {item.count}
                 </span>
               )}

@@ -37,6 +37,9 @@ Sections in this order:
 - Companies the team is tracking. Shows each company's latest brief (rating, what changed, analysis date) with a link to the full brief.
 - The sidebar count and the page must read from the same data.
 
+### Notifications (added 2026-11-17)
+- In-app only. When a discovery run completes, fails or pauses (manual or scheduled), one notification per run and kind is created in `notifications` (`lib/notifications.ts`, called from `finalize`, `failRun` and `pauseRun` in `lib/discovery/run.ts`; failures never break the run). Shared by the team; read state is per user in `notification_reads` (RLS: own rows only). Sidebar "Notifications" shows the unread count; `/notifications` lists the latest 50 with "Mark all as read". Admins can delete notifications.
+
 ### Chronology
 - Dated evidence across saved briefs, so a company's story can be followed over time.
 
@@ -94,9 +97,9 @@ Ask before adding any other dependency or service.
 
 **Scheduling and cost controls (Phase 6):**
 - **Scheduler:** Vercel Cron (decided 2026-11-10). One daily entry in `vercel.json` calls `GET /api/cron/daily` at 14:00 UTC (9–10 am Toronto, after CanadaBuys' morning refresh), authenticated by `Authorization: Bearer $CRON_SECRET` and excluded from the sign-in redirect. Crons only fire on a Vercel deployment; locally, call the route with the header.
-- **Daily job** (`lib/schedule/daily.ts`): if `settings.schedule_ingestion_enabled`, ingests all sources in turn (skipping one already running). Then, if `schedule_discovery_enabled` and today (Toronto) is `discovery_weekday`, no run is active, and month-to-date Firecrawl credits plus the run's maximum (cap × 13) fit `firecrawl_monthly_budget`, it starts a discovery run (`trigger = 'scheduled'`, no user) via the chained step route. Every skip has a stated reason in the response.
+- **Daily job** (`lib/schedule/daily.ts`): if `settings.schedule_ingestion_enabled`, ingests all sources in turn (skipping one already running). Then, if `schedule_discovery_enabled` and today (Toronto) is a discovery day (`discovery_frequency` daily / weekly on `discovery_weekdays` / monthly on `discovery_month_day` 1–28; added 2026-11-17, replacing the single `discovery_weekday`), no run is active, and month-to-date Firecrawl credits plus the run's maximum (cap × 13) fit `firecrawl_monthly_budget`, it starts a discovery run (`trigger = 'scheduled'`, no user) via the chained step route. Every skip has a stated reason in the response.
 - **Defaults** (decided 2026-11-10): both schedules off until deployed with keys; discovery on Monday; budget 800 of the free plan's 1,000 credits. No monthly LLM cap for now; the per-run cap limits calls.
-- **Settings page** (`/settings`): admins edit the caps, models (blank = env default), CanadaBuys minimum, schedules and budget (Zod in `lib/settings.ts` plus RLS); members view.
+- **Settings page** (`/settings`): admins edit the caps, models (blank = env default), CanadaBuys and grants minimums, schedules (frequency, days or day of month; the time is fixed at the cron time because Vercel Hobby allows one daily job, so there is no time picker) and budget (Zod in `lib/settings.ts` plus RLS); members view.
 - **Usage page** (`/usage`): per Toronto month, Firecrawl credits/requests and LLM calls/tokens split by Live Research, manual discovery and scheduled discovery (`lib/schedule/usage.ts`). Discovery research sessions carry `discovery_run_id` and are counted only through their run. Firecrawl credits are our estimate; the actual balance (`GET /v2/team/credit-usage`) is fetched only when an admin clicks "Check Firecrawl balance".
 - **Brief immutability:** reference columns (`trigger_signal_id`, `discovery_run_id`, `created_by`) may be cleared by FK set-null on delete; nothing else on a brief can change except dismissal.
 
@@ -311,7 +314,7 @@ Sign-up is open locally (any visitor with the URL can create a member account) a
 
 ## 13. Out of scope for the MVP
 
-CRM integration, payments, multi-organization tenancy, email alerts, paid data sources, mobile apps.
+CRM integration, payments, multi-organization tenancy, email alerts (in-app notifications only, decided 2026-11-17; email would need a sending service such as Resend and a verified domain), paid data sources, mobile apps.
 
 ## 14. Open questions
 

@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { SCREEN_TOP_K } from "@/lib/discovery/run";
 import { monthToDateCredits } from "@/lib/schedule/usage-db";
+import { describeSchedule } from "@/lib/schedule/plan";
 import { PageHeader } from "@/components/page-header";
 import { StartDiscovery } from "./start-form";
 import { RunStatusBadge, formatTime } from "./ui";
@@ -16,7 +17,7 @@ export default async function DiscoveryPage() {
   const supabase = await createClient();
   const [{ data: runs, error }, { data: settings }] = await Promise.all([
     supabase.from("discovery_runs").select("id, status, trigger, started_at, finished_at, candidates_found, analyzed, usage, profiles:started_by(full_name)").order("started_at", { ascending: false }).limit(30),
-    supabase.from("settings").select("discovery_cap, sources_per_candidate, skip_window_days, firecrawl_monthly_budget").maybeSingle(),
+    supabase.from("settings").select("discovery_cap, sources_per_candidate, skip_window_days, firecrawl_monthly_budget, schedule_discovery_enabled, discovery_frequency, discovery_weekdays, discovery_month_day").maybeSingle(),
   ]);
   const monthCredits = await monthToDateCredits(supabase);
   if (error) throw new Error(`Could not load discovery runs: ${error.message}`);
@@ -33,6 +34,14 @@ export default async function DiscoveryPage() {
       ) : (
         <p className="text-[0.9375rem] text-meta">Only admins can run discovery. Run summaries are visible to everyone.</p>
       )}
+      <p className="text-[0.9375rem]">
+        {settings?.schedule_discovery_enabled
+          ? `Automatic discovery: ${describeSchedule({ frequency: (settings.discovery_frequency as "daily" | "weekly" | "monthly") ?? "weekly", weekdays: settings.discovery_weekdays ?? [1], monthDay: settings.discovery_month_day ?? 1 })}, at about 9–10 am Toronto.`
+          : "Automatic discovery is off."}{" "}
+        <Link href="/settings" className="link">
+          Schedule settings
+        </Link>
+      </p>
 
       <section className="grid gap-2">
         <h2 className="label border-b border-line pb-1.5">Runs</h2>
