@@ -77,7 +77,34 @@ export function isSoftErrorPage(page: Pick<ScrapeResult, "url" | "metadata">): b
   return ERROR_TITLE.test(firstString(page.metadata.title) ?? "");
 }
 
-function toSource(page: ScrapeResult, candidate: Candidate, today: string): CollectedSource {
+// Where the company is first named in the raw page text (-1 if not found).
+// Words of the normalized name may be separated by any punctuation or spacing,
+// and "and" also matches "&".
+export function firstMention(text: string, companyName: string): number {
+  const keys = [...new Set([normalizeCompanyName(companyName), groupKey(companyName)])].filter((k) => k.length >= 4);
+  let best = -1;
+  for (const k of keys) {
+    const words = k.split(" ").map((w) => (w === "and" ? "(?:and|&)" : w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    const m = new RegExp(`(?<![a-z0-9])${words.join("[^a-z0-9]+")}(?![a-z0-9])`, "i").exec(text);
+    if (m && (best === -1 || m.index < best)) best = m.index;
+  }
+  return best;
+}
+
+// The model reads the first EXCERPT_LIMIT (6,000) characters of a source. When
+// the company is first named further down (importer lists, directories, long
+// documents), start the stored excerpt shortly before that mention so the part
+// about the company is what gets analyzed.
+export const FOCUS_AFTER = 3000;
+const FOCUS_LEAD = 1000;
+export function focusedExcerpt(markdown: string, companyName?: string): string {
+  const at = companyName ? firstMention(markdown, companyName) : -1;
+  if (at <= FOCUS_AFTER) return markdown.slice(0, EXCERPT_STORE_LIMIT);
+  const note = "[Excerpt starts shortly before the first mention of the company; earlier page text omitted.]\n\n";
+  return (note + markdown.slice(at - FOCUS_LEAD)).slice(0, EXCERPT_STORE_LIMIT);
+}
+
+function toSource(page: ScrapeResult, candidate: Candidate, today: string, companyName?: string): CollectedSource {
   const meta = page.metadata;
   const lower = new Map(Object.entries(meta).map(([k, v]) => [k.toLowerCase(), v]));
   const host = hostOf(page.url) ?? hostOf(candidate.url) ?? "unknown site";
@@ -88,7 +115,7 @@ function toSource(page: ScrapeResult, candidate: Candidate, today: string): Coll
     title: firstString(meta.title) ?? (candidate.title || host),
     publishedAt,
     dateMethod: method,
-    excerpt: page.markdown.slice(0, EXCERPT_STORE_LIMIT),
+    excerpt: focusedExcerpt(page.markdown, companyName),
     contentHash: createHash("sha256").update(page.markdown).digest("hex"),
     query: candidate.query,
   };
@@ -132,7 +159,7 @@ async function scrapeSome(
     }
     if (page.markdown.trim().length < MIN_CONTENT || isExcluded(page.url) || isSoftErrorPage(page)) continue;
     if (companyName && !mentionsCompany(`${firstString(page.metadata.title) ?? ""}\n${page.markdown}`, companyName)) continue;
-    const source = toSource(page, c, deps.today);
+    const source = toSource(page, c, deps.today, companyName);
     if (out.some((o) => o.source.url === source.url)) continue;
     const id = await deps.store.saveSource(source);
     out.push({ source, id });

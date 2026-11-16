@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ScrapeResult, SearchResult } from "@/lib/firecrawl/client";
 import { FirecrawlError } from "@/lib/firecrawl/client";
-import { isSoftErrorPage, mentionsCompany, runCompanyResearch, runThemeSearch, type CollectedSource, type ResearchStore, type SessionPatch } from "./pipeline";
+import { FOCUS_AFTER, firstMention, focusedExcerpt, isSoftErrorPage, mentionsCompany, runCompanyResearch, runThemeSearch, type CollectedSource, type ResearchStore, type SessionPatch } from "./pipeline";
 
 const TODAY = "2026-11-10";
 const body = (s: string) => `${s}\n\nAcme Ltd. ${"Body text about the company's Ontario operations. ".repeat(10)}`;
@@ -166,6 +166,34 @@ describe("mentionsCompany", () => {
     const m = memoryStore();
     await runCompanyResearch("s1", "Acme Ltd.", { firecrawl: fc, store: m.store, today: TODAY, maxSources: 5 });
     expect(m.sources.map((s) => s.url)).toEqual([all[1].url]);
+  });
+});
+
+describe("focusedExcerpt", () => {
+  const filler = (n: number) => "Unrelated importer row. ".repeat(Math.ceil(n / 24)).slice(0, n);
+
+  it("finds the first mention despite punctuation, case and '&'", () => {
+    expect(firstMention("… CROWN-DISTRIBUTORS LTD. …", "Crown Distributors Ltd.")).toBe(2);
+    expect(firstMention("see Johnson & Johnson Inc.", "Johnson and Johnson Inc.")).toBe(4);
+    expect(firstMention("Crown Royal distributors", "Crown Distributors Ltd.")).toBe(-1);
+  });
+
+  it("keeps the page start when the company is named early", () => {
+    const md = `Crown Distributors Ltd. opens a site. ${filler(30_000)}`;
+    expect(focusedExcerpt(md, "Crown Distributors Ltd.").startsWith("Crown Distributors")).toBe(true);
+  });
+
+  it("starts near the first mention when it is further down, so the model sees it", () => {
+    // Crown's 2026-11-16 importer-list page: the name appeared only past the stored 20,000 characters.
+    const md = `${filler(25_000)}
+| CROWN DISTRIBUTORS LTD. | Mississauga, ON |
+${filler(5_000)}`;
+    const ex = focusedExcerpt(md, "Crown Distributors Ltd.");
+    expect(ex.startsWith("[Excerpt starts shortly before the first mention of the company")).toBe(true);
+    const at = ex.indexOf("CROWN DISTRIBUTORS");
+    expect(at).toBeGreaterThan(0);
+    expect(at).toBeLessThan(FOCUS_AFTER); // well inside the 6,000 characters the model reads
+    expect(ex.length).toBeLessThanOrEqual(20_000);
   });
 });
 
