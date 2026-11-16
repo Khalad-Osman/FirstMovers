@@ -23,6 +23,9 @@ const LANDLORD =
 const NOT_A_BUSINESS = /^(?:a|an)\s|^(?:future|prospective|new|potential)\s+tenants?\b|\b(?:scope of work|work is limited|designer'?s)\b/i;
 
 const LEGAL_END = new RegExp(String.raw`\s${LEGAL}$`, "i");
+// A phrase ending in a kind of premises, or "with accessory …", is a use description.
+const GENERIC_USE =
+  /\b(?:factory|warehouse|plant|restaurant|bakery|kitchen|offices?|storage|showroom|store|shop|facility|space|unit|premises|use)\s*\.?$|\bwith accessory\b/i;
 // Numbered Ontario/Canada companies: "16295932 CANADA INC"
 const NUMBERED = new RegExp(String.raw`\b\d{6,10}\s+(?:canada|ontario)\s+${LEGAL}`, "i");
 
@@ -54,6 +57,8 @@ function clean(raw: string): string | null {
   if (name.length < 3 || name.length > 80) return null;
   if (NOT_A_NAME.test(name)) return null;
   if (LANDLORD.test(name)) return null;
+  // "FIT-OUT … FOR CHOCOLATE FACTORY (WITH ACCESSORY RESTAURANT)" describes a use, not a business.
+  if (!LEGAL_END.test(name) && GENERIC_USE.test(name)) return null;
   if (!looksLikeName(name)) return null;
   if (!/[A-Za-z]{2}/.test(name)) return null;
   if (/^\d/.test(name) && !/[A-Za-z]{3}/.test(name)) return null;

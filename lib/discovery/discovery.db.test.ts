@@ -87,7 +87,8 @@ function firecrawl() {
       u.requests++;
       if (url.includes("/charlie/")) throw new FirecrawlError("blocked", 403);
       u.credits++;
-      return { url, markdown: `# Page\n\n${"Ontario manufacturing expansion details. ".repeat(15)}`, rawHtml: null, metadata: { "article:published_time": "2026-10-01" } };
+      const who = url.includes("/alpha/") ? A : B; // pages must name the company to be kept
+      return { url, markdown: `# ${who}\n\n${"Ontario manufacturing expansion details. ".repeat(15)}`, rawHtml: null, metadata: { "article:published_time": "2026-10-01" } };
     },
   };
 }

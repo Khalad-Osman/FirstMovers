@@ -197,3 +197,12 @@ describe("candidate rules (2026-11-16 review)", () => {
     expect(shortlist([c("systems", 11.5), c("rampart", 8.5), c("vwr", 8.5)], verdicts, 3).map((x) => x.key)).toEqual(["vwr", "rampart", "systems"]);
   });
 });
+
+describe("major fit-outs", () => {
+  it("weighs large alterations as a major fit-out", () => {
+    // East Electrical Supply: $15.9M tenant fit-out, 11,368 m²
+    expect(signalWeight(sig({ signal_strength: "alteration", raw: { EST_CON_VALUE: 15900000, APPL_AREA: 11368.26 } }))).toEqual({ weight: 4, label: "major fit-out" });
+    expect(signalWeight(sig({ signal_strength: "alteration", raw: { APPL_AREA: 2704.4 } })).weight).toBe(4);
+    expect(signalWeight(sig({ signal_strength: "alteration", raw: { EST_CON_VALUE: 46950, APPL_AREA: 33.56 } })).weight).toBe(1);
+  });
+});

@@ -74,6 +74,15 @@ export function isSmallWorks(raw: unknown): boolean {
   return (value === null || value < SMALL_WORKS_VALUE) && (area === null || area < SMALL_WORKS_AREA_M2);
 }
 
+// An alteration this large is a major fit-out (often a new tenancy), e.g. East
+// Electrical Supply's $15.9M, 11,368 m² fit-out, which scored as a plain alteration.
+export const MAJOR_FITOUT_VALUE = 1_000_000;
+export const MAJOR_FITOUT_AREA_M2 = 1_000;
+export function isMajorFitOut(raw: unknown): boolean {
+  const { value, area } = permitSize(raw);
+  return (value !== null && value >= MAJOR_FITOUT_VALUE) || (area !== null && area >= MAJOR_FITOUT_AREA_M2);
+}
+
 export function signalWeight(s: SignalForCandidate): { weight: number; label: string } {
   switch (s.signal_strength) {
     case "new_building":
@@ -87,6 +96,7 @@ export function signalWeight(s: SignalForCandidate): { weight: number; label: st
       return v >= 1_000_000 ? { weight: 3, label: "federal award ≥ $1M" } : { weight: 2, label: "federal award" };
     }
     case "alteration":
+      if (isMajorFitOut(s.raw)) return { weight: 4, label: "major fit-out" };
       return EQUIPMENT.test(`${s.title} ${s.summary}`) ? { weight: 2, label: "alteration with equipment/racking" } : { weight: 1, label: "alteration permit" };
     case "demolition":
       return { weight: 1, label: "demolition permit" };

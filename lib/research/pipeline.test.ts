@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ScrapeResult, SearchResult } from "@/lib/firecrawl/client";
 import { FirecrawlError } from "@/lib/firecrawl/client";
-import { isSoftErrorPage, runCompanyResearch, runThemeSearch, type CollectedSource, type ResearchStore, type SessionPatch } from "./pipeline";
+import { isSoftErrorPage, mentionsCompany, runCompanyResearch, runThemeSearch, type CollectedSource, type ResearchStore, type SessionPatch } from "./pipeline";
 
 const TODAY = "2026-11-10";
-const body = (s: string) => `${s}\n\n${"Body text about the company's Ontario operations. ".repeat(10)}`;
+const body = (s: string) => `${s}\n\nAcme Ltd. ${"Body text about the company's Ontario operations. ".repeat(10)}`;
 
 function memoryStore() {
   const patches: SessionPatch[] = [];
@@ -143,6 +143,29 @@ describe("runThemeSearch", () => {
     expect(m.last().status).toBe("ready");
     expect(m.last().theme_results).toHaveLength(1);
     expect(fc.scrape).not.toHaveBeenCalled();
+  });
+});
+
+describe("mentionsCompany", () => {
+  it("matches the company name with or without suffixes and qualifiers", () => {
+    expect(mentionsCompany("Crown Distributors Ltd. opened a new site", "CROWN DISTRIBUTORS LTD.")).toBe(true);
+    expect(mentionsCompany("CROWN DISTRIBUTORS — Mississauga", "Crown Distributors Ltd.")).toBe(true);
+    expect(mentionsCompany("Thermo Fisher Scientific expands", "Thermo Fisher Scientific (Mississauga) Inc.")).toBe(true);
+    expect(mentionsCompany("East Electrical Supply Inc.", "EAST ELECTRICAL SUPPLY INC.")).toBe(true);
+    expect(mentionsCompany("Johnson & Johnson Inc. plant", "Johnson and Johnson Inc.")).toBe(true);
+  });
+  it("rejects pages that never name the company", () => {
+    // Crown's run-2 web results: importer list, accounting blog, another company's shipments, a login page
+    expect(mentionsCompany("Canadian Importers Database: ACME IMPORTS, BETA TRADING", "CROWN DISTRIBUTORS LTD.")).toBe(false);
+    expect(mentionsCompany("Shipment record for 1363794 B.C. Ltd", "CROWN DISTRIBUTORS LTD.")).toBe(false);
+    expect(mentionsCompany("Crown Royal distributors in Ontario", "CROWN DISTRIBUTORS LTD.")).toBe(false);
+  });
+  it("drops scraped pages that don't name the company", async () => {
+    const all = [result(1), result(2)];
+    const fc = fakeFirecrawl(() => all, { [all[0].url]: { md: `# Importers list\n\n${"Unrelated importer names. ".repeat(20)}` }, [all[1].url]: { date: "2026-10-01" } });
+    const m = memoryStore();
+    await runCompanyResearch("s1", "Acme Ltd.", { firecrawl: fc, store: m.store, today: TODAY, maxSources: 5 });
+    expect(m.sources.map((s) => s.url)).toEqual([all[1].url]);
   });
 });
 

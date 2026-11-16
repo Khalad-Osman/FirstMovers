@@ -4,6 +4,8 @@ import type { Firecrawl, ScrapeResult, SearchResult } from "@/lib/firecrawl/clie
 import { FirecrawlError } from "@/lib/firecrawl/client";
 import { findPublishedDate, type DateMethod } from "./dates";
 import { companyQueries, followUpQuery, sinceMonthsTbs } from "./queries";
+import { groupKey } from "@/lib/discovery/candidates";
+import { normalizeCompanyName } from "./normalize";
 import { canonicalUrl, EXCLUDED_DOMAINS, hostOf, isExcluded, rankCandidates, type Candidate } from "./select";
 
 export const SEARCH_LIMIT = 5; // results per company search (2 credits each)
@@ -92,6 +94,18 @@ function toSource(page: ScrapeResult, candidate: Candidate, today: string): Coll
   };
 }
 
+// Does the page name the company? Compared on normalized text, with and without
+// legal suffixes, bracketed qualifiers and a trailing "Canada"/"Ontario"
+// ("Thermo Fisher Scientific (Mississauga) Inc." matches "Thermo Fisher Scientific").
+// Search results for small private companies often include pages that never
+// mention them (importer lists, login pages, other companies' records).
+export function mentionsCompany(text: string, companyName: string): boolean {
+  const keys = [normalizeCompanyName(companyName), groupKey(companyName)].filter((k) => k.length >= 4);
+  if (keys.length === 0) return true; // too short to test reliably
+  const haystack = ` ${normalizeCompanyName(text.slice(0, 200_000))} `;
+  return keys.some((k) => haystack.includes(` ${k} `));
+}
+
 // Scrape candidates in order until `want` usable sources are collected.
 async function scrapeSome(
   candidates: Candidate[],
@@ -100,6 +114,7 @@ async function scrapeSome(
   deps: PipelineDeps,
   out: { source: CollectedSource; id: string }[],
   onProgress: () => Promise<void>,
+  companyName?: string, // when set, a page that never names the company is not kept
 ): Promise<void> {
   let attempts = 0;
   const maxAttempts = want + 3; // a few spares for unreadable pages
@@ -116,6 +131,7 @@ async function scrapeSome(
       continue; // unreachable or blocked page: try the next candidate
     }
     if (page.markdown.trim().length < MIN_CONTENT || isExcluded(page.url) || isSoftErrorPage(page)) continue;
+    if (companyName && !mentionsCompany(`${firstString(page.metadata.title) ?? ""}\n${page.markdown}`, companyName)) continue;
     const source = toSource(page, c, deps.today);
     if (out.some((o) => o.source.url === source.url)) continue;
     const id = await deps.store.saveSource(source);
@@ -177,7 +193,7 @@ export async function runCompanyResearch(sessionId: string, companyName: string,
       const seeds = deps.seedUrls.map((url) => ({ url: canonicalUrl(url), title: "", description: "", query: "seed", score: 0 }));
       await scrapeSome(seeds, Math.min(seeds.length, max - 1 || 1), seen, deps, collected, progress);
     }
-    await scrapeSome(candidates, Math.max(0, (max > 1 ? max - 1 : max) - collected.length), seen, deps, collected, progress);
+    await scrapeSome(candidates, Math.max(0, (max > 1 ? max - 1 : max) - collected.length), seen, deps, collected, progress, companyName);
 
     // 3. Follow-up: the main announcement is 12–24 months old and nothing recent was found
     const tiers = collected.map((c) => recencyTier({ publishedAt: c.source.publishedAt, eventAt: null }, today));
@@ -188,13 +204,13 @@ export async function runCompanyResearch(sessionId: string, companyName: string,
       await store.update(sessionId, { status: "searching", progress: "Follow-up search for recent developments" });
       try {
         const follow = await firecrawl.search({ query, limit: SEARCH_LIMIT, tbs: sinceMonthsTbs(12, today), excludeDomains: EXCLUDED_DOMAINS });
-        await scrapeSome(rankCandidates([{ query, results: follow }], companyName), max - collected.length, seen, deps, collected, progress);
+        await scrapeSome(rankCandidates([{ query, results: follow }], companyName), max - collected.length, seen, deps, collected, progress, companyName);
       } catch (e) {
         if (e instanceof FirecrawlError && e.status === 402) throw e;
       }
     }
     // 4. Fill any remaining slot from the original candidates
-    if (collected.length < max) await scrapeSome(candidates, max - collected.length, seen, deps, collected, progress);
+    if (collected.length < max) await scrapeSome(candidates, max - collected.length, seen, deps, collected, progress, companyName);
 
     if (collected.length === 0 && !records.length) throw new Error("Found search results, but none of the pages could be read.");
 

@@ -7,6 +7,7 @@ describe("resolveOccupier", () => {
     ["ONE (1) FASCIA SIGN - GREAT SELL", "GREAT SELL"],
     ["ONE (1) FASCIA SIGN  - ROYAL DRUGS", "ROYAL DRUGS"],
     ["Interior alterations for ACME FABRICATION LTD - new office", "ACME FABRICATION LTD"],
+    ["Interior fit-out for THE CHOCOLATE FACTORY INC.", "THE CHOCOLATE FACTORY INC."],
     ["Install racking for Northline Distribution Inc.", "Northline Distribution Inc."],
     ["Tenant: Halloway Switchgear; interior fit-out", "Halloway Switchgear"],
     ["Proposed addition to existing warehouse for PEMBERTON FINE FOODS LIMITED", "PEMBERTON FINE FOODS LIMITED"],
@@ -29,6 +30,9 @@ describe("resolveOccupier", () => {
   });
 
   it.each([
+    // A use, not a business (Toronto, 2026)
+    "INTERIOR ALTERATIONS / FIT-OUT OF EXISTING VACANT UNIT 1 FOR CHOCOLATE FACTORY",
+    "REVISION - INTERIOR ALTERATIONS / FIT-OUT OF EXISTING VACANT UNIT 1 FOR CHOCOLATE FACTORY WITH ACCESSORY RESTAURANT.",
     "NEW OVERHEAD DOOR IN THE SIDE YARD - LANDLORD WORK",
     "ONE (1) FASCIA SIGN - ILLUMINATED",
     "Interior alterations to existing industrial unit",
