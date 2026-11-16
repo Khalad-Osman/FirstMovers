@@ -2,5 +2,5 @@
 // the hosted app, where accounts are created by an admin (scripts/create-account.mjs).
 // Also disable sign-ups in Supabase Auth so the API itself refuses them.
 export function signupEnabled(): boolean {
-  return (process.env.SIGNUP_ENABLED ?? "true").toLowerCase() !== "false";
+  return (process.env.SIGNUP_ENABLED ?? "true").trim().toLowerCase() !== "false";
 }

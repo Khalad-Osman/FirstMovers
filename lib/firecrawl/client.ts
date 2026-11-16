@@ -145,7 +145,7 @@ export function createFirecrawl({ apiKey, fetchImpl = fetch, sleep = defaultSlee
 export type Firecrawl = ReturnType<typeof createFirecrawl>;
 
 export function getFirecrawl(env: NodeJS.ProcessEnv = process.env): Firecrawl {
-  const apiKey = env.FIRECRAWL_API_KEY;
+  const apiKey = env.FIRECRAWL_API_KEY?.trim();
   if (!apiKey) throw new FirecrawlError("FIRECRAWL_API_KEY is not set (.env.local or Vercel env).");
   return createFirecrawl({ apiKey });
 }

@@ -12,10 +12,11 @@ export { toStrictJsonSchema } from "./json-schema";
 export type ModelRole = "screening" | "analysis";
 
 export function getProvider(env: NodeJS.ProcessEnv = process.env): LLMProvider {
-  const name = (env.LLM_PROVIDER || "openai").toLowerCase();
+  // Trim: values pasted into a hosting dashboard often carry stray spaces.
+  const name = (env.LLM_PROVIDER?.trim() || "openai").toLowerCase();
   switch (name) {
     case "openai": {
-      const apiKey = env.OPENAI_API_KEY;
+      const apiKey = env.OPENAI_API_KEY?.trim();
       if (!apiKey) throw new Error("OPENAI_API_KEY is not set (.env.local or Vercel env).");
       return createOpenAIProvider({ apiKey });
     }
