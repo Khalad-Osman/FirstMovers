@@ -58,13 +58,19 @@ export async function analyzeSources(sessionId: string) {
   const id = idSchema.parse(sessionId);
   const db = createAdminClient();
   const { data: session, error } = await db.from("research_sessions").select("status, source_ids").eq("id", id).single();
-  if (error) throw new Error(`Could not load research: ${error.message}`);
-  if (session.status !== "ready" || session.source_ids.length === 0) throw new Error("There are no collected sources to analyze.");
+  if (error) return { error: `Could not load research: ${error.message}` };
+  if (session.status !== "ready" || session.source_ids.length === 0) return { error: "There are no collected sources to analyze." };
 
   // Fail fast on missing configuration, before marking the session busy.
   const { data: settings } = await db.from("settings").select("analysis_model").maybeSingle();
-  const model = resolveModel("analysis", settings);
-  const provider = getProvider();
+  let model: string;
+  let provider: ReturnType<typeof getProvider>;
+  try {
+    model = resolveModel("analysis", settings);
+    provider = getProvider();
+  } catch (e) {
+    return { error: `Analysis isn't configured yet: ${e instanceof Error ? e.message : String(e)}` };
+  }
 
   await db
     .from("research_sessions")
@@ -77,7 +83,7 @@ export async function analyzeSources(sessionId: string) {
 export async function addToFeed(sessionId: string) {
   const user = await requireUser();
   const result = await saveSessionToFeed(idSchema.parse(sessionId), user.id);
-  if (!result.ok) throw new Error(result.error);
+  if (!result.ok) return { error: result.error };
   revalidatePath("/", "layout");
   redirect(`/briefs/${result.briefId}`);
 }

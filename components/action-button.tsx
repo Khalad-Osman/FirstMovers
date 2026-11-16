@@ -2,8 +2,12 @@
 
 import { useState, useTransition } from "react";
 
+// Server actions return { error } for expected failures: in production, Next
+// replaces a thrown error's message with a generic one (React error #441).
+export type ActionResult = { error: string } | void | undefined;
+
 type Props = {
-  action: () => Promise<void>;
+  action: () => Promise<ActionResult>;
   label: string;
   pendingLabel: string;
   confirmLabel?: string; // when set, the first click asks for confirmation inline
@@ -19,10 +23,15 @@ export function ActionButton({ action, label, pendingLabel, confirmLabel, classN
     setError(null);
     startTransition(async () => {
       try {
-        await action();
+        const result = await action();
+        if (result?.error) {
+          setError(result.error);
+          return;
+        }
         setConfirming(false);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong. Try again.");
+      } catch {
+        // Unexpected server error: production hides the message, so don't show React's code.
+        setError("Something went wrong on the server. Try again, or check the Vercel logs.");
       }
     });
   }

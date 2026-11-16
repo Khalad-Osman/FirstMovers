@@ -47,11 +47,11 @@ export async function resumeDiscovery(runId: string) {
   const id = z.uuid().parse(runId);
   const db = createAdminClient();
   const { data: run } = await db.from("discovery_runs").select("status, outcomes, started_at").eq("id", id).single();
-  if (!run || (run.status !== "running" && run.status !== "queued")) throw new Error("This run isn't in progress.");
+  if (!run || (run.status !== "running" && run.status !== "queued")) return { error: "This run isn't in progress." };
   const outcomes = Array.isArray(run.outcomes) ? (run.outcomes as { status?: string; startedAt?: string }[]) : [];
   const last = outcomes[outcomes.length - 1];
   if (last?.status === "running" && last.startedAt && Date.now() - Date.parse(last.startedAt) < STALE_STEP_MS) {
-    throw new Error("A step is still running. Try again in a few minutes.");
+    return { error: "A step is still running. Try again in a few minutes." };
   }
   const base = await origin();
   after(() => triggerStep(base, id));

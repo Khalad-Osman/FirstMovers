@@ -15,7 +15,7 @@ export async function addToWatchlist(companyId: string) {
     { company_id: id, added_by: user.id },
     { onConflict: "company_id", ignoreDuplicates: true },
   );
-  if (error) throw new Error(`Could not add to Watchlist: ${error.message}`);
+  if (error) return { error: `Could not add to Watchlist: ${error.message}` };
   revalidatePath("/", "layout");
 }
 
@@ -24,7 +24,7 @@ export async function removeFromWatchlist(companyId: string) {
   const id = uuid.parse(companyId);
   const supabase = await createClient();
   const { error } = await supabase.from("watchlist").delete().eq("company_id", id);
-  if (error) throw new Error(`Could not remove from Watchlist: ${error.message}`);
+  if (error) return { error: `Could not remove from Watchlist: ${error.message}` };
   revalidatePath("/", "layout");
 }
 
@@ -37,7 +37,7 @@ export async function dismissBrief(briefId: string) {
     .update({ dismissed: true, dismissed_by: admin.id, dismissed_at: new Date().toISOString() })
     .eq("id", id)
     .select("id");
-  if (error) throw new Error(`Could not dismiss brief: ${error.message}`);
-  if (!data?.length) throw new Error("Brief not found or not permitted");
+  if (error) return { error: `Could not dismiss brief: ${error.message}` };
+  if (!data?.length) return { error: "Brief not found or not permitted" };
   revalidatePath("/", "layout");
 }
