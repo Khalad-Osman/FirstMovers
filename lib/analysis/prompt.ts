@@ -37,6 +37,7 @@ Ledger
 - evidenceType is FACT only when the finding is stated directly in that source. Never add facts that are not in the sources.
 - relevance: Signal only for sources that drive the chain and the rating. Context or historical-tier sources are never Signal. Global or US activity without a credible Ontario connection is Not relevant.
 - If several sources cover the same event, the earliest or most authoritative one is the primary; set repeatCoverageOf on the others to the primary's id and say in the finding that it is repeat coverage.
+- Repeat coverage means the same event reported with the same facts (for example a syndicated copy of a press release). A source that reports new facts, a later development or its own reporting (such as a plant size, a production start or a forecast first stated there) is not repeat coverage, even when it concerns the same company or program: leave repeatCoverageOf null and say in the finding what it adds. Separate permits, contracts or job postings are separate records, not repeat coverage of each other.
 - finding is one line, without a heading or label prefix.
 
 Chain

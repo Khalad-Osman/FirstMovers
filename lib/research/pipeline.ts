@@ -56,6 +56,25 @@ function firstString(v: unknown): string | null {
   return typeof x === "string" && x.trim() ? x.trim() : null;
 }
 
+// "Soft 404": the site answered 200 but redirected to an error or listing page
+// (e.g. jobs.jobvite.com/…/jobs?error=404), or the page says it wasn't found.
+const ERROR_PARAM = /^(error|err|status|code)$/i;
+const ERROR_VALUE = /^(404|410|not[-_ ]?found|notfound|gone)$/i;
+const ERROR_PATH = /\/(404|410|not[-_]?found|page[-_]not[-_]found|error)(\/|\.html?)?$/i;
+// Not a bare "404": Highway 404 is a GTA industrial corridor and shows up in real news titles.
+const ERROR_TITLE = /^\s*(?:404|not found)\s*$|\b(?:404 (?:error|not found|page)|error 404|page not found|page (?:does not|doesn't) exist|(?:job|posting|page) (?:is )?no longer available)\b/i;
+
+export function isSoftErrorPage(page: Pick<ScrapeResult, "url" | "metadata">): boolean {
+  try {
+    const u = new URL(page.url);
+    if ([...u.searchParams].some(([k, v]) => ERROR_PARAM.test(k) && ERROR_VALUE.test(v))) return true;
+    if (ERROR_PATH.test(u.pathname)) return true;
+  } catch {
+    return true; // unparseable final URL
+  }
+  return ERROR_TITLE.test(firstString(page.metadata.title) ?? "");
+}
+
 function toSource(page: ScrapeResult, candidate: Candidate, today: string): CollectedSource {
   const meta = page.metadata;
   const lower = new Map(Object.entries(meta).map(([k, v]) => [k.toLowerCase(), v]));
@@ -96,7 +115,7 @@ async function scrapeSome(
       if (e instanceof FirecrawlError && e.status === 402) throw e;
       continue; // unreachable or blocked page: try the next candidate
     }
-    if (page.markdown.trim().length < MIN_CONTENT || isExcluded(page.url)) continue;
+    if (page.markdown.trim().length < MIN_CONTENT || isExcluded(page.url) || isSoftErrorPage(page)) continue;
     const source = toSource(page, c, deps.today);
     if (out.some((o) => o.source.url === source.url)) continue;
     const id = await deps.store.saveSource(source);

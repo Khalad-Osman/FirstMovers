@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ScrapeResult, SearchResult } from "@/lib/firecrawl/client";
 import { FirecrawlError } from "@/lib/firecrawl/client";
-import { runCompanyResearch, runThemeSearch, type CollectedSource, type ResearchStore, type SessionPatch } from "./pipeline";
+import { isSoftErrorPage, runCompanyResearch, runThemeSearch, type CollectedSource, type ResearchStore, type SessionPatch } from "./pipeline";
 
 const TODAY = "2026-11-10";
 const body = (s: string) => `${s}\n\n${"Body text about the company's Ontario operations. ".repeat(10)}`;
@@ -143,5 +143,22 @@ describe("runThemeSearch", () => {
     expect(m.last().status).toBe("ready");
     expect(m.last().theme_results).toHaveLength(1);
     expect(fc.scrape).not.toHaveBeenCalled();
+  });
+});
+
+describe("isSoftErrorPage", () => {
+  const page = (url: string, title?: string) => ({ url, metadata: title ? { title } : {} });
+  it("flags error redirects and not-found pages", () => {
+    expect(isSoftErrorPage(page("https://jobs.jobvite.com/careers/stelumar-advanced-manufacturing/jobs?error=404"))).toBe(true);
+    expect(isSoftErrorPage(page("https://example.ca/page-not-found"))).toBe(true);
+    expect(isSoftErrorPage(page("https://example.ca/404.html"))).toBe(true);
+    expect(isSoftErrorPage(page("https://example.ca/news/item", "Page not found | Example"))).toBe(true);
+    expect(isSoftErrorPage(page("https://example.ca/careers/1", "This job is no longer available"))).toBe(true);
+    expect(isSoftErrorPage(page("https://example.ca/x", "404"))).toBe(true);
+  });
+  it("keeps real pages, including Highway 404 news", () => {
+    expect(isSoftErrorPage(page("https://jobs.jobvite.com/stelumar-advanced-manufacturing/job/oP2RAfw2", "Shipping & Receiving Supervisor"))).toBe(false);
+    expect(isSoftErrorPage(page("https://example.ca/news/warehouse-near-highway-404", "New warehouse planned near Highway 404 in Markham"))).toBe(false);
+    expect(isSoftErrorPage(page("https://example.ca/search?status=active"))).toBe(false);
   });
 });
