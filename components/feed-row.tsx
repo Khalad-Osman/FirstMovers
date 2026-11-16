@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ORIGIN_LABEL } from "@/lib/brief/schema";
+import { ORIGIN_LABEL, VACANCY_LABEL } from "@/lib/brief/schema";
 import type { FeedEntry } from "@/lib/data/briefs";
 import { formatDate, stripLabel } from "@/lib/format";
 import { addToWatchlist, dismissBrief } from "@/app/(app)/actions";
@@ -25,6 +25,7 @@ export function FeedRow({ entry, watched, isAdmin }: Props) {
         {entry.isSample && <SampleBadge />}
         <RatingBadge rating={entry.rating} />
         <StageBadge stage={entry.stage} />
+        {entry.vacancy && <span className="badge badge-inferred">{VACANCY_LABEL[entry.vacancy.assessment]}</span>}
       </div>
 
       <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -32,6 +33,7 @@ export function FeedRow({ entry, watched, isAdmin }: Props) {
         <Field label="What changed" value={entry.whatChanged} />
         <Field label="Facility pressure" value={entry.facilityPressure} />
         <Field label="Countercase" value={entry.countercase} />
+        {entry.vacancy && <Field label="Other premises" value={entry.vacancy.address} />}
       </dl>
 
       <div className="mono flex flex-wrap gap-x-5 gap-y-1 text-[0.8125rem] text-meta">

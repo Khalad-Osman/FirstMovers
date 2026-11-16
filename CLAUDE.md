@@ -15,7 +15,7 @@ The analytical model the product runs on is in `docs/intelligence-model.md`. It 
 
 ### Opportunity Feed (primary feature)
 - Shows system-generated briefs, ranked: **Strong Signal → Worth Monitoring**, newest analysis first within each group.
-- **No Meaningful Signal** results go in a collapsed "Reviewed, no signal" section. Keep them: they show the tool rejects weak leads.
+- **No Meaningful Signal** results go in a collapsed "Reviewed, no signal" section. Keep them: they show the tool rejects weak leads. Exception (decided 2026-11-16): a brief with **likely or possible vacated space** (see §7) is shown in its own visible group, "Space likely to be vacated", below the rated groups, with its rating unchanged; any brief with vacated space carries a badge and an "Other premises" field in the feed.
 - Each entry shows: full company name, local connection, what changed, facility pressure, countercase, signal rating, opportunity stage, analysis date, origin label ("Discovered" or "Added from Live Research"), and the signal or query that surfaced it.
 - Actions: open full brief, add to Watchlist, dismiss.
 - A "Run discovery" button (admin only) runs the discovery pipeline on demand. Scheduled discovery comes later (Phase 6).
@@ -30,7 +30,7 @@ Sections in this order:
 2. Five-step chain: What changed → Operational consequence → Facility pressure → Forcing event → Real-estate decision. Each step marked **Supported / Inferred / Unknown**.
 3. Evidence ledger: each entry has an evidence type, a relevance label, source link, publisher, publication date (and event date if different), and a one-line finding.
 4. Counts at the top: number of Signal / Context / Not relevant sources.
-5. Countercase, working hypothesis, unknowns, decisive next step (with the validating question).
+5. Countercase, working hypothesis, unknowns, space likely to be vacated (when likely or possible: badge, the other address as written, what the sources show, cited sources), decisive next step (with the validating question). Briefs saved before 2026-11-16 have no vacated-space field.
 6. Signal rating with a one-line reason, and opportunity stage.
 
 ### Watchlist
@@ -227,6 +227,11 @@ These rules apply on top of `docs/intelligence-model.md`.
 - **Strong Signal** requires a specific, recent, Ontario facility or capacity signal with a plausible forcing event.
 - The rating must be consistent with the countercase and unknowns. If the brief itself says an external transaction is unverified and alternatives are likely, it is not Strong Signal.
 - **No Meaningful Signal** is a valid, expected outcome. Keep those briefs short; don't fill sections to look busy.
+
+**Space likely to be vacated**
+- When the sources show a new, acquired, built or fitted-out facility and also place the company at another Ontario address, assess whether that other address is likely to be vacated, sublet or sold. This is a separate opportunity (backfill, sublease or disposition) and does not change the rating, which is about a new requirement.
+- **Likely** needs a source for the new facility and a source placing the company at the other address, with nothing showing the other site is kept. Use **Possible** when the relationship between the sites is unclear (it may replace or supplement). Otherwise **Not indicated**.
+- Never invent the other site's size, lease terms, tenure, timing or use. A directory listing establishes an address, not occupancy or tenure.
 
 **Output**
 - The LLM returns structured JSON validated with Zod. On validation failure, retry once, then record an error. Never show unvalidated output.

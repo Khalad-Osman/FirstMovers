@@ -33,6 +33,11 @@ These rules apply on top of `docs/intelligence-model.md`.
 - The rating must be consistent with the countercase and unknowns. If the brief itself says an external transaction is unverified and alternatives are likely, it is not Strong Signal.
 - **No Meaningful Signal** is a valid, expected outcome. Keep those briefs short; don't fill sections to look busy.
 
+**Space likely to be vacated**
+- When the sources show a new, acquired, built or fitted-out facility and also place the company at another Ontario address, assess whether that other address is likely to be vacated, sublet or sold. This is a separate opportunity (backfill, sublease or disposition) and does not change the rating, which is about a new requirement.
+- **Likely** needs a source for the new facility and a source placing the company at the other address, with nothing showing the other site is kept. Use **Possible** when the relationship between the sites is unclear (it may replace or supplement). Otherwise **Not indicated**.
+- Never invent the other site's size, lease terms, tenure, timing or use. A directory listing establishes an address, not occupancy or tenure.
+
 **Output**
 - The LLM returns structured JSON validated with Zod. On validation failure, retry once, then record an error. Never show unvalidated output.
 - Before saving a brief, verify in code that every FACT links to a collected source and that its dates match the source record.

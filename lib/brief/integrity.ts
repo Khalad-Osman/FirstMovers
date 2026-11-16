@@ -82,6 +82,30 @@ export function checkBriefIntegrity(brief: BriefAnalysis): string[] {
     if (brief.unknowns.length > 3) errors.push("No Meaningful Signal: keep unknowns to at most 3 points.");
   }
 
+  // --- Space likely to be vacated (optional on briefs saved before 2026-11-16)
+  const op = brief.otherPremises;
+  if (op) {
+    op.sourceIds.forEach((id) => {
+      if (!byId.has(id)) errors.push(`Other premises: cites ${id}, which is not in the ledger.`);
+    });
+    if (op.assessment === "not_indicated") {
+      if (op.address !== null) errors.push('Other premises: leave address null when vacated space is "not_indicated".');
+    } else {
+      if (!op.address?.trim()) errors.push(`Other premises: "${op.assessment}" needs the other address as written in the sources.`);
+      if (op.sourceIds.length === 0) errors.push(`Other premises: "${op.assessment}" must cite the sources for the other address and the new facility.`);
+      if (brief.company.entityStatus !== "verified") errors.push("Other premises: an unverified entity cannot have vacated space.");
+    }
+    if (op.assessment === "likely") {
+      const cited = op.sourceIds.map((id) => byId.get(id));
+      if (!cited.some((e) => e?.relevance === "signal" && (e.recencyTier === "recent" || e.recencyTier === "undated"))) {
+        errors.push('Other premises: "likely" requires a cited recent Signal source showing the new or fitted-out facility.');
+      }
+      if (!cited.some((e) => e?.evidenceType === "fact")) {
+        errors.push('Other premises: "likely" requires at least one cited FACT.');
+      }
+    }
+  }
+
   return errors;
 }
 

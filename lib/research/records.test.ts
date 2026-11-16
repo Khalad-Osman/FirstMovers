@@ -151,6 +151,7 @@ describe("recordExcerpt / toRecordSource", () => {
         countercase: ["Expansion in place."],
         alternativesAssessment: "alternatives_likely",
         existingFacilityInvestment: true,
+        otherPremises: { assessment: "not_indicated", address: null, text: "No other premises identified.", sourceIds: [] },
         workingHypothesis: null,
         unknowns: [],
         commercialValue: null,

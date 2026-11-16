@@ -59,6 +59,7 @@ function modelOutput(): ModelOutput {
     countercase: ["Existing capacity may absorb the volume."],
     alternativesAssessment: "alternatives_possible",
     existingFacilityInvestment: false,
+    otherPremises: { assessment: "not_indicated", address: null, text: "No other premises identified.", sourceIds: [] },
     workingHypothesis: null,
     unknowns: ["Plant utilization."],
     commercialValue: null,

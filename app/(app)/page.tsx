@@ -20,7 +20,10 @@ export default async function FeedPage({ searchParams }: PageProps<"/">) {
   const all = showSamples ? [...entries, ...getSampleEntries()] : entries;
   const strong = all.filter((e) => e.rating === "strong_signal").sort(newestFirst);
   const worth = all.filter((e) => e.rating === "worth_monitoring").sort(newestFirst);
-  const none = all.filter((e) => e.rating === "no_meaningful_signal").sort(newestFirst);
+  const noSignal = all.filter((e) => e.rating === "no_meaningful_signal").sort(newestFirst);
+  // No new requirement, but space they're likely to leave: shown, not collapsed (rating unchanged).
+  const vacated = noSignal.filter((e) => e.vacancy);
+  const none = noSignal.filter((e) => !e.vacancy);
 
   return (
     <div className="grid gap-6">
@@ -73,6 +76,15 @@ export default async function FeedPage({ searchParams }: PageProps<"/">) {
 
       {strong.length > 0 && <Group title="Strong Signal" entries={strong} watched={watched} isAdmin={isAdmin} />}
       {worth.length > 0 && <Group title="Worth Monitoring" entries={worth} watched={watched} isAdmin={isAdmin} />}
+      {vacated.length > 0 && (
+        <Group
+          title="Space likely to be vacated"
+          note="No new requirement, but the company has committed to a new facility and the sources place it at another address that may come to market."
+          entries={vacated}
+          watched={watched}
+          isAdmin={isAdmin}
+        />
+      )}
 
       {none.length > 0 && (
         <details className="group border-t border-line pt-3">
@@ -95,11 +107,13 @@ export default async function FeedPage({ searchParams }: PageProps<"/">) {
 
 function Group({
   title,
+  note,
   entries,
   watched,
   isAdmin,
 }: {
   title: string;
+  note?: string;
   entries: FeedEntry[];
   watched: Set<string>;
   isAdmin: boolean;
@@ -109,6 +123,7 @@ function Group({
       <h2 className="label border-b border-line pb-1.5">
         {title} · <span className="mono">{entries.length}</span>
       </h2>
+      {note && <p className="mt-2 text-[0.875rem] text-meta">{note}</p>}
       {entries.map((e) => (
         <FeedRow key={e.key} entry={e} watched={e.companyId ? watched.has(e.companyId) : false} isAdmin={isAdmin} />
       ))}

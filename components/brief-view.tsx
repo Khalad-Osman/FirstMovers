@@ -1,4 +1,4 @@
-import { CHAIN_STEPS, ORIGIN_LABEL, RECENCY_LABEL, type BriefAnalysis, type Origin } from "@/lib/brief/schema";
+import { CHAIN_STEPS, ORIGIN_LABEL, RECENCY_LABEL, VACANCY_LABEL, type BriefAnalysis, type Origin } from "@/lib/brief/schema";
 import { ledgerCounts } from "@/lib/brief/integrity";
 import { formatDate, stripLabel } from "@/lib/format";
 import {
@@ -189,6 +189,29 @@ export function BriefView({ analysis, companyName, isSample, analyzedAt, origin,
         {analysis.commercialValue && (
           <Section title="Commercial value">
             <p>{analysis.commercialValue}</p>
+          </Section>
+        )}
+        {analysis.otherPremises && analysis.otherPremises.assessment !== "not_indicated" && (
+          <Section title="Space likely to be vacated">
+            <p>
+              <span className="badge badge-inferred mr-2">{VACANCY_LABEL[analysis.otherPremises.assessment]}</span>
+              {analysis.otherPremises.address && <strong>{analysis.otherPremises.address}</strong>}
+            </p>
+            <p className="mt-2">{stripLabel(analysis.otherPremises.text, "Space likely to be vacated")}</p>
+            {analysis.otherPremises.sourceIds.length > 0 && (
+              <p className="mono mt-1 text-[0.8125rem] text-meta">
+                Sources:{" "}
+                {analysis.otherPremises.sourceIds.map((id, i) => (
+                  <span key={id}>
+                    {i > 0 && ", "}
+                    <a href={`#source-${id}`} className="link">
+                      {id}
+                    </a>
+                  </span>
+                ))}
+              </p>
+            )}
+            <p className="mt-1 text-[0.8125rem] text-meta">Separate from the rating, which is about a new requirement.</p>
           </Section>
         )}
         <Section title="Decisive next step">

@@ -47,6 +47,18 @@ const chainSchema = z.object({
   realEstateDecision: chainStepSchema,
 });
 
+// Space likely to be vacated (added 2026-11-16): when a company commits to a
+// new or fitted-out facility and the sources also place it at another Ontario
+// address, that other address may become sublease, backfill or sale space.
+// Reported separately from the rating, which is about a new requirement.
+export const vacancyAssessmentSchema = z.enum(["likely", "possible", "not_indicated"]);
+export const otherPremisesSchema = z.object({
+  assessment: vacancyAssessmentSchema,
+  address: z.string().nullable(), // the other address as written in the sources
+  text: z.string().min(1),
+  sourceIds: z.array(z.string()),
+});
+
 // Fields shared by the model output and the stored brief.
 const sharedFields = {
   chain: chainSchema,
@@ -87,6 +99,7 @@ export const modelOutputSchema = z.object({
   company: companySchema,
   ledger: z.array(modelLedgerEntrySchema),
   ...sharedFields,
+  otherPremises: otherPremisesSchema,
 });
 
 // ---------- Stored brief ----------
@@ -109,7 +122,14 @@ export const briefAnalysisSchema = z.object({
   company: companySchema,
   ledger: z.array(ledgerEntrySchema),
   ...sharedFields,
+  otherPremises: otherPremisesSchema.optional(), // absent on briefs saved before 2026-11-16
 });
+
+export const VACANCY_LABEL: Record<z.infer<typeof vacancyAssessmentSchema>, string> = {
+  likely: "Vacated space likely",
+  possible: "Possible vacated space",
+  not_indicated: "Not indicated",
+};
 
 export type Rating = z.infer<typeof ratingSchema>;
 export type Stage = z.infer<typeof stageSchema>;

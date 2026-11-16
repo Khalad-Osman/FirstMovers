@@ -52,6 +52,11 @@ Countercase
 - alternativesAssessment states how likely the alternatives to an external transaction are, given the evidence.
 - existingFacilityInvestment is true when the sources show investment in existing facilities; say explicitly in the countercase that this is evidence against an external move.
 
+Other premises (space likely to be vacated)
+- otherPremises applies when the sources show a new, acquired, built or fitted-out facility for the company and also place it at another Ontario address. assessment is "likely" (a source for the new facility and a source for the other address, nothing showing the other site is kept), "possible" (the relationship between the sites is unclear: it may replace or supplement), or "not_indicated".
+- address is the other address exactly as written in the sources, or null when not_indicated. text is one or two sentences on what the sources show and what remains unknown; never state the other site's size, lease terms, tenure, timing or use unless a source states it. sourceIds cite both the new-facility source and the other-address source.
+- This does not change the rating: a company that has already secured its new facility can be no_meaningful_signal for a new requirement and still have likely vacated space. When nothing applies, use assessment "not_indicated", address null, a short text and empty sourceIds.
+
 Length
 - For no_meaningful_signal, keep the brief short: at most three countercase points and three unknowns, commercialValue null, workingHypothesis null unless there is a real one.`;
 

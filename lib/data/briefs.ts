@@ -21,6 +21,8 @@ export type FeedEntry = {
   analyzedAt: string;
   origin: Origin;
   surfacedBy: string | null;
+  // Space likely to be vacated (likely/possible only); null otherwise
+  vacancy: { assessment: "likely" | "possible"; address: string } | null;
 };
 
 export type InvalidBrief = { briefId: string; companyName: string; analyzedAt: string };
@@ -30,10 +32,12 @@ const BRIEF_COLUMNS =
 
 function toEntry(
   analysis: BriefAnalysis,
-  meta: Omit<FeedEntry, "companyName" | "localConnection" | "whatChanged" | "facilityPressure" | "countercase" | "rating" | "stage">,
+  meta: Omit<FeedEntry, "companyName" | "localConnection" | "whatChanged" | "facilityPressure" | "countercase" | "rating" | "stage" | "vacancy">,
   companyName: string,
 ): FeedEntry {
+  const op = analysis.otherPremises;
   return {
+    vacancy: op && op.assessment !== "not_indicated" && op.address ? { assessment: op.assessment, address: op.address } : null,
     ...meta,
     companyName,
     localConnection: analysis.company.localConnection,

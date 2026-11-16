@@ -51,6 +51,7 @@ function briefFor(name: string, sourceCount: number, verified: boolean): ModelOu
     countercase: ["Existing space may suffice."],
     alternativesAssessment: "alternatives_possible",
     existingFacilityInvestment: false,
+    otherPremises: { assessment: "not_indicated", address: null, text: "No other premises identified.", sourceIds: [] },
     workingHypothesis: null,
     unknowns: ["Utilization."],
     commercialValue: null,
