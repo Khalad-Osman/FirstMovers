@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { getBrief, getWatchlist } from "@/lib/data/briefs";
+import { getBrief, getCompanyTimeline, getWatchlist } from "@/lib/data/briefs";
 import { formatDate } from "@/lib/format";
 import { BriefView } from "@/components/brief-view";
 import { fitForBrief } from "@/lib/data/deals";
+import { CompanyTimeline } from "@/components/company-timeline";
 import { ActionButton } from "@/components/action-button";
 import { addToWatchlist, dismissBrief } from "../../actions";
 
@@ -35,7 +36,7 @@ export default async function BriefPage({ params }: PageProps<"/briefs/[id]">) {
     );
   }
 
-  const fit = await fitForBrief(brief.analysis, user?.role === "admin");
+  const [fit, timeline] = await Promise.all([fitForBrief(brief.analysis, user?.role === "admin"), getCompanyTimeline(brief.companyId)]);
 
   return (
     <div className="grid min-w-0 gap-4">
@@ -117,6 +118,7 @@ export default async function BriefPage({ params }: PageProps<"/briefs/[id]">) {
           </>
         }
       />
+      <CompanyTimeline items={timeline} />
     </div>
   );
 }

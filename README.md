@@ -12,7 +12,7 @@ Industrial commercial-real-estate intelligence for the GTA and Ontario. First Mo
 | Live Research | Research a company or theme on demand (Firecrawl), review the sources, then analyze and add to the feed |
 | Discovery | Builds candidates from structured signals, screens them with a cheap model, researches and analyzes the best within caps |
 | Signals / Data sources | Federal contract awards (CanadaBuys) and industrial building permits (Mississauga, Brampton, Toronto) |
-| Watchlist, Chronology | Companies being tracked; dated evidence over time |
+| Watchlist, company timeline | Companies being tracked; each brief ends with the company's dated history |
 | Usage, Settings | Monthly credit/token usage; caps, models, schedules (admin) |
 
 Stack: Next.js 16 (App Router) + TypeScript + Tailwind, Supabase (Postgres, Auth, RLS), Vercel. LLM: OpenAI by default behind `lib/llm/`. Web research: Firecrawl.

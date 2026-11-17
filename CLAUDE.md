@@ -45,8 +45,8 @@ Sections in this order:
 ### Notifications (added 2026-11-17)
 - In-app only. When a discovery run completes, fails or pauses (manual or scheduled), one notification per run and kind is created in `notifications` (`lib/notifications.ts`, called from `finalize`, `failRun` and `pauseRun` in `lib/discovery/run.ts`; failures never break the run). Shared by the team; read state is per user in `notification_reads` (RLS: own rows only). Sidebar "Notifications" shows the unread count; `/notifications` lists the latest 50 with "Mark all as read". Admins can delete notifications.
 
-### Chronology
-- Dated evidence across saved briefs, so a company's story can be followed over time.
+### Company timeline (replaced the global Chronology page, decided 2026-11-17)
+- Each brief page ends with a **Timeline** of that company, oldest first: Signal evidence from **all** its brief versions (each tagged with the versions that cited it) plus its stored public records (permits, grants, contract awards matched by `company_id` or `entity_key`), including records no brief has cited yet. Code: `lib/brief/timeline.ts`, `getCompanyTimeline` in `lib/data/briefs.ts`. The old Chronology page mixed every company's sources (including Context and Not relevant ones) in one list, so it was removed.
 
 ### Versions
 - Re-analyzing a company creates a **new dated brief version**. Never overwrite. The brief view shows the latest version and lists earlier dates.
@@ -55,7 +55,7 @@ Sections in this order:
 - Three sample briefs (fictional companies) live in code, never in the database, behind a **Show samples** toggle that is off by default. Every sample shows a clear **"Sample"** label in both the feed and the full brief view.
 
 ### Access
-- Default: a shared team workspace. All signed-in users see the same feed, Watchlist and Chronology.
+- Default: a shared team workspace. All signed-in users see the same feed, Watchlist and company timelines.
 - Roles: **admin** can run discovery, dismiss briefs and delete data. **member** can view briefs, use Live Research and manage the Watchlist.
 - No public access without sign-in.
 

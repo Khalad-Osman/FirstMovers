@@ -21,7 +21,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               { href: "/", label: "Opportunity Feed" },
               { href: "/research", label: "Live Research" },
               { href: "/watchlist", label: "Watchlist", count: watchlist.length },
-              { href: "/chronology", label: "Chronology" },
               { href: "/notifications", label: "Notifications", count: unread, countLabel: `${unread} unread`, highlight: unread > 0 },
             ]}
             secondary={{

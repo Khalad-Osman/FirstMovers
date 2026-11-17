@@ -5,6 +5,9 @@ import { briefAnalysisSchema, type BriefAnalysis, type Origin, type Rating, type
 import { SAMPLE_BRIEFS, type SampleBrief } from "@/lib/samples";
 import { dealFit, type FitLevel } from "@/lib/deals/fit";
 import { getPastDealsForFit } from "./deals";
+import { buildTimeline, type TimelineItem } from "@/lib/brief/timeline";
+import type { RecordSignal } from "@/lib/research/records";
+import { normalizeCompanyName } from "@/lib/research/normalize";
 
 // One shape for feed rows, whether they come from the database or the samples.
 export type FeedEntry = {
@@ -198,50 +201,29 @@ export const getWatchlist = cache(async (): Promise<WatchlistItem[]> => {
   });
 });
 
-export type ChronologyItem = {
-  date: string;
-  dateKind: "event" | "published";
-  companyId: string;
-  companyName: string;
-  briefId: string;
-  finding: string;
-  relevance: BriefAnalysis["ledger"][number]["relevance"];
-  url: string;
-  publisher: string;
-};
 
-// Dated evidence across saved briefs (all versions), newest first, de-duplicated by
-// company + source URL so repeated analyses don't repeat the same evidence.
-export async function getChronology(): Promise<ChronologyItem[]> {
+// One company's timeline: Signal evidence from all its brief versions plus its
+// stored public records (lib/brief/timeline.ts).
+export async function getCompanyTimeline(companyId: string): Promise<TimelineItem[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("briefs")
-    .select("id, company_id, version, analysis, companies(display_name)")
-    .order("version", { ascending: false });
-  if (error) throw new Error(`Could not load chronology: ${error.message}`);
+  const [{ data: company }, { data: briefs, error }] = await Promise.all([
+    supabase.from("companies").select("normalized_key, display_name, aliases").eq("id", companyId).maybeSingle(),
+    supabase.from("briefs").select("version, analysis").eq("company_id", companyId),
+  ]);
+  if (error) throw new Error(`Could not load the timeline: ${error.message}`);
+  const parsed = (briefs ?? [])
+    .map((b) => ({ version: b.version, parsed: briefAnalysisSchema.safeParse(b.analysis) }))
+    .filter((b) => b.parsed.success)
+    .map((b) => ({ version: b.version, analysis: b.parsed.data! }));
 
-  const seen = new Set<string>();
-  const items: ChronologyItem[] = [];
-  for (const row of data) {
-    const parsed = briefAnalysisSchema.safeParse(row.analysis);
-    if (!parsed.success) continue;
-    for (const e of parsed.data.ledger) {
-      const date = e.eventAt ?? e.publishedAt;
-      const k = `${row.company_id}|${e.url}`;
-      if (!date || seen.has(k)) continue;
-      seen.add(k);
-      items.push({
-        date,
-        dateKind: e.eventAt ? "event" : "published",
-        companyId: row.company_id,
-        companyName: row.companies?.display_name ?? "Unknown company",
-        briefId: row.id,
-        finding: e.finding,
-        relevance: e.relevance,
-        url: e.url,
-        publisher: e.publisher,
-      });
-    }
-  }
-  return items.sort((a, b) => b.date.localeCompare(a.date));
+  const keys = company
+    ? [...new Set([company.normalized_key, ...[company.display_name, ...(company.aliases ?? [])].map(normalizeCompanyName)].filter(Boolean))]
+    : [];
+  const filters = [`company_id.eq.${companyId}`, keys.length ? `entity_key.in.(${keys.map((k) => `"${k}"`).join(",")})` : null].filter(Boolean);
+  const { data: records } = await supabase
+    .from("signals")
+    .select("id, source_type, source_record_id, raw_entity_name, entity_key, signal_strength, title, summary, url, published_at, event_at, location, raw")
+    .or(filters.join(","))
+    .limit(200);
+  return buildTimeline({ briefs: parsed, records: (records ?? []) as RecordSignal[] });
 }
