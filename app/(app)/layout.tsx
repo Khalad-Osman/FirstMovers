@@ -19,6 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <SidebarNav
             items={[
               { href: "/", label: "Opportunity Feed" },
+              { href: "/discovery", label: "Discovery" },
               { href: "/research", label: "Live Research" },
               { href: "/watchlist", label: "Watchlist", count: watchlist.length },
               { href: "/notifications", label: "Notifications", count: unread, countLabel: `${unread} unread`, highlight: unread > 0 },
@@ -26,7 +27,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             secondary={{
               label: "Pipeline & admin",
               items: [
-                { href: "/discovery", label: "Discovery" },
                 { href: "/signals", label: "Signals" },
                 { href: "/sources", label: "Data sources" },
                 { href: "/deals", label: "Past deals" },

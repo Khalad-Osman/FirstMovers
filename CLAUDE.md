@@ -18,7 +18,7 @@ The analytical model the product runs on is in `docs/intelligence-model.md`. It 
 - **No Meaningful Signal** results go in a collapsed "Reviewed, no signal" section. Keep them: they show the tool rejects weak leads. Exception (decided 2026-11-16): a brief with **likely or possible vacated space** (see §7) is shown in its own visible group, "Space likely to be vacated", below the rated groups, with its rating unchanged; any brief with vacated space carries a badge and an "Other premises" field in the feed.
 - Each entry shows: full company name, local connection, what changed, facility pressure, countercase, signal rating, opportunity stage, analysis date, origin label ("Discovered" or "Added from Live Research"), and the signal or query that surfaced it.
 - Actions: open full brief, add to Watchlist, dismiss.
-- A "Run discovery" button (admin only) runs the discovery pipeline on demand. Scheduled discovery comes later (Phase 6).
+- A "Run discovery" button (admin only) opens the Discovery page, and a "Schedule: every Monday" / "Schedule: off" button (admin only) opens the Schedule section of Settings (`/settings#schedule`). The Discovery page shows the schedule status to everyone with a "Change schedule" button. Discovery sits in the main sidebar under Opportunity Feed (decided 2026-11-17).
 
 ### Live Research (secondary feature)
 - The user enters a company name or theme. The app collects sources, shows them in the evidence ledger as unclassified, then runs analysis only when the user clicks **Analyze sources**.

@@ -34,12 +34,12 @@ export default async function DiscoveryPage() {
       ) : (
         <p className="text-[0.9375rem] text-meta">Only admins can run discovery. Run summaries are visible to everyone.</p>
       )}
-      <p className="text-[0.9375rem]">
+      <p className="flex flex-wrap items-center gap-3 text-[0.9375rem]">
         {settings?.schedule_discovery_enabled
           ? `Automatic discovery: ${describeSchedule({ frequency: (settings.discovery_frequency as "daily" | "weekly" | "monthly") ?? "weekly", weekdays: settings.discovery_weekdays ?? [1], monthDay: settings.discovery_month_day ?? 1 })}, at about 9–10 am Toronto.`
           : "Automatic discovery is off."}{" "}
-        <Link href="/settings" className="link">
-          Schedule settings
+        <Link href="/settings#schedule" className="btn">
+          Change schedule
         </Link>
       </p>
 

@@ -47,7 +47,7 @@ export function SettingsForm({ values, envModels, canEdit }: Props) {
           <TextField name="analysis_model" label="Analysis model (strong)" value={values.analysis_model} hint={`Blank uses the server default: ${envModels.analysis ?? "not set"}.`} />
         </Group>
 
-        <Group title="Schedule">
+        <Group title="Schedule" id="schedule">
           <Check name="schedule_ingestion_enabled" label="Run ingestion every day" checked={values.schedule_ingestion_enabled} hint="All structured sources, after their morning refresh. Free." />
           <Check name="schedule_discovery_enabled" label="Run discovery automatically" checked={values.schedule_discovery_enabled} hint="Spends Firecrawl and LLM credits within the caps above. Everyone is notified in the app when a run finishes." />
           <fieldset className="grid content-start gap-2 sm:col-span-2">
@@ -116,9 +116,9 @@ export function SettingsForm({ values, envModels, canEdit }: Props) {
   );
 }
 
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
+function Group({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
-    <section className="grid gap-3">
+    <section id={id} className="grid scroll-mt-6 gap-3">
       <h2 className="label border-b border-line pb-1.5">{title}</h2>
       <div className="grid gap-4 sm:grid-cols-2">{children}</div>
     </section>

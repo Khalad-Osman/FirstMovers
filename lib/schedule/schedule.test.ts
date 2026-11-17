@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseSettingsForm } from "@/lib/settings";
-import { decideScheduledDiscovery, describeSchedule, isDiscoveryDay, maxRunCredits, torontoParts } from "./plan";
+import { decideScheduledDiscovery, describeSchedule, isDiscoveryDay, maxRunCredits, scheduleStatus, torontoParts } from "./plan";
 import { aggregateUsage, monthOf } from "./usage";
 
 describe("torontoParts", () => {
@@ -157,5 +157,14 @@ describe("settings form: schedule", () => {
   it("allows no weekdays for monthly (stored default Monday)", () => {
     const r = form("monthly", []);
     expect(r.success && r.data).toMatchObject({ discovery_frequency: "monthly", discovery_month_day: 15, discovery_weekdays: [1] });
+  });
+});
+
+describe("scheduleStatus", () => {
+  it("says off, or describes the schedule", () => {
+    const s = { schedule_discovery_enabled: true, discovery_frequency: "weekly", discovery_weekdays: [1, 4], discovery_month_day: 1 };
+    expect(scheduleStatus(s)).toBe("every Monday, Thursday");
+    expect(scheduleStatus({ ...s, schedule_discovery_enabled: false })).toBe("off");
+    expect(scheduleStatus(null)).toBe("off");
   });
 });

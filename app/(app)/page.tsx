@@ -4,6 +4,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { getFeed, getSampleEntries, getWatchlist, type FeedEntry } from "@/lib/data/briefs";
 import { FeedRow } from "@/components/feed-row";
 import { PageHeader } from "@/components/page-header";
+import { createClient } from "@/lib/supabase/server";
+import { scheduleStatus } from "@/lib/schedule/plan";
 
 export const metadata: Metadata = { title: "Opportunity Feed · First Movers" };
 
@@ -13,7 +15,13 @@ function newestFirst(a: FeedEntry, b: FeedEntry) {
 
 export default async function FeedPage({ searchParams }: PageProps<"/">) {
   const showSamples = (await searchParams).samples === "1";
-  const [user, { entries, invalid }, watchlist] = await Promise.all([getCurrentUser(), getFeed(), getWatchlist()]);
+  const supabase = await createClient();
+  const [user, { entries, invalid }, watchlist, { data: schedule }] = await Promise.all([
+    getCurrentUser(),
+    getFeed(),
+    getWatchlist(),
+    supabase.from("settings").select("schedule_discovery_enabled, discovery_frequency, discovery_weekdays, discovery_month_day").maybeSingle(),
+  ]);
   const isAdmin = user?.role === "admin";
   const watched = new Set(watchlist.map((w) => w.companyId));
 
@@ -30,9 +38,14 @@ export default async function FeedPage({ searchParams }: PageProps<"/">) {
       <PageHeader title="Opportunity Feed">
         <div className="flex flex-wrap items-center gap-4">
         {isAdmin && (
-          <Link href="/discovery" className="btn btn-primary">
-            Run discovery
-          </Link>
+          <>
+            <Link href="/discovery" className="btn btn-primary">
+              Run discovery
+            </Link>
+            <Link href="/settings#schedule" className="btn">
+              Schedule: {scheduleStatus(schedule)}
+            </Link>
+          </>
         )}
         <Link
           href={showSamples ? "/" : "/?samples=1"}

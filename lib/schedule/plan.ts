@@ -64,3 +64,9 @@ export function decideScheduledDiscovery(input: {
   }
   return { run: true };
 }
+
+// Short status for buttons: "every Monday" or "off".
+export function scheduleStatus(s: { schedule_discovery_enabled: boolean; discovery_frequency: string; discovery_weekdays: number[]; discovery_month_day: number } | null | undefined): string {
+  if (!s?.schedule_discovery_enabled) return "off";
+  return describeSchedule({ frequency: s.discovery_frequency as DiscoverySchedule["frequency"], weekdays: s.discovery_weekdays, monthDay: s.discovery_month_day });
+}
