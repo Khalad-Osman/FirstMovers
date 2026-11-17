@@ -26,9 +26,23 @@ export function createOpenAIProvider({ apiKey, fetchImpl = fetch, sleep = defaul
   return {
     name: "openai",
     async generateStructured(req: StructuredRequest): Promise<StructuredResponse> {
+      // Attachments go into the last user message as Chat Completions "file" parts.
+      const messages: unknown[] = [...req.messages];
+      if (req.attachments?.length) {
+        const i = messages.length - 1;
+        const last = req.messages[i];
+        if (!last || last.role !== "user") throw new LLMError("Attachments need a final user message.");
+        messages[i] = {
+          role: "user",
+          content: [
+            ...req.attachments.map((a) => ({ type: "file", file: { filename: a.filename, file_data: `data:${a.mediaType};base64,${a.dataBase64}` } })),
+            { type: "text", text: last.content },
+          ],
+        };
+      }
       const body = JSON.stringify({
         model: req.model,
-        messages: [{ role: "system", content: req.system }, ...req.messages],
+        messages: [{ role: "system", content: req.system }, ...messages],
         response_format: {
           type: "json_schema",
           json_schema: { name: req.schemaName, schema: req.jsonSchema, strict: true },

@@ -8,6 +8,9 @@ export type StructuredRequest = {
   messages: ChatMessage[];
   schemaName: string;
   jsonSchema: Record<string, unknown>; // strict JSON schema (see ./json-schema.ts)
+  // Files sent with the last user message (e.g. a PDF of past deals). Adapters
+  // that can't read files must reject the request.
+  attachments?: { filename: string; mediaType: "application/pdf"; dataBase64: string }[];
 };
 
 export type StructuredResponse = {

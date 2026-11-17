@@ -3,6 +3,8 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { briefAnalysisSchema, type BriefAnalysis, type Origin, type Rating, type Stage } from "@/lib/brief/schema";
 import { SAMPLE_BRIEFS, type SampleBrief } from "@/lib/samples";
+import { dealFit, type FitLevel } from "@/lib/deals/fit";
+import { getPastDealsForFit } from "./deals";
 
 // One shape for feed rows, whether they come from the database or the samples.
 export type FeedEntry = {
@@ -23,6 +25,7 @@ export type FeedEntry = {
   surfacedBy: string | null;
   // Space likely to be vacated (likely/possible only); null otherwise
   vacancy: { assessment: "likely" | "possible"; address: string } | null;
+  fit?: FitLevel; // past deal fit; absent when no deals are uploaded
 };
 
 export type InvalidBrief = { briefId: string; companyName: string; analyzedAt: string };
@@ -81,6 +84,7 @@ export async function getFeed(): Promise<{ entries: FeedEntry[]; invalid: Invali
 
   const entries: FeedEntry[] = [];
   const invalid: InvalidBrief[] = [];
+  const deals = await getPastDealsForFit();
   for (const row of latest.values()) {
     if (row.dismissed) continue;
     const companyName = row.companies?.display_name ?? "Unknown company";
@@ -105,6 +109,7 @@ export async function getFeed(): Promise<{ entries: FeedEntry[]; invalid: Invali
         companyName,
       ),
     );
+    if (deals.length) entries[entries.length - 1].fit = dealFit(parsed.data, deals).level;
   }
   return { entries, invalid };
 }

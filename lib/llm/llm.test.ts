@@ -55,6 +55,17 @@ describe("OpenAI adapter", () => {
     expect((init.headers as Record<string, string>).Authorization).toBe("Bearer sk-test");
   });
 
+  it("sends attachments as file parts in the last user message", async () => {
+    const fetchImpl = vi.fn(async () => ok('{"a":1}'));
+    const p = createOpenAIProvider({ apiKey: "sk-test", fetchImpl, sleep });
+    await p.generateStructured({ ...REQ, attachments: [{ filename: "deals.pdf", mediaType: "application/pdf", dataBase64: "QUJD" }] });
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    const last = JSON.parse(init.body as string).messages.at(-1);
+    expect(last.role).toBe("user");
+    expect(last.content[0]).toEqual({ type: "file", file: { filename: "deals.pdf", file_data: "data:application/pdf;base64,QUJD" } });
+    expect(last.content[1].type).toBe("text");
+  });
+
   it("retries 429 and 5xx with backoff", async () => {
     const fetchImpl = vi
       .fn()

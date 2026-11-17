@@ -38,6 +38,10 @@ Sections in this order:
 - Companies the team is tracking. Shows each company's latest brief (rating, what changed, analysis date) with a link to the full brief.
 - The sidebar count and the page must read from the same data.
 
+### Past deal fit (added 2026-11-17)
+- **Past deals** page (`/deals`, under Pipeline & admin): admins upload the team's track record. **Admins only** (RLS on `past_deals`; members and the demo account see only a notice). CSV is parsed in the browser with no AI (`lib/deals/normalize.ts`: columns matched by common names such as Occupier/Tenant/Client, Sector, City, Deal, SF, Clear, Date, Notes; unreadable values stay blank). A PDF (≤ 3 MB; `serverActions.bodySizeLimit` 4 MB, Vercel caps bodies at ~4.5 MB) is read once by the analysis model as a Chat Completions `file` part (`lib/deals/extract.ts`, Zod, one retry; values not stated stay null). Every row is reviewed and editable before **Save**; Excel users save as CSV (no Excel library, decided 2026-11-17).
+- **Fit** (`lib/deals/fit.ts`, no AI): each brief is compared with the deals on company type, region (from the local connection), deal type (`dealIndicators`) and size (sizes stated in FACT findings, ±50%). Best deal matching 3+ dimensions = High, 2 = Medium, 1 = Low, else None. Shown as a "Past deal fit" section on the brief and a feed badge (not shown when None or when no deals exist). **Separate from the signal rating.** Deals are read with the secret key so every viewer gets the level; only admins see which deals matched.
+
 ### Notifications (added 2026-11-17)
 - In-app only. When a discovery run completes, fails or pauses (manual or scheduled), one notification per run and kind is created in `notifications` (`lib/notifications.ts`, called from `finalize`, `failRun` and `pauseRun` in `lib/discovery/run.ts`; failures never break the run). Shared by the team; read state is per user in `notification_reads` (RLS: own rows only). Sidebar "Notifications" shows the unread count; `/notifications` lists the latest 50 with "Mark all as read". Admins can delete notifications.
 

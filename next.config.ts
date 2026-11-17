@@ -7,6 +7,12 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/**": ["./docs/intelligence-model.md", "./docs/analysis-rules.md"],
   },
+  experimental: {
+    serverActions: {
+      // Past-deal PDFs (lib/deals/extract.ts, max 3 MB); Vercel caps bodies at ~4.5 MB.
+      bodySizeLimit: "4mb",
+    },
+  },
   turbopack: {
     rules: {
       "*.css": {

@@ -14,6 +14,8 @@ import { RUNNING, ResearchStatusBadge } from "../status";
 import { Poller } from "./poller";
 import { checkFilters, hasFilters, researchFiltersSchema } from "@/lib/research/filters";
 import { FilterCheck, FilterSummary } from "./filter-check";
+import { fitForBrief } from "@/lib/data/deals";
+import { getCurrentUser } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Live Research · First Movers" };
 export const maxDuration = 300; // analysis continues in after()
@@ -255,6 +257,7 @@ ${s.excerpt ?? ""}` })),
             )}
           </div>
           <BriefView
+            fit={await fitForBrief(analysis.data, (await getCurrentUser())?.role === "admin")}
             analysis={analysis.data}
             companyName={analysis.data.company.name}
             isSample={false}

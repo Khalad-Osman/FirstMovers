@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getBrief, getWatchlist } from "@/lib/data/briefs";
 import { formatDate } from "@/lib/format";
 import { BriefView } from "@/components/brief-view";
+import { fitForBrief } from "@/lib/data/deals";
 import { ActionButton } from "@/components/action-button";
 import { addToWatchlist, dismissBrief } from "../../actions";
 
@@ -34,6 +35,8 @@ export default async function BriefPage({ params }: PageProps<"/briefs/[id]">) {
     );
   }
 
+  const fit = await fitForBrief(brief.analysis, user?.role === "admin");
+
   return (
     <div className="grid min-w-0 gap-4">
       <Link href="/" className="link w-fit text-[0.875rem]">
@@ -47,6 +50,7 @@ export default async function BriefPage({ params }: PageProps<"/briefs/[id]">) {
         origin={brief.origin}
         surfacedBy={brief.surfacedBy}
         version={brief.version}
+        fit={fit}
         actions={
           <>
             {watched ? (

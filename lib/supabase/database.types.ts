@@ -211,6 +211,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"past_deals": {
+                  Row: {
+                    "clear_height_ft": number | null,"company_type": string | null,"created_at": string,"created_by": string | null,"deal_date": string | null,"deal_type": string | null,"id": string,"municipality": string | null,"notes": string | null,"occupier": string,"region": string | null,"size_sqft": number | null,"source": string,"source_file": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "clear_height_ft"?: number | null,"company_type"?: string | null,"created_at"?: string,"created_by"?: string | null,"deal_date"?: string | null,"deal_type"?: string | null,"id"?: string,"municipality"?: string | null,"notes"?: string | null,"occupier": string,"region"?: string | null,"size_sqft"?: number | null,"source"?: string,"source_file"?: string | null
+                  }
+                  Update: {
+                    "clear_height_ft"?: number | null,"company_type"?: string | null,"created_at"?: string,"created_by"?: string | null,"deal_date"?: string | null,"deal_type"?: string | null,"id"?: string,"municipality"?: string | null,"notes"?: string | null,"occupier"?: string,"region"?: string | null,"size_sqft"?: number | null,"source"?: string,"source_file"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "past_deals_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profiles": {
                   Row: {
                     "created_at": string,"full_name": string | null,"id": string,"role": Database["public"]['Enums']["app_role"]

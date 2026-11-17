@@ -5,6 +5,8 @@ import { formatDate, stripLabel } from "@/lib/format";
 import { addToWatchlist, dismissBrief } from "@/app/(app)/actions";
 import { ActionButton } from "./action-button";
 import { RatingBadge, SampleBadge, StageBadge } from "./badges";
+import { FIT_CLASS } from "./brief-view";
+import { FIT_LABEL } from "@/lib/deals/fit";
 
 type Props = {
   entry: FeedEntry;
@@ -26,6 +28,7 @@ export function FeedRow({ entry, watched, isAdmin }: Props) {
         <RatingBadge rating={entry.rating} />
         <StageBadge stage={entry.stage} />
         {entry.vacancy && <span className="badge badge-inferred">{VACANCY_LABEL[entry.vacancy.assessment]}</span>}
+        {entry.fit && entry.fit !== "none" && <span className={`badge ${FIT_CLASS[entry.fit]}`}>Past deal fit: {FIT_LABEL[entry.fit]}</span>}
       </div>
 
       <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-4">

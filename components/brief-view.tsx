@@ -1,6 +1,9 @@
 import { CHAIN_STEPS, ORIGIN_LABEL, RECENCY_LABEL, VACANCY_LABEL, type BriefAnalysis, type Origin } from "@/lib/brief/schema";
 import { ledgerCounts } from "@/lib/brief/integrity";
 import { COMPANY_TYPES, DEAL_TYPES } from "@/lib/research/filters";
+import { FIT_LABEL, type FitLevel } from "@/lib/deals/fit";
+
+export const FIT_CLASS: Record<FitLevel, string> = { high: "badge-supported", medium: "badge-signal", low: "badge-stage", none: "badge-stage" };
 import { formatDate, stripLabel } from "@/lib/format";
 import {
   ChainStatusBadge,
@@ -31,9 +34,11 @@ type Props = {
   version?: number;
   actions?: React.ReactNode;
   aside?: React.ReactNode; // versions list, notices
+  // Past deal fit (code, not AI). `matches` (deal descriptions) only for admins.
+  fit?: { level: FitLevel; reason: string; matches?: string[] } | null;
 };
 
-export function BriefView({ analysis, companyName, isSample, analyzedAt, origin, surfacedBy, version, actions, aside }: Props) {
+export function BriefView({ analysis, companyName, isSample, analyzedAt, origin, surfacedBy, version, actions, aside, fit }: Props) {
   const counts = ledgerCounts(analysis);
   const ids = new Set(analysis.ledger.map((e) => e.id));
 
@@ -248,6 +253,23 @@ export function BriefView({ analysis, companyName, isSample, analyzedAt, origin,
         </div>
         <p className="mt-2">{stripLabel(analysis.ratingReason, "Signal rating")}</p>
       </Section>
+
+      {fit && (
+        <Section title="Past deal fit">
+          <p>
+            <span className={`badge ${FIT_CLASS[fit.level]} mr-2`}>Past deal fit: {FIT_LABEL[fit.level]}</span>
+            {fit.reason}
+          </p>
+          {fit.matches && fit.matches.length > 0 && (
+            <ul className="mt-2 grid list-disc gap-1 pl-5 text-[0.9375rem]">
+              {fit.matches.map((m) => (
+                <li key={m}>Similar to {m}</li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-1 text-[0.8125rem] text-meta">Compared in code with the team&apos;s past deals. Separate from the signal rating.</p>
+        </Section>
+      )}
     </article>
   );
 }
