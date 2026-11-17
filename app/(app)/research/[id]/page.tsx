@@ -12,6 +12,8 @@ import { analyzeSources, addToFeed } from "../actions";
 import { ResearchForm } from "../research-form";
 import { RUNNING, ResearchStatusBadge } from "../status";
 import { Poller } from "./poller";
+import { checkFilters, hasFilters, researchFiltersSchema } from "@/lib/research/filters";
+import { FilterCheck, FilterSummary } from "./filter-check";
 
 export const metadata: Metadata = { title: "Live Research · First Movers" };
 export const maxDuration = 300; // analysis continues in after()
@@ -71,7 +73,21 @@ export default async function ResearchSessionPage({ params }: PageProps<"/resear
     title: string;
     description: string;
     publisher: string;
+    matches?: string[];
   }[];
+  const parsedFilters = session.filters ? researchFiltersSchema.safeParse(session.filters) : null;
+  const filters = parsedFilters?.success && hasFilters(parsedFilters.data) ? parsedFilters.data : null;
+  const filterRows =
+    filters && session.mode === "company" && sources.length > 0
+      ? checkFilters({
+          filters,
+          brief: analysis?.success
+            ? { localConnection: analysis.data.company.localConnection, companyType: analysis.data.companyType, dealIndicators: analysis.data.dealIndicators }
+            : null,
+          sources: sources.map((s, i) => ({ id: `S${i + 1}`, text: `${s.title ?? ""}
+${s.excerpt ?? ""}` })),
+        })
+      : [];
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto" }).format(new Date());
 
   return (
@@ -87,6 +103,7 @@ export default async function ResearchSessionPage({ params }: PageProps<"/resear
           <span className="text-[0.875rem] text-meta">{session.mode === "theme" ? "Theme search" : "Company research"}</span>
         </div>
         <h1 className="text-[1.5rem] font-semibold">{session.query}</h1>
+        {filters && <FilterSummary filters={filters} />}
         <div className="mono flex flex-wrap gap-x-5 gap-y-1 text-[0.8125rem] text-meta">
           <span>Started {formatDate(session.created_at)}</span>
           <span>Firecrawl: {usage.firecrawl_requests ?? 0} requests · ~{usage.firecrawl_credits ?? 0} credits</span>
@@ -125,6 +142,15 @@ export default async function ResearchSessionPage({ params }: PageProps<"/resear
                   {r.title}
                 </a>
                 <span className="text-[0.8125rem] text-meta">{r.publisher}</span>
+                {r.matches && r.matches.length > 0 && (
+                  <span className="flex flex-wrap gap-1.5">
+                    {r.matches.map((m) => (
+                      <span key={m} className="badge badge-supported">
+                        Matches {m}
+                      </span>
+                    ))}
+                  </span>
+                )}
                 {r.description && <p className="text-[0.9375rem]">{r.description}</p>}
               </li>
             ))}
@@ -193,6 +219,8 @@ export default async function ResearchSessionPage({ params }: PageProps<"/resear
           )}
         </section>
       )}
+
+      {filterRows.length > 0 && <FilterCheck rows={filterRows} analyzed={Boolean(analysis?.success)} />}
 
       {errors.length > 0 && session.status !== "analyzing" && (
         <section role="alert" className="grid gap-2 border-l-4 border-[var(--error-fg)] bg-[var(--error-bg)] px-4 py-3">

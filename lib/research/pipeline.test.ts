@@ -144,6 +144,21 @@ describe("runThemeSearch", () => {
     expect(m.last().theme_results).toHaveLength(1);
     expect(fc.scrape).not.toHaveBeenCalled();
   });
+
+  it("adds filter terms to the theme search and lists matching results first", async () => {
+    const results = [
+      { url: "https://a.ca/1", title: "Cold storage boom in Ohio", description: "US market" },
+      { url: "https://a.ca/2", title: "Brampton dairy plant expands", description: "Food processor adds space" },
+    ];
+    const fc = fakeFirecrawl(() => results, {});
+    const m = memoryStore();
+    await runThemeSearch("s1", "cold storage", { firecrawl: fc, store: m.store, today: TODAY, maxSources: 5 }, { regions: ["peel"], companyTypes: ["food_beverage"], dealTypes: [] });
+    expect(fc.search.mock.calls[0][0]).toMatchObject({ query: "cold storage (Peel OR Mississauga OR Brampton) (food OR beverage)" });
+    const listed = m.last().theme_results!;
+    expect(listed.map((r) => r.url)).toEqual(["https://a.ca/2", "https://a.ca/1"]);
+    expect(listed[0].matches).toEqual(["Peel", "Food & beverage"]);
+    expect(fc.usage.credits).toBe(2); // still one search
+  });
 });
 
 describe("mentionsCompany", () => {

@@ -95,11 +95,18 @@ export const modelLedgerEntrySchema = z.object({
   repeatCoverageOf: z.string().nullable(),
 });
 
+// Company type and deal indicators (added 2026-11-17, for Live Research
+// filters): set only from what the sources show; "unknown" / [] otherwise.
+export const companyTypeSchema = z.enum(["manufacturer", "logistics_3pl", "food_beverage", "energy_nuclear", "data_centre_tech", "other", "unknown"]);
+export const dealIndicatorSchema = z.enum(["lease", "sale_purchase", "expansion_in_place", "new_build"]);
+
 export const modelOutputSchema = z.object({
   company: companySchema,
   ledger: z.array(modelLedgerEntrySchema),
   ...sharedFields,
   otherPremises: otherPremisesSchema,
+  companyType: companyTypeSchema,
+  dealIndicators: z.array(dealIndicatorSchema),
 });
 
 // ---------- Stored brief ----------
@@ -123,6 +130,8 @@ export const briefAnalysisSchema = z.object({
   ledger: z.array(ledgerEntrySchema),
   ...sharedFields,
   otherPremises: otherPremisesSchema.optional(), // absent on briefs saved before 2026-11-16
+  companyType: companyTypeSchema.optional(), // absent before 2026-11-17
+  dealIndicators: z.array(dealIndicatorSchema).optional(), // absent before 2026-11-17
 });
 
 export const VACANCY_LABEL: Record<z.infer<typeof vacancyAssessmentSchema>, string> = {

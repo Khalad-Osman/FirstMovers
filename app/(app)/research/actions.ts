@@ -9,6 +9,8 @@ import { getProvider, resolveModel } from "@/lib/llm";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runResearchJob, todayInToronto } from "@/lib/research/run";
 import { analyzeSession, saveSessionToFeed } from "@/lib/research/session";
+import { hasFilters, parseFiltersForm } from "@/lib/research/filters";
+import type { Json } from "@/lib/supabase/database.types";
 
 export type StartState = { error?: string } | undefined;
 
@@ -28,7 +30,9 @@ export async function startResearch(_prev: StartState, formData: FormData): Prom
     companyId: formData.get("companyId") || undefined,
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
-  if (!process.env.FIRECRAWL_API_KEY) {
+  const filters = parseFiltersForm(formData);
+  if (!filters.success) return { error: filters.error.issues[0].message };
+  if (!process.env.FIRECRAWL_API_KEY?.trim()) {
     return { error: "Live Research isn't configured yet: FIRECRAWL_API_KEY is missing on the server." };
   }
 
@@ -42,6 +46,7 @@ export async function startResearch(_prev: StartState, formData: FormData): Prom
       created_by: user.id,
       status: "searching",
       progress: "Starting",
+      filters: hasFilters(filters.data) ? (JSON.parse(JSON.stringify(filters.data)) as Json) : null,
     })
     .select("id")
     .single();

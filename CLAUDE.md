@@ -23,6 +23,7 @@ The analytical model the product runs on is in `docs/intelligence-model.md`. It 
 ### Live Research (secondary feature)
 - The user enters a company name or theme. The app collects sources, shows them in the evidence ledger as unclassified, then runs analysis only when the user clicks **Analyze sources**.
 - After analysis, **Add to feed** saves the brief with origin "Added from Live Research".
+- **Filters (added 2026-11-17, `lib/research/filters.ts`, no AI):** region (Peel, York, Halton, Durham, Toronto, Hamilton/Niagara, Waterloo, wider Ontario), company type, deal type, and property criteria (min/max sq ft, min clear height). Stored in `research_sessions.filters`. Theme searches add up to 8 place and 6 type terms to the query (still one search) and list matching results first with a "Matches …" tag. Company research is not changed by filters; the session page shows **"Fits your filters?"**: region from the brief's local connection, company type and deal type from two brief fields the model fills only from the sources (`companyType`, `dealIndicators`; absent on briefs before 2026-11-17), and sizes and clear heights found by pattern in the collected sources, quoted with their source id. Each check is Matches / Doesn't match / Not stated; nothing is assumed.
 
 ### Brief view
 Sections in this order:

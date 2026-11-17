@@ -3,6 +3,7 @@ import { getFirecrawl } from "@/lib/firecrawl/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runCompanyResearch, runThemeSearch } from "./pipeline";
 import { attachRecords } from "./records-db";
+import { researchFiltersSchema } from "./filters";
 import { createDbStore } from "./store";
 
 export function todayInToronto(): string {
@@ -16,7 +17,7 @@ export async function runResearchJob(sessionId: string): Promise<void> {
   const store = createDbStore();
   const { data: session } = await db
     .from("research_sessions")
-    .select("mode, query, company_id")
+    .select("mode, query, company_id, filters")
     .eq("id", sessionId)
     .single();
   if (!session) return;
@@ -39,7 +40,8 @@ export async function runResearchJob(sessionId: string): Promise<void> {
   }
 
   if (session.mode === "theme") {
-    await runThemeSearch(sessionId, session.query, deps);
+    const parsed = researchFiltersSchema.safeParse(session.filters ?? undefined);
+    await runThemeSearch(sessionId, session.query, deps, session.filters && parsed.success ? parsed.data : null);
     return;
   }
 

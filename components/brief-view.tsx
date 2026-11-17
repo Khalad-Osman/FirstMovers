@@ -1,5 +1,6 @@
 import { CHAIN_STEPS, ORIGIN_LABEL, RECENCY_LABEL, VACANCY_LABEL, type BriefAnalysis, type Origin } from "@/lib/brief/schema";
 import { ledgerCounts } from "@/lib/brief/integrity";
+import { COMPANY_TYPES, DEAL_TYPES } from "@/lib/research/filters";
 import { formatDate, stripLabel } from "@/lib/format";
 import {
   ChainStatusBadge,
@@ -77,6 +78,18 @@ export function BriefView({ analysis, companyName, isSample, analyzedAt, origin,
             <div>
               <dt className="label">Entity</dt>
               <dd className="mt-0.5">{analysis.company.entityNotes}</dd>
+            </div>
+          )}
+          {analysis.companyType && analysis.companyType !== "unknown" && (
+            <div>
+              <dt className="label">Company type (from sources)</dt>
+              <dd className="mt-0.5">{COMPANY_TYPES[analysis.companyType].label}</dd>
+            </div>
+          )}
+          {analysis.dealIndicators && analysis.dealIndicators.length > 0 && (
+            <div>
+              <dt className="label">Deal indicators (from sources)</dt>
+              <dd className="mt-0.5">{analysis.dealIndicators.map((d) => DEAL_TYPES[d]).join(", ")}</dd>
             </div>
           )}
         </dl>

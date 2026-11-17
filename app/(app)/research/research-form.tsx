@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { COMPANY_TYPES, COMPANY_TYPE_KEYS, DEAL_TYPES, DEAL_TYPE_KEYS, REGIONS, REGION_KEYS } from "@/lib/research/filters";
 import { startResearch, type StartState } from "./actions";
 
 type Props = {
@@ -54,11 +55,64 @@ export function ResearchForm({ initialMode = "company", initialQuery = "", compa
         </button>
       </div>
       <p className="text-[0.8125rem] text-meta">{HINT[mode]}</p>
+      {!compact && !companyId && <FilterFields mode={mode} />}
       {state?.error && (
         <p role="alert" className="form-error">
           {state.error}
         </p>
       )}
     </form>
+  );
+}
+
+function Chips({ name, title, options }: { name: string; title: string; options: { value: string; label: string }[] }) {
+  return (
+    <fieldset className="grid gap-1.5">
+      <legend className="field-label mb-1">{title}</legend>
+      <div className="flex flex-wrap gap-2">
+        {options.map((o) => (
+          <label key={o.value} className="inline-flex cursor-pointer items-center gap-1.5 rounded-[3px] border border-line bg-white px-2.5 py-1.5 text-[0.9375rem]">
+            <input type="checkbox" name={name} value={o.value} className="h-4 w-4" />
+            {o.label}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+function FilterFields({ mode }: { mode: "company" | "theme" }) {
+  return (
+    <details className="group border-t border-line pt-3">
+      <summary className="cursor-pointer list-none text-[0.9375rem] font-semibold">
+        <span className="inline-block transition-transform group-open:rotate-90">▸</span> Filters (optional)
+      </summary>
+      <div className="mt-3 grid gap-4">
+        <p className="text-[0.8125rem] text-meta">
+          {mode === "theme"
+            ? "Region and company type narrow the search (same cost). Every filter is then checked against the results."
+            : "Filters don't change the search. After analysis, the brief is checked against each one."}{" "}
+          Property criteria are checked against what the sources state, never searched for or assumed.
+        </p>
+        <Chips name="filter_region" title="Region" options={REGION_KEYS.map((k) => ({ value: k, label: REGIONS[k].label }))} />
+        <Chips name="filter_company_type" title="Company type" options={COMPANY_TYPE_KEYS.map((k) => ({ value: k, label: COMPANY_TYPES[k].label }))} />
+        <Chips name="filter_deal_type" title="Deal type" options={DEAL_TYPE_KEYS.map((k) => ({ value: k, label: DEAL_TYPES[k] }))} />
+        <fieldset className="grid gap-1.5">
+          <legend className="field-label mb-1">Property criteria · checked against sources, not searched</legend>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              ["filter_min_sqft", "Min sq ft"],
+              ["filter_max_sqft", "Max sq ft"],
+              ["filter_min_clear_height", "Min clear height (ft)"],
+            ].map(([name, label]) => (
+              <label key={name} className="grid gap-1">
+                <span className="text-[0.875rem]">{label}</span>
+                <input type="text" inputMode="numeric" name={name} pattern="[0-9, ]*" className="input mono" autoComplete="off" />
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      </div>
+    </details>
   );
 }

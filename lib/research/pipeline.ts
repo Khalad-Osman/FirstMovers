@@ -6,6 +6,7 @@ import { findPublishedDate, type DateMethod } from "./dates";
 import { companyQueries, followUpQuery, sinceMonthsTbs } from "./queries";
 import { groupKey } from "@/lib/discovery/candidates";
 import { normalizeCompanyName } from "./normalize";
+import { themeMatches, themeQuery, type ResearchFilters } from "./filters";
 import { canonicalUrl, EXCLUDED_DOMAINS, hostOf, isExcluded, rankCandidates, type Candidate } from "./select";
 
 export const SEARCH_LIMIT = 5; // results per company search (2 credits each)
@@ -18,7 +19,7 @@ export type SessionPatch = {
   progress?: string | null;
   error?: string | null;
   source_ids?: string[];
-  theme_results?: { url: string; title: string; description: string; publisher: string }[];
+  theme_results?: { url: string; title: string; description: string; publisher: string; matches?: string[] }[];
   usage?: Record<string, number>;
 };
 
@@ -257,16 +258,27 @@ export async function runCompanyResearch(sessionId: string, companyName: string,
   }
 }
 
-export async function runThemeSearch(sessionId: string, theme: string, deps: PipelineDeps): Promise<void> {
+export async function runThemeSearch(sessionId: string, theme: string, deps: PipelineDeps, filters?: ResearchFilters | null): Promise<void> {
   const { store, firecrawl, today } = deps;
   try {
     await store.update(sessionId, { status: "searching", progress: "Searching" });
-    const results = await firecrawl.search({ query: theme, limit: THEME_LIMIT, tbs: sinceMonthsTbs(24, today), excludeDomains: EXCLUDED_DOMAINS });
+    // Region and company-type filters add a few terms; same cost (one search).
+    const results = await firecrawl.search({ query: themeQuery(theme, filters), limit: THEME_LIMIT, tbs: sinceMonthsTbs(24, today), excludeDomains: EXCLUDED_DOMAINS });
     const seen = new Set<string>();
     const theme_results = results
       .filter((r) => !isExcluded(r.url))
-      .map((r) => ({ url: canonicalUrl(r.url), title: r.title || r.url, description: r.description, publisher: hostOf(r.url) ?? "" }))
-      .filter((r) => (seen.has(r.url) ? false : (seen.add(r.url), true)));
+      .map((r) => ({
+        url: canonicalUrl(r.url),
+        title: r.title || r.url,
+        description: r.description,
+        publisher: hostOf(r.url) ?? "",
+        matches: themeMatches(`${r.title} ${r.description}`, filters),
+      }))
+      .filter((r) => (seen.has(r.url) ? false : (seen.add(r.url), true)))
+      // Results that match more filters first; otherwise keep the search order.
+      .map((r, i) => ({ r, i }))
+      .sort((a, b) => b.r.matches.length - a.r.matches.length || a.i - b.i)
+      .map(({ r }) => r);
     await store.update(sessionId, {
       status: theme_results.length ? "ready" : "failed",
       progress: `${theme_results.length} result${theme_results.length === 1 ? "" : "s"}`,

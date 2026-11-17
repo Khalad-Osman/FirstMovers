@@ -152,6 +152,8 @@ describe("recordExcerpt / toRecordSource", () => {
         alternativesAssessment: "alternatives_likely",
         existingFacilityInvestment: true,
         otherPremises: { assessment: "not_indicated", address: null, text: "No other premises identified.", sourceIds: [] },
+        companyType: "unknown",
+        dealIndicators: [],
         workingHypothesis: null,
         unknowns: [],
         commercialValue: null,

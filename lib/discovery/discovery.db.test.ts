@@ -52,6 +52,8 @@ function briefFor(name: string, sourceCount: number, verified: boolean): ModelOu
     alternativesAssessment: "alternatives_possible",
     existingFacilityInvestment: false,
     otherPremises: { assessment: "not_indicated", address: null, text: "No other premises identified.", sourceIds: [] },
+    companyType: "unknown",
+    dealIndicators: [],
     workingHypothesis: null,
     unknowns: ["Utilization."],
     commercialValue: null,

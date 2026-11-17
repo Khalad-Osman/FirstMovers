@@ -57,6 +57,10 @@ Other premises (space likely to be vacated)
 - address is the other address exactly as written in the sources, or null when not_indicated. text is one or two sentences on what the sources show and what remains unknown; never state the other site's size, lease terms, tenure, timing or use unless a source states it. sourceIds cite both the new-facility source and the other-address source.
 - This does not change the rating: a company that has already secured its new facility can be no_meaningful_signal for a new requirement and still have likely vacated space. When nothing applies, use assessment "not_indicated", address null, a short text and empty sourceIds.
 
+Company type and deal indicators
+- companyType is the company's main business as the sources show it: manufacturer, logistics_3pl (logistics, 3PL, distribution, warehousing), food_beverage (food or beverage production or processing), energy_nuclear (energy or nuclear supply chain), data_centre_tech (data centres or tech hardware), other, or unknown when the sources don't establish it.
+- dealIndicators lists only the property actions a source directly indicates for this company: lease (leasing or a tenancy), sale_purchase (buying or selling property), expansion_in_place (adding to or fitting out premises it already occupies), new_build (constructing a new building). Use an empty list when none is stated. Never infer one from the rating or from general growth.
+
 Length
 - For no_meaningful_signal, keep the brief short: at most three countercase points and three unknowns, commercialValue null, workingHypothesis null unless there is a real one.`;
 
