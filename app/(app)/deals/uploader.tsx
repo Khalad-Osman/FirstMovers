@@ -13,6 +13,8 @@ export function DealsUploader() {
   const [message, setMessage] = useState<{ kind: "error" | "info"; text: string } | null>(null);
   const [pending, start] = useTransition();
   const [confirmPdf, setConfirmPdf] = useState<File | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
 
   function reset() {
     setRows([]);
@@ -58,6 +60,7 @@ export function DealsUploader() {
       const r = await savePastDeals({ drafts: included, source: source.kind, filename: source.filename });
       if ("error" in r) return setMessage({ kind: "error", text: r.error });
       setMessage({ kind: "info", text: `Saved ${r.saved} deal${r.saved === 1 ? "" : "s"}.` });
+      setFileName(null);
       reset();
     });
   }
@@ -76,19 +79,50 @@ export function DealsUploader() {
           CSV files are read in your browser with no AI. A PDF is read once by the analysis model (about $0.02–0.05). Either way you review every field before saving; values the file doesn&apos;t give stay blank.
         </p>
       </div>
-      <label className="grid w-fit gap-1">
-        <span className="field-label">Choose a file (CSV or PDF, PDF up to 3 MB)</span>
-        <input
-          type="file"
-          accept=".csv,.tsv,.txt,.pdf,text/csv,application/pdf"
-          disabled={pending}
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) void onFile(f);
-            e.target.value = "";
-          }}
-        />
-      </label>
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (!pending) setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          const f = e.dataTransfer.files?.[0];
+          if (f && !pending) {
+            setFileName(f.name);
+            void onFile(f);
+          }
+        }}
+        className={`grid justify-items-center gap-2 rounded-[3px] border-2 border-dashed px-4 py-6 text-center ${
+          dragging ? "border-[var(--accent)] bg-[#eff6ff]" : "border-[#9ca3af] bg-white"
+        }`}
+      >
+        <label className={`btn btn-primary cursor-pointer text-[1rem] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)] ${pending ? "pointer-events-none opacity-60" : ""}`}>
+          Choose a file to upload
+          <input
+            type="file"
+            accept=".csv,.tsv,.txt,.pdf,text/csv,application/pdf"
+            disabled={pending}
+            className="sr-only"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) {
+                setFileName(f.name);
+                void onFile(f);
+              }
+              e.target.value = "";
+            }}
+          />
+        </label>
+        <p className="text-[0.9375rem]">or drag a file here</p>
+        <p className="text-[0.8125rem] text-meta">CSV (from Excel: File → Save As → CSV) or PDF up to 3 MB</p>
+        {fileName && (
+          <p className="mono text-[0.875rem]">
+            Selected: <strong>{fileName}</strong>
+          </p>
+        )}
+      </div>
 
       {confirmPdf && (
         <div role="alert" className="flex flex-wrap items-center gap-2 border-l-4 border-[#b45309] bg-[#fffbeb] px-3 py-2 text-[0.9375rem]">
