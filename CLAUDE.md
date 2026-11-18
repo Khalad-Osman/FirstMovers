@@ -20,6 +20,9 @@ The analytical model the product runs on is in `docs/intelligence-model.md`. It 
 - Actions: open full brief, add to Watchlist, dismiss.
 - A "Run discovery" button (admin only) opens the Discovery page, and a "Schedule: every Monday" / "Schedule: off" button (admin only) opens the Schedule section of Settings (`/settings#schedule`). The Discovery page shows the schedule status to everyone with a "Change schedule" button. Discovery sits in the main sidebar under Opportunity Feed (decided 2026-11-17).
 
+### Prospects (added 2026-11-17)
+- Main sidebar, under Discovery. Every named company in the stored signals (last 12 months) with **physical activity**: a permit scoring 2+ (new building, addition, change of use, major fit-out, racking/equipment, small structures) or a facility/equipment grant; awards alone don't qualify. Ranked by the discovery rule score (`lib/prospects.ts`, reusing `buildCandidates`, so the best-award/best-grant cap and non-industrial filter apply). **No AI, no credits, no screening**, so a few non-occupiers can appear. Filters in the URL: region (default the GTA: Peel, York, Halton, Durham, Toronto), signal type, minimum value, never analyzed only. Each row: score and reasons, top 3 records (dated, linked to the official record), all records on demand, latest brief (rating, link) or "Public record only", and a plain **Research** link (Live Research pre-filled; decided 2026-11-17: no one-click Generate brief). **Export CSV** (`/prospects/export`) uses the same filters. Discovery picks 3 per run from the same pool automatically; Prospects is the wide view where a broker chooses.
+
 ### Live Research (secondary feature)
 - The user enters a company name or theme. The app collects sources, shows them in the evidence ledger as unclassified, then runs analysis only when the user clicks **Analyze sources**.
 - After analysis, **Add to feed** saves the brief with origin "Added from Live Research".
