@@ -206,4 +206,14 @@ describe("Environmental Registry: names and administrative notices", () => {
     expect(signalWeight(s as SignalForCandidate)).toEqual({ weight: 1, label: "environmental approval: administrative" });
     expect(isPhysical(s)).toBe(false);
   });
+  it("ignores the standard flexibility wording when classifying", () => {
+    const boiler = "It permits modifications such as process changes, de-bottlenecking or addition of new equipment subject to limits on operational flexibility. The Limited Operational Flexibility conditions will expire 10 years from the date of the Approval.";
+    const kindOf = (details: string) => {
+      const n = parseNotice("026-0950", page({ title: "Acme Wire Inc. - Environmental Compliance Approval (air & noise)", type: "Environmental Compliance Approval (air & noise)", details }));
+      return (rowOf(mapNotice(n, ctx))[0].raw as { kind: string }).kind;
+    };
+    expect(kindOf(`An amended Environmental Compliance Approval with Limited Operational was granted to Acme Wire Inc., operating a wire facility. ${boiler}`)).toBe("admin");
+    expect(kindOf(`An amended Environmental Compliance Approval with Limited Operational Flexibility to add a new furnace was granted to Acme Wire Inc. ${boiler}`)).toBe("growth");
+    expect(kindOf(`This approval is for the stack modification at the facility. ${boiler}`)).toBe("change");
+  });
 });

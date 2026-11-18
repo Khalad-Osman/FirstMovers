@@ -76,6 +76,7 @@ Broker angle
   Weak: "The company's new building may have implications for its existing premises."
   Strong: "Building a new plant on [street] while still listed at [address]: pitch a sublease or sale of the current space."
 - talkingPoints: one to three short points to raise, each citing the source ids it rests on; at least one must cite a FACT. Never claim a requirement, size, lease term or date the sources don't state.
+- Write the headline and talking points for the broker, in the third person: name the company or say "they" (for example "Ask how they plan to use..."). Never address the company as "you" or "your company"; these are notes for the broker, not a message to the company.
 - A no_meaningful_signal brief can still have a vacated_space, capacity_conversation or relationship angle when the evidence supports one.
 
 Length

@@ -70,7 +70,23 @@ const NOT_OCCUPIER = /\b(?:paving|asphalt|cremat\w*|crematorium|funeral|landfill
 const GROWTH = /\bnew (?:environmental compliance approval|facility|plant|site|production line|line|building)|\b(?:additional|new) (?:production |processing |manufacturing |coating |paint |spray )?(?:lines?|equipment|sources?|booths?|ovens?|kilns?|furnaces?)\b|\bincreas\w* (?:in )?(?:production|capacity|throughput)|\bexpan\w+|\brelocat\w+|\bestablish\w*/i;
 // Paperwork, not a change on the ground: renewing operational-flexibility
 // conditions, consolidating approvals, corrections, name or owner changes.
-const ADMIN = /\brenewal of (?:the )?limited operational flexibility|\breplaces all (?:of )?the (?:current|existing) environmental compliance approvals|\b(?:correct(?:ion|ing)|administrative amendment|transfer of ownership|change of (?:name|owner)|name change|previously known as)\b/i;
+const ADMIN = /\brenewal of (?:the |an? )?(?:environmental compliance approval with )?limited operational flexibility|\b(?:an )?(?:amended environmental compliance approval|amendment to environmental compliance approval[^.]*?) with (?:limited )?operational\b(?![^.]*\bto (?:add|install|increase|expand|modify|replace|include)\b)|\breplaces all (?:of )?the (?:current|existing) environmental compliance approvals|\b(?:correct(?:ion|ing)|administrative amendment|transfer of ownership|change of (?:name|owner)|name change|previously known as)\b/i;
+
+// Standard wording in every Limited Operational Flexibility approval ("It permits
+// modifications such as process changes, de-bottlenecking or addition of new
+// equipment…") describes what the approval allows, not a project. Drop those
+// sentences before looking for growth language.
+export function stripBoilerplate(text: string): string {
+  return text
+    .split(/(?<=\.)\s+/)
+    .filter((s) => !/\bpermits modifications such as\b|\blimits on operational flexibility\b|\blimited operational flexibility conditions will expire\b|\bapplication for amendment at that time\b/i.test(s))
+    .join(" ");
+}
+
+export function approvalKind(raw: string): "growth" | "change" | "admin" {
+  const text = stripBoilerplate(raw);
+  return GROWTH.test(text) ? "growth" : ADMIN.test(text) ? "admin" : "change";
+}
 
 // The legal name: drop a French duplicate ("Sofina Foods Inc. Aliments Sofina Inc.")
 // and an operating name ("St. Marys Cement Inc. (Canada) operating as CBM Ready Mix").
@@ -108,8 +124,7 @@ export function mapNotice(n: EroNotice, ctx: Pick<IngestContext, "cutoff" | "tod
   if (!fullName) return { skip: "no proponent" };
   if (NOT_OCCUPIER.test(`${fullName} ${n.details ?? ""}`.slice(0, 400))) return { skip: "not an industrial occupier" };
   const name = legalName(fullName);
-  const text = `${n.summary ?? ""} ${n.details ?? ""}`;
-  const kind = GROWTH.test(text) ? "growth" : ADMIN.test(text) ? "admin" : "change";
+  const kind = approvalKind(`${n.summary ?? ""} ${n.details ?? ""}`);
   return {
     row: {
       source_type: "ero_approval",
