@@ -16,6 +16,8 @@ const PAGE = 50;
 const STRENGTH_LABEL: Record<Strength, string> = {
   award: "Award",
   grant: "Grant",
+  announcement: "Announcement",
+  env_approval: "Environmental approval",
   new_building: "New building",
   addition: "Addition",
   change_of_use: "Change of use",
@@ -27,6 +29,8 @@ const STRENGTH_LABEL: Record<Strength, string> = {
 const STRENGTH_CLASS: Record<Strength, string> = {
   award: "badge-signal",
   grant: "badge-signal",
+  announcement: "badge-signal",
+  env_approval: "badge-signal",
   new_building: "badge-strong",
   addition: "badge-strong",
   change_of_use: "badge-worth",

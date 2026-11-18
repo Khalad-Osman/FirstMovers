@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/page-header";
 export const metadata: Metadata = { title: "Prospects · First Movers" };
 
 const PAGE = 50;
-const FAMILY_LABEL: Record<SignalFamily, string> = { permit: "Permit", grant: "Grant", award: "Award" };
+const FAMILY_LABEL: Record<SignalFamily, string> = { permit: "Permit", grant: "Grant", award: "Award", news: "Ontario news", approval: "Env. approval" };
 const money = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
 
 export default async function ProspectsPage({ searchParams }: PageProps<"/prospects">) {
@@ -60,7 +60,7 @@ export default async function ProspectsPage({ searchParams }: PageProps<"/prospe
           <fieldset className="grid gap-1.5">
             <legend className="field-label mb-1">Signal type</legend>
             <div className="flex flex-wrap gap-2">
-              {(["permit", "grant", "award"] as const).map((t) => (
+              {(["permit", "grant", "award", "news", "approval"] as const).map((t) => (
                 <label key={t} className="inline-flex items-center gap-1.5 rounded-[3px] border border-line bg-white px-2.5 py-1.5 text-[0.9375rem]">
                   <input type="checkbox" name="type" value={t} defaultChecked={filters.families.includes(t)} className="h-4 w-4" />
                   {FAMILY_LABEL[t]}

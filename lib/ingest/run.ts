@@ -59,6 +59,16 @@ export async function drive(
   return counts;
 }
 
+// Server runs stop starting new requests after this, to finish inside the 300 s function limit.
+const RUN_BUDGET_MS = 220_000;
+
+async function knownRange(db: ReturnType<typeof createAdminClient>, source: string) {
+  const pick = (asc: boolean) =>
+    db.from("signals").select("source_record_id, published_at").eq("source_type", source as never).order("source_record_id", { ascending: asc }).limit(1).maybeSingle();
+  const [{ data: newest }, { data: oldest }] = await Promise.all([pick(false), pick(true)]);
+  return { newestId: newest?.source_record_id ?? null, oldestId: oldest?.source_record_id ?? null, oldestDate: oldest?.published_at ?? null };
+}
+
 // Background job (after()). Never throws: the outcome is written to ingestion_runs.
 export async function runIngestionJob(runId: string, sourceType: string): Promise<void> {
   const db = createAdminClient();
@@ -80,6 +90,8 @@ export async function runIngestionJob(runId: string, sourceType: string): Promis
       cutoff: monthsBefore(today, 12),
       canadabuysMinValue: Number(settings?.canadabuys_min_value ?? 100000),
       grantsMinValue: Number(settings?.grants_min_value ?? 100000),
+      known: await knownRange(db, source.source),
+      deadline: Date.now() + RUN_BUDGET_MS,
       fetchImpl: ingestFetch,
       progress: (message: string) => update({ progress: message }),
     };

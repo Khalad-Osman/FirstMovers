@@ -28,6 +28,10 @@ export type IngestContext = {
   cutoff: string; // YYYY-MM-DD, 12 months before today
   canadabuysMinValue: number;
   grantsMinValue: number;
+  // Range of record ids already stored for this source (sources that scan sequential ids).
+  known?: { newestId: string | null; oldestId: string | null; oldestDate: string | null };
+  // Stop starting new work after this time (epoch ms); unset when run from the CLI.
+  deadline?: number;
   fetchImpl: typeof fetch;
   progress: (message: string) => Promise<void>;
 };

@@ -6,9 +6,17 @@ import { toRecordSource, type RecordSignal } from "@/lib/research/records";
 // the stored signals with recent physical activity, ranked with the discovery
 // rule score. Discovery and Live Research are the deep dive; this is the wide view.
 
-export type SignalFamily = "permit" | "grant" | "award";
+export type SignalFamily = "permit" | "grant" | "award" | "news" | "approval";
 export const familyOf = (s: { source_type: string }): SignalFamily =>
-  s.source_type.startsWith("permit_") ? "permit" : s.source_type === "federal_grant" ? "grant" : "award";
+  s.source_type.startsWith("permit_")
+    ? "permit"
+    : s.source_type === "federal_grant"
+      ? "grant"
+      : s.source_type === "ontario_news"
+        ? "news"
+        : s.source_type === "ero_approval"
+          ? "approval"
+          : "award";
 
 // Space-related activity: permits that score 2+ (new building, addition, change
 // of use, major fit-out, racking/equipment, small structures) and facility or
@@ -18,6 +26,12 @@ export function isPhysical(s: RecordSignal): boolean {
   if (s.source_type === "federal_grant") {
     const kind = s.raw && typeof s.raw === "object" ? (s.raw as Record<string, unknown>).grant_kind : null;
     return kind === "facility" || kind === "equipment";
+  }
+  if (s.source_type === "ontario_news") return true; // a named company's investment or facility
+  if (s.source_type === "ero_approval") {
+    // A production change or growth; administrative renewals alone don't count.
+    const kind = s.raw && typeof s.raw === "object" ? (s.raw as Record<string, unknown>).kind : null;
+    return kind !== "admin";
   }
   return false;
 }
@@ -33,6 +47,7 @@ export function signalValue(s: RecordSignal): number | null {
     n(r.EST_CON_VALUE) ??
     n(r.EST_CONST_COST) ??
     n(r.agreement_value) ??
+    n(r.amount) ??
     (() => {
       const a = n(r["contractAmount-montantContrat"]);
       const b = n(r["totalContractValue-valeurTotaleContrat"]);
@@ -139,7 +154,7 @@ export function parseProspectFilters(params: Record<string, string | string[] | 
     : regionParam.length
       ? (regionParam.filter((r) => r in REGIONS) as RegionKey[])
       : GTA_REGIONS;
-  const families = list(params.type).filter((t): t is SignalFamily => t === "permit" || t === "grant" || t === "award");
+  const families = list(params.type).filter((t): t is SignalFamily => ["permit", "grant", "award", "news", "approval"].includes(t));
   const min = Number(String(params.min ?? "").replace(/[^0-9]/g, ""));
   return { regions, families, neverAnalyzed: params.new === "1", minValue: min > 0 ? min : null };
 }

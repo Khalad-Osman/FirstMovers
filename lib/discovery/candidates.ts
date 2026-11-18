@@ -103,6 +103,18 @@ export function signalWeight(s: SignalForCandidate): { weight: number; label: st
       if (kind === "equipment") return { weight: 2, label: "federal grant: equipment or automation" };
       return { weight: 1, label: "federal grant" };
     }
+    case "announcement": {
+      // Ontario newsroom: a named company's investment or new facility (early, specific).
+      const kind = s.raw && typeof s.raw === "object" ? (s.raw as Record<string, unknown>).kind : null;
+      return kind === "new_facility" ? { weight: 5, label: "Ontario announcement: new facility" } : { weight: 4, label: "Ontario announcement: investment or expansion" };
+    }
+    case "env_approval": {
+      // Environmental approval: production changes, usually before installation.
+      const kind = s.raw && typeof s.raw === "object" ? (s.raw as Record<string, unknown>).kind : null;
+      if (kind === "growth") return { weight: 4, label: "environmental approval: new or added production" };
+      if (kind === "admin") return { weight: 1, label: "environmental approval: administrative" };
+      return { weight: 2, label: "environmental approval: production change" };
+    }
     case "alteration":
       if (isMajorFitOut(s.raw)) return { weight: 4, label: "major fit-out" };
       return EQUIPMENT.test(`${s.title} ${s.summary}`) ? { weight: 2, label: "alteration with equipment/racking" } : { weight: 1, label: "alteration permit" };
@@ -215,7 +227,8 @@ export function buildCandidates(
 export type CandidateFamily = "permit" | "grant" | "award";
 export function candidateFamily(c: Candidate): CandidateFamily {
   if (c.signals.some((s) => s.source_type.startsWith("permit_"))) return "permit";
-  if (c.signals.some((s) => s.source_type === "federal_grant")) return "grant";
+  if (c.signals.some((s) => s.source_type === "ero_approval")) return "permit"; // physical, like a permit
+  if (c.signals.some((s) => s.source_type === "federal_grant" || s.source_type === "ontario_news")) return "grant"; // funding / announcements
   return "award";
 }
 
