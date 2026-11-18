@@ -30,6 +30,7 @@ These rules apply on top of `docs/intelligence-model.md`.
 
 **Ratings**
 - **Strong Signal** requires a specific, recent, Ontario facility or capacity signal with a plausible forcing event.
+- **Worth Monitoring** (defined 2026-11-18): a specific, recent Ontario facility signal (a permit, grant, contract or announced project for this company) with a plausible path to more space or a property decision, even when facility pressure or a forcing event is not yet shown. Physical investment at existing premises still qualifies when it points to growth; the countercase records that it argues against an external move. Use No Meaningful Signal when there is no recent Ontario facility signal, or the only change is routine (a sign, a minor repair or a replacement).
 - The rating must be consistent with the countercase and unknowns. If the brief itself says an external transaction is unverified and alternatives are likely, it is not Strong Signal.
 - **No Meaningful Signal** is a valid, expected outcome. Keep those briefs short; don't fill sections to look busy.
 

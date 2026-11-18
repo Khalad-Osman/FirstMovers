@@ -68,7 +68,12 @@ Broker angle
   capacity_conversation: investment, equipment or expansion at premises it already occupies; the conversation is about future space needs.
   relationship: a funding, ownership, leadership or contract trigger that is a reason to reconnect, without implying a property need.
   monitor_only: nothing worth a call yet (headline says so briefly; talkingPoints may be empty).
-- headline: one sentence a broker could act on, specific to this company (name the site, project or event). Not a summary of the brief, and no timing words such as "soon" or "within months".
+- headline: one sentence written for an industrial real-estate broker deciding whether to call. Name the pattern the evidence shows (what changed, where, how often) and what the broker could offer or ask. Plain, direct words; no hedging phrases such as "without assuming", "may potentially" or "it is unclear whether" (the countercase and unknowns carry the caveats). Specific to this company: name the site, project or event. No timing words such as "soon" or "within months", and no claim the sources don't support.
+  (The examples below are illustrative only; never reuse their places or numbers.)
+  Weak: "Ask how the permitted additions, mezzanines and racking fit the company's production and logistics plan."
+  Strong: "Three permits across its two [street] buildings since [month]: it is building out fast. Offer a space plan before it runs out of room."
+  Weak: "The company's new building may have implications for its existing premises."
+  Strong: "Building a new plant on [street] while still listed at [address]: pitch a sublease or sale of the current space."
 - talkingPoints: one to three short points to raise, each citing the source ids it rests on; at least one must cite a FACT. Never claim a requirement, size, lease term or date the sources don't state.
 - A no_meaningful_signal brief can still have a vacated_space, capacity_conversation or relationship angle when the evidence supports one.
 
