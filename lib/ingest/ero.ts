@@ -75,7 +75,13 @@ const ADMIN = /\brenewal of (?:the )?limited operational flexibility|\breplaces 
 // The legal name: drop a French duplicate ("Sofina Foods Inc. Aliments Sofina Inc.")
 // and an operating name ("St. Marys Cement Inc. (Canada) operating as CBM Ready Mix").
 export function legalName(raw: string): string {
-  let n = raw.replace(/\s+(?:operating as|o\/a|carrying on business as|c\.o\.b\. as)\s+.*$/i, "").trim();
+  // "X GP Inc. as general partner for and on behalf of X LP" -> the operating partnership "X LP"
+  // (postings include typos such as "on behald of"); with no partnership named
+  // ("Suncor Energy Inc. and 1277136 Alberta Ltd. as general partners"), the first partner.
+  const partner = /\bas (?:the )?general partners? (?:for and )?(?:on beha\w* of|of)\s+(.+)$/i.exec(raw);
+  const partners = /^(.+?),?\s+as (?:the )?general partners?\s*$/i.exec(raw);
+  let n = partner ? partner[1] : partners ? partners[1].split(/\s+and\s+(?=[A-Z0-9])/)[0] : raw;
+  n = n.replace(/\s+(?:operating as|o\/a|carrying on business as|c\.o\.b\. as)\s+.*$/i, "").trim();
   // "Dana Canada Corporation/Corporation Dana Canada" -> the English half
   if (/\S\s*\/\s*\S/.test(n) && !/\bo\/a\b/i.test(n)) n = n.split(/\s*\/\s*/)[0];
   const firstSuffix = /^(.+?\b(?:Inc|Ltd|Limited|Corp|Corporation|ULC|LLC|Company|Co)\.?(?:\s*\([^)]*\))?)\s+\S.*$/.exec(n);

@@ -190,6 +190,12 @@ describe("Environmental Registry: names and administrative notices", () => {
     expect(legalName("MARTINREA AUTOMOTIVE INC.")).toBe("MARTINREA AUTOMOTIVE INC.");
     expect(legalName("Tempel Canada Company")).toBe("Tempel Canada Company");
     expect(legalName("Dana Canada Corporation/Corporation Dana Canada")).toBe("Dana Canada Corporation");
+    expect(legalName("Lincoln Electric Company of Canada GP 2 Limited as general partner for and on behalf of Lincoln Electric Company of Canada LP")).toBe("Lincoln Electric Company of Canada LP");
+    expect(legalName("Owens Corning Insulating Systems Canada GP Inc., as general partner for and on behalf of Owens Corning Insulating Systems Canada LP")).toBe("Owens Corning Insulating Systems Canada LP");
+    expect(legalName("TransAlta Cogeneration Ltd. as general partner for and on behald of TransAlta Cogeneration, L.P.")).toBe("TransAlta Cogeneration, L.P.");
+    expect(legalName("Suncor Energy Inc. and 1277136 Alberta Ltd. as general partners")).toBe("Suncor Energy Inc.");
+    expect(legalName("Sky Energy (Power) Corporation and Tractebel Management Inc. as general partner for and on behalf of Tractebel Windsor Power L.P")).toBe("Tractebel Windsor Power L.P");
+    expect(legalName("Johnson and Johnson Inc.")).toBe("Johnson and Johnson Inc.");
   });
   it("marks paperwork as administrative (weight 1, not physical) and keeps the posted name", () => {
     const n = parseNotice("026-0921", page({ title: "Sofina Foods Inc. Aliments Sofina Inc. - Environmental Compliance Approval (air)", type: "Environmental Compliance Approval (air)", details: "This proposal is for the renewal of Limited Operational Flexibility for the facility." }));
