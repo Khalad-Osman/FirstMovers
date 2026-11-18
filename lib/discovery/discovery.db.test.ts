@@ -54,6 +54,7 @@ function briefFor(name: string, sourceCount: number, verified: boolean): ModelOu
     otherPremises: { assessment: "not_indicated", address: null, text: "No other premises identified.", sourceIds: [] },
     companyType: "unknown",
     dealIndicators: [],
+    brokerAngle: { type: "monitor_only", headline: "Nothing to act on yet.", talkingPoints: [] },
     workingHypothesis: null,
     unknowns: ["Utilization."],
     commercialValue: null,

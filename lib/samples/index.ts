@@ -115,6 +115,15 @@ const norvale: SampleBrief = {
     ],
     alternativesAssessment: "alternatives_possible",
     existingFacilityInvestment: false,
+    brokerAngle: {
+      type: "new_requirement",
+      headline: "A five-year supply contract and a new production cell at a plant with no expansion land: ask whether Brampton can absorb the new volume.",
+      talkingPoints: [
+        { text: "Five-year supply contract awarded, with first deliveries scheduled.", sourceIds: ["S1"] },
+        { text: "Hiring moulders, machinists and a second-shift supervisor for a new production cell.", sourceIds: ["S3"] },
+      ],
+      urgency: "act_now",
+    },
     workingHypothesis:
       "Norvale may need additional machining or storage space near Brampton before Q3 2027 deliveries begin.",
     unknowns: [
@@ -224,6 +233,15 @@ const kestrel: SampleBrief = {
     ],
     alternativesAssessment: "alternatives_likely",
     existingFacilityInvestment: true,
+    brokerAngle: {
+      type: "capacity_conversation",
+      headline: "A new frozen-distribution contract and a refrigeration fit-out at the Mississauga warehouse: ask how much more volume the building can take.",
+      talkingPoints: [
+        { text: "Multi-year frozen distribution agreement with a national grocery customer.", sourceIds: ["S1"] },
+        { text: "Permit for refrigeration equipment at the existing warehouse: investment in place.", sourceIds: ["S2"] },
+      ],
+      urgency: "act_now",
+    },
     workingHypothesis:
       "If the upgraded building cannot absorb the grocery volume, Kestrel Bay may look for overflow freezer space in Peel Region.",
     unknowns: [
@@ -295,6 +313,7 @@ const ardent: SampleBrief = {
     countercase: ["The only expansion found is in the United States, with no stated link to the Toronto plant."],
     alternativesAssessment: "alternatives_possible",
     existingFacilityInvestment: false,
+    brokerAngle: { type: "monitor_only", headline: "Nothing to act on in Ontario yet.", talkingPoints: [], urgency: "watch" },
     workingHypothesis: null,
     unknowns: ["Whether the Ohio plant shifts any volume into or away from Toronto."],
     commercialValue: null,

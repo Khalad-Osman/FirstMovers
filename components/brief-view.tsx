@@ -1,9 +1,11 @@
-import { CHAIN_STEPS, ORIGIN_LABEL, RECENCY_LABEL, VACANCY_LABEL, type BriefAnalysis, type Origin } from "@/lib/brief/schema";
+import { ANGLE_LABEL, CHAIN_STEPS, ORIGIN_LABEL, RECENCY_LABEL, URGENCY_LABEL, VACANCY_LABEL, type BriefAnalysis, type BrokerAngle, type Origin } from "@/lib/brief/schema";
+import { effectiveAngle } from "@/lib/brief/angle";
 import { ledgerCounts } from "@/lib/brief/integrity";
 import { COMPANY_TYPES, DEAL_TYPES } from "@/lib/research/filters";
 import { FIT_LABEL, type FitLevel } from "@/lib/deals/fit";
 
 export const FIT_CLASS: Record<FitLevel, string> = { high: "badge-supported", medium: "badge-signal", low: "badge-stage", none: "badge-stage" };
+export const URGENCY_CLASS: Record<BrokerAngle["urgency"], string> = { act_now: "badge-supported", follow_up: "badge-signal", watch: "badge-stage" };
 import { formatDate, stripLabel } from "@/lib/format";
 import {
   ChainStatusBadge,
@@ -72,6 +74,44 @@ export function BriefView({ analysis, companyName, isSample, analyzedAt, origin,
         {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
         {aside}
       </header>
+
+      {(() => {
+        const angle = effectiveAngle(analysis, analyzedAt);
+        return (
+          <Section title="Broker angle">
+            <div className="grid gap-2 border-l-4 border-[var(--accent)] bg-panel px-4 py-3">
+              <p className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold">{ANGLE_LABEL[angle.type]}</span>
+                <span className={`badge ${URGENCY_CLASS[angle.urgency]}`}>{URGENCY_LABEL[angle.urgency]}</span>
+              </p>
+              <p className="text-[1.0625rem]">{angle.headline}</p>
+              {angle.talkingPoints.length > 0 && (
+                <ul className="grid list-disc gap-1 pl-5 text-[0.9375rem]">
+                  {angle.talkingPoints.map((p) => (
+                    <li key={p.text}>
+                      {p.text}{" "}
+                      {p.sourceIds.filter((id) => ids.has(id)).map((id, i) => (
+                        <span key={id} className="mono text-[0.8125rem]">
+                          {i === 0 ? "(" : ", "}
+                          <a href={`#source-${id}`} className="link">
+                            {id}
+                          </a>
+                          {i === p.sourceIds.filter((x) => ids.has(x)).length - 1 ? ")" : ""}
+                        </span>
+                      ))}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="text-[0.8125rem] text-meta">
+                {angle.derived
+                  ? "Worked out in code from this older brief. Re-analyze to get one written from the sources."
+                  : "A reason for a conversation, not a claim of a requirement. Urgency comes from the cited sources' dates."}
+              </p>
+            </div>
+          </Section>
+        );
+      })()}
 
       <Section title="Company and entity">
         <dl className="grid gap-3 sm:grid-cols-2">

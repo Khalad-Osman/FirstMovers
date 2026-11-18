@@ -1,5 +1,6 @@
 import type { BriefAnalysis, ModelOutput } from "@/lib/brief/schema";
 import { recencyTier } from "./recency";
+import { angleUrgency } from "@/lib/brief/angle";
 import type { SourceRecord } from "./types";
 
 export type BuildResult = { ok: true; brief: BriefAnalysis } | { ok: false; errors: string[] };
@@ -39,7 +40,9 @@ export function buildBrief(output: ModelOutput, sources: SourceRecord[], analysi
     };
   });
 
-  const { ledger: _modelLedger, ...rest } = output;
+  const { ledger: _modelLedger, brokerAngle: modelAngle, ...rest } = output;
   void _modelLedger;
-  return { ok: true, brief: { ...rest, ledger } };
+  // Urgency is computed here from the cited sources' dates, never by the model.
+  const brokerAngle = modelAngle ? { ...modelAngle, urgency: angleUrgency(modelAngle, ledger, analysisDate) } : undefined;
+  return { ok: true, brief: { ...rest, ledger, ...(brokerAngle ? { brokerAngle } : {}) } };
 }

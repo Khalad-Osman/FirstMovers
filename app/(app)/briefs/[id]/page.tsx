@@ -8,7 +8,7 @@ import { BriefView } from "@/components/brief-view";
 import { fitForBrief } from "@/lib/data/deals";
 import { CompanyTimeline } from "@/components/company-timeline";
 import { ActionButton } from "@/components/action-button";
-import { addToWatchlist, dismissBrief } from "../../actions";
+import { addToWatchlist, dismissBrief, reanalyzeFromStoredSources } from "../../actions";
 
 export async function generateMetadata({ params }: PageProps<"/briefs/[id]">): Promise<Metadata> {
   const brief = await getBrief((await params).id);
@@ -69,6 +69,14 @@ export default async function BriefPage({ params }: PageProps<"/briefs/[id]">) {
             >
               Re-analyze
             </Link>
+            {user?.role === "admin" && (
+              <ActionButton
+                action={reanalyzeFromStoredSources.bind(null, brief.id)}
+                label="Re-analyze from stored sources"
+                pendingLabel="Starting…"
+                confirmLabel="Confirm: one model call (~$0.05), no Firecrawl credits"
+              />
+            )}
             {user?.role === "admin" && !brief.dismissed && (
               <ActionButton
                 action={dismissBrief.bind(null, brief.id)}

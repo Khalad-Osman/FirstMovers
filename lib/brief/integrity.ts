@@ -106,6 +106,30 @@ export function checkBriefIntegrity(brief: BriefAnalysis): string[] {
     }
   }
 
+  // --- Broker angle (optional on briefs saved before 2026-11-17)
+  const angle = brief.brokerAngle;
+  if (angle) {
+    for (const p of angle.talkingPoints) {
+      p.sourceIds.forEach((id) => {
+        if (!byId.has(id)) errors.push(`Broker angle: a talking point cites ${id}, which is not in the ledger.`);
+      });
+    }
+    if (angle.type !== "monitor_only") {
+      if (angle.talkingPoints.length === 0) errors.push(`Broker angle: "${angle.type}" needs at least one talking point.`);
+      if (angle.talkingPoints.some((p) => p.sourceIds.length === 0)) errors.push("Broker angle: every talking point must cite a source.");
+      if (!angle.talkingPoints.some((p) => p.sourceIds.some((id) => byId.get(id)?.evidenceType === "fact"))) {
+        errors.push("Broker angle: at least one talking point must cite a FACT.");
+      }
+      if (brief.company.entityStatus !== "verified") errors.push("Broker angle: an unverified entity can only be monitor_only.");
+    }
+    if (angle.type === "new_requirement" && brief.rating === "no_meaningful_signal") {
+      errors.push('Broker angle: "new_requirement" is inconsistent with a No Meaningful Signal rating. Use vacated_space, capacity_conversation, relationship or monitor_only.');
+    }
+    if (angle.type === "vacated_space" && !(brief.otherPremises && brief.otherPremises.assessment !== "not_indicated")) {
+      errors.push('Broker angle: "vacated_space" requires otherPremises to be likely or possible.');
+    }
+  }
+
   return errors;
 }
 

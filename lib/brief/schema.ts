@@ -100,6 +100,23 @@ export const modelLedgerEntrySchema = z.object({
 export const companyTypeSchema = z.enum(["manufacturer", "logistics_3pl", "food_beverage", "energy_nuclear", "data_centre_tech", "other", "unknown"]);
 export const dealIndicatorSchema = z.enum(["lease", "sale_purchase", "expansion_in_place", "new_build"]);
 
+// Broker angle (added 2026-11-17): the reason for a conversation (the
+// intelligence model's "Connect" outcome). The model chooses type, headline and
+// points; urgency is computed in code from the cited sources' dates.
+export const angleTypeSchema = z.enum(["new_requirement", "vacated_space", "capacity_conversation", "relationship", "monitor_only"]);
+export const angleUrgencySchema = z.enum(["act_now", "follow_up", "watch"]);
+const talkingPointSchema = z.object({ text: z.string().min(1), sourceIds: z.array(z.string()) });
+export const modelBrokerAngleSchema = z.object({
+  type: angleTypeSchema,
+  headline: z.string().min(1),
+  talkingPoints: z.array(talkingPointSchema).max(3),
+});
+export const brokerAngleSchema = modelBrokerAngleSchema.extend({
+  urgency: angleUrgencySchema,
+  derived: z.boolean().optional(), // true = worked out in code for a brief saved before angles existed
+});
+export type BrokerAngle = z.infer<typeof brokerAngleSchema>;
+
 export const modelOutputSchema = z.object({
   company: companySchema,
   ledger: z.array(modelLedgerEntrySchema),
@@ -107,6 +124,7 @@ export const modelOutputSchema = z.object({
   otherPremises: otherPremisesSchema,
   companyType: companyTypeSchema,
   dealIndicators: z.array(dealIndicatorSchema),
+  brokerAngle: modelBrokerAngleSchema,
 });
 
 // ---------- Stored brief ----------
@@ -132,7 +150,21 @@ export const briefAnalysisSchema = z.object({
   otherPremises: otherPremisesSchema.optional(), // absent on briefs saved before 2026-11-16
   companyType: companyTypeSchema.optional(), // absent before 2026-11-17
   dealIndicators: z.array(dealIndicatorSchema).optional(), // absent before 2026-11-17
+  brokerAngle: brokerAngleSchema.optional(), // absent before 2026-11-17 (a derived one is shown instead)
 });
+
+export const ANGLE_LABEL: Record<z.infer<typeof angleTypeSchema>, string> = {
+  new_requirement: "New requirement",
+  vacated_space: "Vacated space",
+  capacity_conversation: "Capacity conversation",
+  relationship: "Relationship",
+  monitor_only: "Monitor only",
+};
+export const URGENCY_LABEL: Record<z.infer<typeof angleUrgencySchema>, string> = {
+  act_now: "Act now",
+  follow_up: "Follow up",
+  watch: "Watch",
+};
 
 export const VACANCY_LABEL: Record<z.infer<typeof vacancyAssessmentSchema>, string> = {
   likely: "Vacated space likely",

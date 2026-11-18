@@ -36,6 +36,7 @@ function strongOutput(): ModelOutput {
     otherPremises: { assessment: "not_indicated", address: null, text: "No other premises identified.", sourceIds: [] },
     companyType: "unknown",
     dealIndicators: [],
+    brokerAngle: { type: "monitor_only", headline: "Nothing to act on yet.", talkingPoints: [] },
     workingHypothesis: "Halloway will lease or buy a second plant in York or Peel before mid-2027.",
     unknowns: ["Size of the second facility."],
     commercialValue: "Site search support against a fixed delivery date.",

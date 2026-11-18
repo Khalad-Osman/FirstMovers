@@ -6,12 +6,27 @@ import { FeedRow } from "@/components/feed-row";
 import { PageHeader } from "@/components/page-header";
 import { createClient } from "@/lib/supabase/server";
 import { scheduleStatus } from "@/lib/schedule/plan";
+import { ANGLE_ORDER, URGENCY_ORDER } from "@/lib/brief/angle";
+import { ANGLE_LABEL } from "@/lib/brief/schema";
 
 export const metadata: Metadata = { title: "Opportunity Feed · First Movers" };
 
-function newestFirst(a: FeedEntry, b: FeedEntry) {
-  return b.analyzedAt.localeCompare(a.analyzedAt);
+const RATING_ORDER = ["strong_signal", "worth_monitoring", "no_meaningful_signal"];
+// Within an angle group: most urgent first, then the stronger rating, then newest.
+function byUrgency(a: FeedEntry, b: FeedEntry) {
+  return (
+    URGENCY_ORDER.indexOf(a.angle.urgency) - URGENCY_ORDER.indexOf(b.angle.urgency) ||
+    RATING_ORDER.indexOf(a.rating) - RATING_ORDER.indexOf(b.rating) ||
+    b.analyzedAt.localeCompare(a.analyzedAt)
+  );
 }
+
+const GROUP_NOTE: Partial<Record<FeedEntry["angle"]["type"], string>> = {
+  new_requirement: "An external space need the evidence supports (Worth Monitoring or Strong Signal).",
+  vacated_space: "The company has committed to a new facility and the sources place it at another address that may come to market.",
+  capacity_conversation: "Investment or expansion at premises the company already occupies: a reason to ask about future space needs.",
+  relationship: "A funding, ownership, leadership or contract trigger: a reason to reconnect, not a property need.",
+};
 
 export default async function FeedPage({ searchParams }: PageProps<"/">) {
   const showSamples = (await searchParams).samples === "1";
@@ -26,12 +41,10 @@ export default async function FeedPage({ searchParams }: PageProps<"/">) {
   const watched = new Set(watchlist.map((w) => w.companyId));
 
   const all = showSamples ? [...entries, ...getSampleEntries()] : entries;
-  const strong = all.filter((e) => e.rating === "strong_signal").sort(newestFirst);
-  const worth = all.filter((e) => e.rating === "worth_monitoring").sort(newestFirst);
-  const noSignal = all.filter((e) => e.rating === "no_meaningful_signal").sort(newestFirst);
-  // No new requirement, but space they're likely to leave: shown, not collapsed (rating unchanged).
-  const vacated = noSignal.filter((e) => e.vacancy);
-  const none = noSignal.filter((e) => !e.vacancy);
+  // Ranked by broker angle (decided 2026-11-17); the rating stays on every row.
+  const byAngle = (type: FeedEntry["angle"]["type"]) => all.filter((e) => e.angle.type === type).sort(byUrgency);
+  const groups = ANGLE_ORDER.filter((t) => t !== "monitor_only").map((t) => ({ type: t, entries: byAngle(t) }));
+  const none = byAngle("monitor_only");
 
   return (
     <div className="grid gap-6">
@@ -81,29 +94,24 @@ export default async function FeedPage({ searchParams }: PageProps<"/">) {
         <div className="border border-dashed border-[#9ca3af] bg-panel px-5 py-6">
           <p className="font-semibold">No briefs yet.</p>
           <p className="mt-1 text-meta">
-            Briefs from discovery runs and Live Research will appear here, ranked by signal strength.
+            Briefs from discovery runs and Live Research will appear here, ranked by broker angle: the reason to call now.
             {!showSamples && " Turn on Show samples to see how a brief looks."}
           </p>
         </div>
       )}
 
-      {strong.length > 0 && <Group title="Strong Signal" entries={strong} watched={watched} isAdmin={isAdmin} />}
-      {worth.length > 0 && <Group title="Worth Monitoring" entries={worth} watched={watched} isAdmin={isAdmin} />}
-      {vacated.length > 0 && (
-        <Group
-          title="Space likely to be vacated"
-          note="No new requirement, but the company has committed to a new facility and the sources place it at another address that may come to market."
-          entries={vacated}
-          watched={watched}
-          isAdmin={isAdmin}
-        />
+      {groups.map(
+        (g) =>
+          g.entries.length > 0 && (
+            <Group key={g.type} title={ANGLE_LABEL[g.type]} note={GROUP_NOTE[g.type]} entries={g.entries} watched={watched} isAdmin={isAdmin} />
+          ),
       )}
 
       {none.length > 0 && (
         <details className="group border-t border-line pt-3">
           <summary className="cursor-pointer list-none">
             <span className="label">
-              <span className="inline-block transition-transform group-open:rotate-90">▸</span> Reviewed, no signal ·{" "}
+              <span className="inline-block transition-transform group-open:rotate-90">▸</span> Reviewed, nothing to act on yet ·{" "}
               <span className="mono">{none.length}</span>
             </span>
           </summary>

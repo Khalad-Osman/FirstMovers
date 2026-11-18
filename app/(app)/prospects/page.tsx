@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getProspects } from "@/lib/data/prospects";
 import { filterProspects, GTA_REGIONS, parseProspectFilters, type SignalFamily } from "@/lib/prospects";
 import { REGIONS, REGION_KEYS } from "@/lib/research/filters";
-import { RATING_LABEL, type Rating } from "@/lib/brief/schema";
+import { ANGLE_LABEL, RATING_LABEL, type Rating } from "@/lib/brief/schema";
 import { formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 
@@ -113,7 +113,8 @@ export default async function ProspectsPage({ searchParams }: PageProps<"/prospe
                 ))}
                 {p.brief ? (
                   <Link href={`/briefs/${p.brief.id}`} className="badge badge-signal">
-                    Brief: {RATING_LABEL[p.brief.rating as Rating] ?? p.brief.rating} · {formatDate(p.brief.analyzedAt)}
+                    Brief: {RATING_LABEL[p.brief.rating as Rating] ?? p.brief.rating}
+                    {p.brief.angle && p.brief.angle !== "monitor_only" ? ` · ${ANGLE_LABEL[p.brief.angle as keyof typeof ANGLE_LABEL]}` : ""} · {formatDate(p.brief.analyzedAt)}
                   </Link>
                 ) : (
                   <span className="badge badge-stage">Public record only</span>

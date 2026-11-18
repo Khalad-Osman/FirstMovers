@@ -38,6 +38,10 @@ These rules apply on top of `docs/intelligence-model.md`.
 - **Likely** needs a source for the new facility and a source placing the company at the other address, with nothing showing the other site is kept. Use **Possible** when the relationship between the sites is unclear (it may replace or supplement). Otherwise **Not indicated**.
 - Never invent the other site's size, lease terms, tenure, timing or use. A directory listing establishes an address, not occupancy or tenure.
 
+**Broker angle**
+- Every brief states a broker angle: the most useful reason for a conversation that the evidence supports. Types: **new requirement** (an external space need; only when the rating is Worth Monitoring or Strong Signal), **vacated space** (only when vacated space is likely or possible), **capacity conversation** (investment or expansion at existing premises: ask about future space needs), **relationship** (funding, ownership, leadership or similar trigger to reconnect, without implying a property need), or **monitor only**.
+- The angle is a reason to talk, not a claim. It must not imply a requirement the rating doesn't support, and every talking point cites the sources it rests on. Never state timing; urgency is computed from the sources' dates.
+
 **Output**
 - The LLM returns structured JSON validated with Zod. On validation failure, retry once, then record an error. Never show unvalidated output.
 - Before saving a brief, verify in code that every FACT links to a collected source and that its dates match the source record.

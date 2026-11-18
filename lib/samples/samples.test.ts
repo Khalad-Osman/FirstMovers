@@ -79,3 +79,14 @@ describe("checkBriefIntegrity", () => {
     expect(checkBriefIntegrity(bad).join()).toMatch(/evidence against an external move/);
   });
 });
+
+describe("sample broker angles", () => {
+  it("have urgencies that match their cited sources' dates", async () => {
+    const { angleUrgency } = await import("@/lib/brief/angle");
+    for (const s of SAMPLE_BRIEFS) {
+      const a = s.analysis.brokerAngle!;
+      expect(a, s.slug).toBeDefined();
+      expect(a.urgency, s.slug).toBe(angleUrgency(a, s.analysis.ledger, s.analyzedAt));
+    }
+  });
+});

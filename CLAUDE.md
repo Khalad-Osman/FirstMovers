@@ -14,8 +14,8 @@ The analytical model the product runs on is in `docs/intelligence-model.md`. It 
 ## 2. Product features
 
 ### Opportunity Feed (primary feature)
-- Shows system-generated briefs, ranked: **Strong Signal → Worth Monitoring**, newest analysis first within each group.
-- **No Meaningful Signal** results go in a collapsed "Reviewed, no signal" section. Keep them: they show the tool rejects weak leads. Exception (decided 2026-11-16): a brief with **likely or possible vacated space** (see §7) is shown in its own visible group, "Space likely to be vacated", below the rated groups, with its rating unchanged; any brief with vacated space carries a badge and an "Other premises" field in the feed.
+- Shows system-generated briefs **grouped by broker angle** (decided 2026-11-17): New requirement → Vacated space → Capacity conversation → Relationship; within a group, act now → follow up → watch, then the stronger rating, then newest. Every row keeps its rating badge and shows the angle headline. (Previously ranked Strong Signal → Worth Monitoring.)
+- Briefs whose angle is **monitor only** go in a collapsed "Reviewed, nothing to act on yet" section. Keep them: they show the tool rejects weak leads. A No Meaningful Signal brief can still sit in a visible group when it has a vacated-space, capacity or relationship angle; any brief with vacated space also carries a badge and an "Other premises" field.
 - Each entry shows: full company name, local connection, what changed, facility pressure, countercase, signal rating, opportunity stage, analysis date, origin label ("Discovered" or "Added from Live Research"), and the signal or query that surfaced it.
 - Actions: open full brief, add to Watchlist, dismiss.
 - A "Run discovery" button (admin only) opens the Discovery page, and a "Schedule: every Monday" / "Schedule: off" button (admin only) opens the Schedule section of Settings (`/settings#schedule`). The Discovery page shows the schedule status to everyone with a "Change schedule" button. Discovery sits in the main sidebar under Opportunity Feed (decided 2026-11-17).
@@ -30,6 +30,7 @@ The analytical model the product runs on is in `docs/intelligence-model.md`. It 
 
 ### Brief view
 Sections in this order:
+0. **Broker angle** (added 2026-11-17): type, urgency, a one-sentence reason to call and 1–3 cited talking points. Model-written (`brokerAngle`); urgency computed in code from the cited Signal sources' dates (≤ 90 days act now, ≤ 12 months follow up, else watch; `lib/brief/angle.ts`). Briefs saved before angles show one **derived** in code from their fields, labelled as such. Admins can **Re-analyze from stored sources** (one model call, no Firecrawl credits) to get a written angle; it opens the research page and Add to feed saves a new version.
 1. Company and entity, with the established local connection
 2. Five-step chain: What changed → Operational consequence → Facility pressure → Forcing event → Real-estate decision. Each step marked **Supported / Inferred / Unknown**.
 3. Evidence ledger: each entry has an evidence type, a relevance label, source link, publisher, publication date (and event date if different), and a one-line finding.
@@ -243,6 +244,10 @@ These rules apply on top of `docs/intelligence-model.md`.
 - When the sources show a new, acquired, built or fitted-out facility and also place the company at another Ontario address, assess whether that other address is likely to be vacated, sublet or sold. This is a separate opportunity (backfill, sublease or disposition) and does not change the rating, which is about a new requirement.
 - **Likely** needs a source for the new facility and a source placing the company at the other address, with nothing showing the other site is kept. Use **Possible** when the relationship between the sites is unclear (it may replace or supplement). Otherwise **Not indicated**.
 - Never invent the other site's size, lease terms, tenure, timing or use. A directory listing establishes an address, not occupancy or tenure.
+
+**Broker angle**
+- Every brief states a broker angle: the most useful reason for a conversation that the evidence supports. Types: **new requirement** (an external space need; only when the rating is Worth Monitoring or Strong Signal), **vacated space** (only when vacated space is likely or possible), **capacity conversation** (investment or expansion at existing premises: ask about future space needs), **relationship** (funding, ownership, leadership or similar trigger to reconnect, without implying a property need), or **monitor only**.
+- The angle is a reason to talk, not a claim. It must not imply a requirement the rating doesn't support, and every talking point cites the sources it rests on. Never state timing; urgency is computed from the sources' dates.
 
 **Output**
 - The LLM returns structured JSON validated with Zod. On validation failure, retry once, then record an error. Never show unvalidated output.

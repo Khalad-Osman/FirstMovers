@@ -5,6 +5,8 @@ import { buildProspects, briefKey, type LatestBrief, type Prospect } from "@/lib
 import type { RecordSignal } from "@/lib/research/records";
 import { todayInToronto } from "@/lib/research/run";
 import { monthsBefore } from "@/lib/ingest/types";
+import { briefAnalysisSchema } from "@/lib/brief/schema";
+import { effectiveAngle } from "@/lib/brief/angle";
 
 // All prospects (unfiltered), built from the last 12 months of named signals.
 export const getProspects = cache(async (): Promise<Prospect[]> => {
@@ -32,7 +34,8 @@ export const getProspects = cache(async (): Promise<Prospect[]> => {
   for (const b of briefs ?? []) {
     const c = b.companies;
     if (!c || !b.id) continue;
-    const angle = (b.analysis as { brokerAngle?: { type?: string } } | null)?.brokerAngle?.type ?? null;
+    const parsed = briefAnalysisSchema.safeParse(b.analysis);
+    const angle = parsed.success ? effectiveAngle(parsed.data, b.analyzed_at ?? "").type : null;
     const entry: LatestBrief = { id: b.id, rating: b.rating ?? "unknown", analyzedAt: b.analyzed_at ?? "", angle };
     for (const name of [c.display_name, ...(c.aliases ?? [])]) briefsByKey.set(briefKey(name), entry);
     briefsByKey.set(c.normalized_key, entry);

@@ -5,6 +5,8 @@ import { briefAnalysisSchema, type BriefAnalysis, type Origin, type Rating, type
 import { SAMPLE_BRIEFS, type SampleBrief } from "@/lib/samples";
 import { dealFit, type FitLevel } from "@/lib/deals/fit";
 import { getPastDealsForFit } from "./deals";
+import { effectiveAngle } from "@/lib/brief/angle";
+import type { BrokerAngle } from "@/lib/brief/schema";
 import { buildTimeline, type TimelineItem } from "@/lib/brief/timeline";
 import type { RecordSignal } from "@/lib/research/records";
 import { normalizeCompanyName } from "@/lib/research/normalize";
@@ -29,6 +31,7 @@ export type FeedEntry = {
   // Space likely to be vacated (likely/possible only); null otherwise
   vacancy: { assessment: "likely" | "possible"; address: string } | null;
   fit?: FitLevel; // past deal fit; absent when no deals are uploaded
+  angle: BrokerAngle; // stored, or derived for briefs saved before angles
 };
 
 export type InvalidBrief = { briefId: string; companyName: string; analyzedAt: string };
@@ -38,11 +41,12 @@ const BRIEF_COLUMNS =
 
 function toEntry(
   analysis: BriefAnalysis,
-  meta: Omit<FeedEntry, "companyName" | "localConnection" | "whatChanged" | "facilityPressure" | "countercase" | "rating" | "stage" | "vacancy">,
+  meta: Omit<FeedEntry, "companyName" | "localConnection" | "whatChanged" | "facilityPressure" | "countercase" | "rating" | "stage" | "vacancy" | "angle">,
   companyName: string,
 ): FeedEntry {
   const op = analysis.otherPremises;
   return {
+    angle: effectiveAngle(analysis, meta.analyzedAt),
     vacancy: op && op.assessment !== "not_indicated" && op.address ? { assessment: op.assessment, address: op.address } : null,
     ...meta,
     companyName,

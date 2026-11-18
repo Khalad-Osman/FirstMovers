@@ -61,6 +61,17 @@ Company type and deal indicators
 - companyType is the company's main business as the sources show it: manufacturer, logistics_3pl (logistics, 3PL, distribution, warehousing), food_beverage (food or beverage production or processing), energy_nuclear (energy or nuclear supply chain), data_centre_tech (data centres or tech hardware), other, or unknown when the sources don't establish it.
 - dealIndicators lists only the property actions a source directly indicates for this company: lease (leasing or a tenancy), sale_purchase (buying or selling property), expansion_in_place (adding to or fitting out premises it already occupies), new_build (constructing a new building). Use an empty list when none is stated. Never infer one from the rating or from general growth.
 
+Broker angle
+- brokerAngle is the most useful reason for a broker to start a conversation now, as the evidence supports it (the model's "Connect" outcome). type:
+  new_requirement: an external space need; only when rating is worth_monitoring or strong_signal.
+  vacated_space: the company is likely leaving premises; only when otherPremises is likely or possible.
+  capacity_conversation: investment, equipment or expansion at premises it already occupies; the conversation is about future space needs.
+  relationship: a funding, ownership, leadership or contract trigger that is a reason to reconnect, without implying a property need.
+  monitor_only: nothing worth a call yet (headline says so briefly; talkingPoints may be empty).
+- headline: one sentence a broker could act on, specific to this company (name the site, project or event). Not a summary of the brief, and no timing words such as "soon" or "within months".
+- talkingPoints: one to three short points to raise, each citing the source ids it rests on; at least one must cite a FACT. Never claim a requirement, size, lease term or date the sources don't state.
+- A no_meaningful_signal brief can still have a vacated_space, capacity_conversation or relationship angle when the evidence supports one.
+
 Length
 - For no_meaningful_signal, keep the brief short: at most three countercase points and three unknowns, commercialValue null, workingHypothesis null unless there is a real one.`;
 
