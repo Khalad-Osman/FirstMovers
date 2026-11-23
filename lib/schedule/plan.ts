@@ -70,3 +70,11 @@ export function scheduleStatus(s: { schedule_discovery_enabled: boolean; discove
   if (!s?.schedule_discovery_enabled) return "off";
   return describeSchedule({ frequency: s.discovery_frequency as DiscoverySchedule["frequency"], weekdays: s.discovery_weekdays, monthDay: s.discovery_month_day });
 }
+
+// Daily ingestion order: sources that read page by page and continue next run
+// go last, so the fast sources always run and the slow one gets the time left.
+const RESUMABLE = new Set(["ero_approval"]);
+export const dailyOrder = <T extends { source: string }>(sources: T[]): T[] => [
+  ...sources.filter((s) => !RESUMABLE.has(s.source)),
+  ...sources.filter((s) => RESUMABLE.has(s.source)),
+];

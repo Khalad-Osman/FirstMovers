@@ -24,8 +24,8 @@ const INVESTMENT = /\$\s?[\d.,]+\s?(?:million|billion)?\s+investment|invest(?:in
 // "a new, state-of-the-art manufacturing facility" (commas and adjectives allowed)
 const FACILITY = /\b(?:new|expand(?:ed|ing|s)?|expansion of),?\s+(?:its\s+|their\s+|a\s+|an\s+)?(?:(?:state-of-the-art|advanced|high-tech|modern|larger),?\s+)*(?:manufacturing|production|processing|distribution|research|assembly|headquarters|facility|plant|factory|warehouse|operations?|campus|site)\b|\bexpan(?:d|ds|ding|sion)\b|\bbreak(?:s|ing)? ground\b|\bgroundbreaking\b/i;
 const PROGRAMME = /\b(?:skills development fund|training stream|community grants|civil remedies|scholarship|apprentice|bursar)/i;
-// Public construction (hospitals, schools, transit): the company named is a contractor, not an occupier.
-const PUBLIC_PROJECT = /\b(?:hospital|school|long-term care|transit|subway|highway|courthouse|library)\b/i;
+// Public construction (hospitals, schools, transit, broadband): the company named is a contractor, not an occupier.
+const PUBLIC_PROJECT = /\b(?:hospital|school|long-term care|transit|subway|highway|courthouse|library|broadband|high-speed internet|cellular service)\b/i;
 
 // A municipality named in the text, for releases without a dateline.
 const PLACES = [

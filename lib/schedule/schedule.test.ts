@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseSettingsForm } from "@/lib/settings";
-import { decideScheduledDiscovery, describeSchedule, isDiscoveryDay, maxRunCredits, scheduleStatus, torontoParts } from "./plan";
+import { dailyOrder, decideScheduledDiscovery, describeSchedule, isDiscoveryDay, maxRunCredits, scheduleStatus, torontoParts } from "./plan";
 import { aggregateUsage, monthOf } from "./usage";
 
 describe("torontoParts", () => {
@@ -166,5 +166,12 @@ describe("scheduleStatus", () => {
     expect(scheduleStatus(s)).toBe("every Monday, Thursday");
     expect(scheduleStatus({ ...s, schedule_discovery_enabled: false })).toBe("off");
     expect(scheduleStatus(null)).toBe("off");
+  });
+});
+
+describe("daily ingestion order", () => {
+  it("runs the resumable registry scraper last", () => {
+    const src = ["canadabuys_award", "federal_grant", "ontario_news", "ero_approval", "permit_mississauga", "permit_toronto"].map((source) => ({ source }));
+    expect(dailyOrder(src).map((s) => s.source)).toEqual(["canadabuys_award", "federal_grant", "ontario_news", "permit_mississauga", "permit_toronto", "ero_approval"]);
   });
 });

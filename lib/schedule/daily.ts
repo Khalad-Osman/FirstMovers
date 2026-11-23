@@ -4,10 +4,15 @@ import { INGEST_SOURCES } from "@/lib/ingest/sources";
 import { runIngestionJob } from "@/lib/ingest/run";
 import { createDiscoveryRun, failRun } from "@/lib/discovery/run";
 import { jobSecret, realDiscoveryDeps, triggerStep } from "@/lib/discovery/job";
-import { decideScheduledDiscovery, torontoParts } from "./plan";
+import { dailyOrder, decideScheduledDiscovery, torontoParts } from "./plan";
 import { monthToDateCredits } from "./usage-db";
 
 const RUNNING_GRACE_MS = 15 * 60 * 1000;
+// The whole daily job must finish inside Vercel's 300 s function limit (found
+// 2026-11-19: the registry scraper's own 220 s budget started after ~100 s of
+// other sources, the function was killed and the permit sources never ran).
+const DAILY_BUDGET_MS = 250_000;
+const MIN_SOURCE_MS = 20_000;
 
 export type DailySummary = {
   date: string;
@@ -27,7 +32,18 @@ export async function runDaily(origin: string, now = new Date()): Promise<DailyS
   if (!s?.schedule_ingestion_enabled) {
     summary.ingestion.push({ source: "all", status: "skipped", detail: "Scheduled ingestion is off." });
   } else {
-    for (const src of INGEST_SOURCES) {
+    const deadline = now.getTime() + DAILY_BUDGET_MS;
+    // A run ended by the function time limit never records its end: close it.
+    await db
+      .from("ingestion_runs")
+      .update({ status: "failed", progress: null, finished_at: new Date().toISOString(), errors: ["Stopped: the server's time limit ended the run."] })
+      .eq("status", "running")
+      .lt("started_at", new Date(now.getTime() - RUNNING_GRACE_MS).toISOString());
+    for (const src of dailyOrder(INGEST_SOURCES)) {
+      if (deadline - Date.now() < MIN_SOURCE_MS) {
+        summary.ingestion.push({ source: src.source, status: "skipped", detail: "Not enough time left in today's job; runs tomorrow." });
+        continue;
+      }
       const { data: running } = await db
         .from("ingestion_runs")
         .select("id")
@@ -48,7 +64,7 @@ export async function runDaily(origin: string, now = new Date()): Promise<DailyS
         summary.ingestion.push({ source: src.source, status: "failed", detail: error.message });
         continue;
       }
-      await runIngestionJob(run.id, src.source); // never throws; outcome stored on the run
+      await runIngestionJob(run.id, src.source, { deadline }); // never throws; outcome stored on the run
       const { data: done } = await db.from("ingestion_runs").select("status, inserted, updated, errors").eq("id", run.id).single();
       summary.ingestion.push({
         source: src.source,

@@ -44,6 +44,7 @@ describe("Ontario newsroom", () => {
 
   it.each([
     [{ content_title: "Ontario Taking the Next Step to Expand Stevenson Memorial Hospital", content_lead: "TORONTO — Pomerleau Inc. will build a $100 million new facility." }, "public construction project"],
+    [{ content_title: "Ontario Expands Rural High-Speed Internet in Bruce and Grey Counties", content_lead: "WEST GREY — A $40 million investment with EH!tel Networks Inc. expands broadband to new homes." }, "public construction project"],
     [{ content_title: "Ontario Investing $4.8 Million to Protect and Train Workers", content_lead: "AURORA — Through the Skills Development Fund, an investment of $4.8 million to Acme Inc. to expand." }, "training or grant programme"],
     [{ content_lead: "TORONTO — Northern Ontario Heritage Fund Corporation is investing $2 million to expand a new facility." }, "no company named in the headline or lead"],
     [{ content_title: "Ontario Updates Regulations", content_lead: "TORONTO — The government updated rules." }, "no company investment or facility"],

@@ -70,7 +70,7 @@ async function knownRange(db: ReturnType<typeof createAdminClient>, source: stri
 }
 
 // Background job (after()). Never throws: the outcome is written to ingestion_runs.
-export async function runIngestionJob(runId: string, sourceType: string): Promise<void> {
+export async function runIngestionJob(runId: string, sourceType: string, opts: { deadline?: number } = {}): Promise<void> {
   const db = createAdminClient();
   const update = async (patch: TablesUpdate<"ingestion_runs">) => {
     await db.from("ingestion_runs").update(patch).eq("id", runId);
@@ -91,7 +91,7 @@ export async function runIngestionJob(runId: string, sourceType: string): Promis
       canadabuysMinValue: Number(settings?.canadabuys_min_value ?? 100000),
       grantsMinValue: Number(settings?.grants_min_value ?? 100000),
       known: await knownRange(db, source.source),
-      deadline: Date.now() + RUN_BUDGET_MS,
+      deadline: Math.min(Date.now() + RUN_BUDGET_MS, opts.deadline ?? Infinity),
       fetchImpl: ingestFetch,
       progress: (message: string) => update({ progress: message }),
     };
