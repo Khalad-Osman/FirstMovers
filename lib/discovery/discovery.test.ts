@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createFakeProvider } from "@/lib/llm/fake";
-import { buildCandidates, groupKey, isSmallWorks, selectForScreening, signalWeight, type Candidate, type SignalForCandidate } from "./candidates";
+import { buildCandidates, dropRepeatFunding, groupKey, growthRounds, isSmallWorks, selectForScreening, signalWeight, type Candidate, type SignalForCandidate } from "./candidates";
 import { buildScreeningMessage, screenCandidates, shortlist, type ScreenVerdict } from "./screen";
 
 const TODAY = "2026-11-10";
@@ -227,5 +227,25 @@ describe("discovery fixes (2026-11-17 review)", () => {
     expect(SCREENING_SYSTEM).toMatch(/federal grants and contributions/);
     expect(SCREENING_SYSTEM).toMatch(/5 = a new site, new building or new facility/);
     expect(SCREENING_SYSTEM).toMatch(/2 = equipment, automation, racking or modernisation in existing premises/);
+  });
+});
+
+describe("momentum and repeat funding (2026-11-23)", () => {
+  const permit = (d: string, strength = "addition") => sig({ signal_strength: strength, published_at: d });
+  it("counts growth rounds at least 45 days apart, ignoring awards and minor work", () => {
+    expect(growthRounds([permit("2026-01-10"), permit("2026-01-20"), permit("2026-04-01"), permit("2026-09-01")])).toBe(3);
+    expect(growthRounds([permit("2026-01-10"), sig({ signal_strength: "award", published_at: "2026-06-01" }), permit("2026-08-01", "alteration")])).toBe(1);
+  });
+  it("adds a momentum bonus for repeated growth", () => {
+    const [c] = buildCandidates([permit("2026-02-01"), permit("2026-06-01")], { today: "2026-11-23", skipKeys: new Set() }).candidates;
+    expect(c.scoreParts).toContain("growth signals at 2 separate times (+1.5)");
+  });
+  it("treats a FedDev announcement and the matching grant record as one agreement", () => {
+    const grant = sig({ source_type: "federal_grant", signal_strength: "grant", published_at: "2026-01-01", raw: { grant_kind: "equipment", agreement_value: "670270.0" } });
+    const news = sig({ source_type: "feddev_news", signal_strength: "grant", published_at: "2026-08-17", raw: { grant_kind: "equipment", contribution: 650000 } });
+    const other = sig({ source_type: "federal_grant", signal_strength: "grant", published_at: "2025-12-22", raw: { grant_kind: "equipment", agreement_value: "160000" } });
+    expect(dropRepeatFunding([grant, news, other]).map((s) => s.id)).toEqual([news.id, other.id]);
+    const [c] = buildCandidates([grant, news], { today: "2026-11-23", skipKeys: new Set() }).candidates;
+    expect(c.scoreParts.join(" ")).not.toMatch(/different sources|separate times/);
   });
 });

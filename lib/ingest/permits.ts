@@ -147,13 +147,29 @@ export function isTorontoIndustrial(r: Record<string, unknown>): boolean {
   return INDUSTRIAL_USE.test(`${str(r.CURRENT_USE)} ${str(r.PROPOSED_USE)} ${str(r.STRUCTURE_TYPE)}`);
 }
 
-export function mapToronto(r: Record<string, unknown>, ctx: Pick<IngestContext, "today" | "cutoff">, resourceId?: string): IngestItem {
+// Applications that are still alive (added 2026-11-23): Active Permits lists
+// them with no ISSUED_DATE and a status such as "Under Review" or "Application
+// Acceptable". Refused, cancelled or closed ones are dropped.
+const DEAD_STATUS = /refus|cancel|revok|closed|withdrawn|abandon/i;
+
+export function mapToronto(
+  r: Record<string, unknown>,
+  ctx: Pick<IngestContext, "today" | "cutoff">,
+  resourceId?: string,
+  opts: { applications?: boolean } = {},
+): IngestItem {
   const permit = str(r.PERMIT_NUM);
   const issued = str(r.ISSUED_DATE).slice(0, 10) || null;
+  const applied = str(r.APPLICATION_DATE).slice(0, 10) || null;
   if (!permit) return { skip: "no permit number" };
-  if (!issued) return { skip: "not issued" };
-  if (issued < ctx.cutoff) return { skip: "older than 12 months" };
-  if (issued > ctx.today) return { skip: "issue date in the future" };
+  // Each pass reads one kind, so a record is never written twice in a run.
+  if (opts.applications ? issued : !issued) return { skip: opts.applications ? "issued (read in the issued pass)" : "not issued (read in the applications pass)" };
+  const stage = issued ? "issued" : "application";
+  const date = issued ?? applied;
+  if (!date) return { skip: "no application date" };
+  if (date < ctx.cutoff) return { skip: "older than 12 months" };
+  if (date > ctx.today) return { skip: "issue date in the future" };
+  if (stage === "application" && DEAD_STATUS.test(str(r.STATUS))) return { skip: "application refused, cancelled or closed" };
   if (!isTorontoIndustrial(r)) return { skip: "not industrial" };
   const work = str(r.WORK);
   const description = str(r.DESCRIPTION);
@@ -169,13 +185,17 @@ export function mapToronto(r: Record<string, unknown>, ctx: Pick<IngestContext, 
       entity_key: occupier.entityKey,
       occupier_status: occupier.status,
       signal_strength: strengthFrom(work, description),
-      title: `Toronto permit: ${work || str(r.PERMIT_TYPE) || "permit"} at ${address || "unknown address"}`,
+      title:
+        stage === "issued"
+          ? `Toronto permit: ${work || str(r.PERMIT_TYPE) || "permit"} at ${address || "unknown address"}`
+          : `Toronto permit application (${str(r.STATUS).toLowerCase() || "in review"}): ${work || str(r.PERMIT_TYPE) || "permit"} at ${address || "unknown address"}`,
       summary: [description, ...uses, cost ? `Est. cost ${money(cost)}` : null].filter(Boolean).join(". "),
       url: null,
-      published_at: issued,
+      published_at: date,
       event_at: null,
       location: `${address ? `${address}, ` : ""}Toronto, Ontario${str(r.POSTAL) ? ` ${str(r.POSTAL)}` : ""}`,
-      raw: resourceId ? { ...r, _resource_id: resourceId } : r, // which dataset, for the record link
+      // which dataset, for the record link; stage as for Caledon and Oakville
+      raw: { ...r, ...(resourceId ? { _resource_id: resourceId } : {}), stage, applied_at: applied, issued_at: issued },
     },
   };
 }
@@ -202,6 +222,25 @@ async function* runToronto(ctx: IngestContext): AsyncGenerator<IngestItem> {
       if (records.length < PAGE || older === records.length) break;
     }
   }
+  // Applications not yet issued (Active Permits only), newest application first.
+  const active = TORONTO_RESOURCES[0];
+  await ctx.progress("Reading Toronto permit applications");
+  for (let offset = 0; ; offset += PAGE) {
+    const qs = new URLSearchParams({ resource_id: active.id, limit: String(PAGE), offset: String(offset), sort: "APPLICATION_DATE desc nulls last" });
+    const r = await ctx.fetchImpl(`${CKAN}?${qs}`, { signal: AbortSignal.timeout(120_000) });
+    if (!r.ok) throw new Error(`Toronto CKAN request failed (${r.status})`);
+    const json = (await r.json()) as { success?: boolean; result?: { records?: Record<string, unknown>[] }; error?: unknown };
+    if (!json.success) throw new Error(`Toronto CKAN error: ${JSON.stringify(json.error).slice(0, 200)}`);
+    const records = json.result?.records ?? [];
+    let older = 0;
+    for (const rec of records) {
+      const applied = str(rec.APPLICATION_DATE).slice(0, 10);
+      if (!applied || applied < ctx.cutoff) older++;
+      yield mapToronto(rec, ctx, active.id, { applications: true });
+    }
+    await ctx.progress(`Read ${(offset + records.length).toLocaleString("en-CA")} Toronto applications`);
+    if (records.length < PAGE || older === records.length) break;
+  }
 }
 
 export const mississaugaPermits: IngestSource = {
@@ -219,6 +258,6 @@ export const bramptonPermits: IngestSource = {
 export const torontoPermits: IngestSource = {
   source: "permit_toronto",
   label: "Toronto building permits",
-  description: "Active and cleared permits issued in the last 12 months with industrial area or an industrial/warehouse use.",
+  description: "Active and cleared permits issued, and applications received, in the last 12 months with industrial area or an industrial/warehouse use.",
   run: runToronto,
 };

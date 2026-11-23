@@ -148,9 +148,18 @@ describe("permits", () => {
   });
 
   it("skips unissued, old and non-industrial Toronto permits", () => {
-    expect(mapToronto({ PERMIT_NUM: "a", ISSUED_DATE: null }, ctx)).toEqual({ skip: "not issued" });
+    expect(mapToronto({ PERMIT_NUM: "a", ISSUED_DATE: null }, ctx)).toEqual({ skip: "not issued (read in the applications pass)" });
     expect(mapToronto({ PERMIT_NUM: "a", ISSUED_DATE: "2025-01-01", INDUSTRIAL: 5 }, ctx)).toEqual({ skip: "older than 12 months" });
     expect(mapToronto({ PERMIT_NUM: "a", ISSUED_DATE: "2026-10-01", PROPOSED_USE: "Apartment" }, ctx)).toEqual({ skip: "not industrial" });
+  });
+
+  it("keeps a live Toronto application, dated when received, in the applications pass", () => {
+    const app = { PERMIT_NUM: "26 123456 BLD", REVISION_NUM: "00", ISSUED_DATE: null, APPLICATION_DATE: "2026-10-20", STATUS: "Under Review ", WORK: "Interior Alterations", INDUSTRIAL: 2000, DESCRIPTION: "Interior alterations for ACME LOGISTICS INC.", STREET_NUM: "10", STREET_NAME: "Industry", STREET_TYPE: "St" };
+    const item = mapToronto(app, ctx, "res", { applications: true });
+    expect(item).toMatchObject({ row: { published_at: "2026-10-20", raw_entity_name: "ACME LOGISTICS INC.", title: "Toronto permit application (under review): Interior Alterations at 10 Industry St" } });
+    expect("row" in item && item.row.raw).toMatchObject({ stage: "application", applied_at: "2026-10-20", issued_at: null });
+    expect(mapToronto({ ...app, STATUS: "Refusal Notice" }, ctx, "res", { applications: true })).toEqual({ skip: "application refused, cancelled or closed" });
+    expect(mapToronto({ ...app, ISSUED_DATE: "2026-11-01" }, ctx, "res", { applications: true })).toEqual({ skip: "issued (read in the issued pass)" });
   });
 });
 

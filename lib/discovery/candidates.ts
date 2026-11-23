@@ -126,6 +126,47 @@ export function signalWeight(s: SignalForCandidate): { weight: number; label: st
   }
 }
 
+const fundingValue = (s: SignalForCandidate): number | null => {
+  const r = s.raw && typeof s.raw === "object" ? (s.raw as Record<string, unknown>) : {};
+  const v = Number(s.source_type === "feddev_news" ? r.contribution : r.agreement_value);
+  return Number.isFinite(v) && v > 0 ? v : null;
+};
+
+// A FedDev announcement and a federal grant record within 10% of each other in
+// value are one agreement (FedDev rounds: "over $650,000" for $670,270). Keeps
+// the announcement, which describes the project.
+export function dropRepeatFunding<T extends SignalForCandidate>(signals: T[]): T[] {
+  const news = signals.filter((s) => s.source_type === "feddev_news");
+  if (!news.length) return signals;
+  return signals.filter((s) => {
+    if (s.source_type !== "federal_grant") return true;
+    const v = fundingValue(s);
+    return !news.some((n) => {
+      const w = fundingValue(n);
+      return v !== null && w !== null && Math.abs(v - w) <= 0.1 * Math.max(v, w);
+    });
+  });
+}
+
+// Growth events (space-related, weight 2+, not awards) grouped into rounds at
+// least 45 days apart, so revisions and same-week records count once.
+export const ROUND_GAP_DAYS = 45;
+export function growthRounds(signals: SignalForCandidate[]): number {
+  const dates = signals
+    .filter((s) => s.signal_strength !== "award" && signalWeight(s).weight >= 2 && (s.event_at ?? s.published_at))
+    .map((s) => (s.event_at ?? s.published_at)!.slice(0, 10))
+    .sort();
+  let rounds = 0;
+  let start: string | null = null;
+  for (const d of dates) {
+    if (start === null || daysBetween(start, d) >= ROUND_GAP_DAYS) {
+      rounds++;
+      start = d;
+    }
+  }
+  return rounds;
+}
+
 function daysBetween(a: string, b: string) {
   return Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000);
 }
@@ -175,7 +216,10 @@ export function buildCandidates(
     }
 
     const sorted = [...list].sort((a, b) => (b.published_at ?? "").localeCompare(a.published_at ?? ""));
-    const weighted = sorted.map((s) => ({ s, ...signalWeight(s) })).sort((a, b) => b.weight - a.weight);
+    // One funding agreement can appear twice (FedDev's announcement and the
+    // federal disclosure record): score it once.
+    const events = dropRepeatFunding(sorted);
+    const weighted = events.map((s) => ({ s, ...signalWeight(s) })).sort((a, b) => b.weight - a.weight);
     // Only the single best award and the single best grant count toward the
     // score: awards measure sales, not space, and several small equipment grants
     // shouldn't outrank one facility grant (Mariposa vs Saputo, 2026-11-17).
@@ -187,14 +231,22 @@ export function buildCandidates(
     let score = top.reduce((sum, w) => sum + w.weight, 0);
     const parts = top.map((w) => `${w.label} (+${w.weight})`);
 
-    const sources = new Set(list.map((s) => s.source_type));
+    const sources = new Set(events.map((s) => s.source_type));
     if (sources.size > 1) {
       score += 1.5 * (sources.size - 1);
       parts.push(`${sources.size} different sources (+${1.5 * (sources.size - 1)})`);
     }
-    if (list.length > 3) {
+    if (events.length > 3) {
       score += 0.5;
-      parts.push(`${list.length} signals (+0.5)`);
+      parts.push(`${events.length} signals (+0.5)`);
+    }
+    // Momentum (added 2026-11-23): space-related growth at separate times is a
+    // pattern that tends to come before a site search.
+    const rounds = growthRounds(events);
+    if (rounds >= 2) {
+      const bonus = rounds >= 3 ? 3 : 1.5;
+      score += bonus;
+      parts.push(`growth signals at ${rounds} separate times (+${bonus})`);
     }
     const newest = sorted[0].published_at;
     if (newest && daysBetween(newest, opts.today) <= 90) {
