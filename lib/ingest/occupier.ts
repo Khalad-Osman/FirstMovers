@@ -93,9 +93,13 @@ const TRIMMED: RegExp[] = [
 export function resolveOccupier(description: string | null | undefined): Occupier {
   const text = (description ?? "").trim();
   if (!text) return { name: null, entityKey: null, status: "unresolved" };
-  for (const re of TRIMMED) {
+  for (const [i, re] of TRIMMED.entries()) {
     const m = re.exec(text);
-    const name = m ? clean(m[1].replace(USE_TAIL, "")) : null;
+    let name = m ? clean(m[1].replace(USE_TAIL, "")) : null;
+    // After ") - " Caledon clerks also write notes in Title Case ("Alternative
+    // Solution", "Classification of Building Has Been Revised…"): accept only
+    // ALL-CAPS names or names with a legal suffix there.
+    if (name && i === TRIMMED.length - 1 && !LEGAL_END.test(name) && name !== name.toUpperCase()) name = null;
     if (name) {
       const key = normalizeCompanyName(name);
       if (key.length >= 3) return { name, entityKey: key, status: "named" };

@@ -31,6 +31,8 @@ describe("occupier names in Caledon and Oakville wording", () => {
     "Alter Industrial (Spray Booth) * Do not put under review until updated owners information is on the application form. SK",
     "Construct Industrial Warehouse (Shell)",
     "INTERIOR ALTERATIONS (TENANT IMPROVEMENTS) - LANDLORDS WORK",
+    "Erect Industrial (Hardrock Hardwall) - Classification of Building Has Been Revised and Floor Plans Have Changed",
+    "Construct Industrial Building (One Storey Warehouse with Office Areas - Building H, Block 5) - Alternative Solution (2)",
   ])("finds no business in %s", (text) => {
     expect(resolveOccupier(text).name).toBeNull();
   });
