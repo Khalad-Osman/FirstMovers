@@ -49,12 +49,13 @@ function awardValue(raw: unknown): number {
 
 // Business types that are not industrial occupiers, recognisable from the name.
 export const NON_INDUSTRIAL =
-  /\b(law|legal|lawyers?|barristers?|solicitors?|notary|professional corporation|immigration|visa|dental|dentistry|tooth|orthodont\w*|clinic|physiotherap\w*|chiropract\w*|rehab\w*|pharmacy|optometr\w*|veterinar\w*|school|academy|tutoring|learning cent(?:re|er)|daycare|child ?care|montessori|dance|yoga|fitness|gym|martial arts|church|ministr(?:y|ies)|mosque|temple|restaurant|cafe|bakery caf[eé]|salon|spa|barber|insurance|accounting|cpa|tax services|travel|realty|real estate|mortgage|gas station|car wash)\b/i;
+  /\b(law|legal|lawyers?|barristers?|solicitors?|notary|professional corporation|immigration|visa|dental|dentistry|tooth|orthodont\w*|clinic|physiotherap\w*|chiropract\w*|rehab\w*|pharmacy|optometr\w*|veterinar\w*|school|academy|tutoring|learning cent(?:re|er)|daycare|child ?care|montessori|dance|yoga|fitness|gym|martial arts|padel|pickle\w*|church|ministr(?:y|ies)|mosque|temple|restaurant|cafe|bakery caf[eé]|salon|spa|barber|insurance|accounting|cpa|tax services|travel|realty|real estate|mortgage|gas station|car wash)\b/i;
 
 const EQUIPMENT =/\b(racking|mezzanine|production line|equipment|crane|spray booth|dock|loading|conveyor|automation|cold storage|freezer)\b/i;
 
 // Permit size from the record: Mississauga EST_CON_VALUE / APPL_AREA (m²),
-// Toronto EST_CONST_COST. Null when the record doesn't say.
+// Toronto EST_CONST_COST, Caledon CONSTVALUE / WORKAREA, Oakville
+// Construction_Value / GFA. Null when the record doesn't say.
 function permitSize(raw: unknown): { value: number | null; area: number | null } {
   if (!raw || typeof raw !== "object") return { value: null, area: null };
   const r = raw as Record<string, unknown>;
@@ -62,7 +63,7 @@ function permitSize(raw: unknown): { value: number | null; area: number | null }
     const n = typeof v === "number" ? v : Number(String(v ?? "").replace(/[^0-9.]/g, ""));
     return Number.isFinite(n) && n > 0 ? n : null;
   };
-  return { value: num(r.EST_CON_VALUE ?? r.EST_CONST_COST), area: num(r.APPL_AREA) };
+  return { value: num(r.EST_CON_VALUE ?? r.EST_CONST_COST ?? r.CONSTVALUE ?? r.Construction_Value), area: num(r.APPL_AREA ?? r.WORKAREA ?? r.GFA) };
 }
 
 // A "new building" or "addition" this small is an accessory structure (a fire
@@ -228,7 +229,7 @@ export type CandidateFamily = "permit" | "grant" | "award";
 export function candidateFamily(c: Candidate): CandidateFamily {
   if (c.signals.some((s) => s.source_type.startsWith("permit_"))) return "permit";
   if (c.signals.some((s) => s.source_type === "ero_approval")) return "permit"; // physical, like a permit
-  if (c.signals.some((s) => s.source_type === "federal_grant" || s.source_type === "ontario_news")) return "grant"; // funding / announcements
+  if (c.signals.some((s) => s.source_type === "federal_grant" || s.source_type === "feddev_news" || s.source_type === "ontario_news")) return "grant"; // funding / announcements
   return "award";
 }
 

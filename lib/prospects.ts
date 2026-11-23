@@ -10,7 +10,7 @@ export type SignalFamily = "permit" | "grant" | "award" | "news" | "approval";
 export const familyOf = (s: { source_type: string }): SignalFamily =>
   s.source_type.startsWith("permit_")
     ? "permit"
-    : s.source_type === "federal_grant"
+    : s.source_type === "federal_grant" || s.source_type === "feddev_news"
       ? "grant"
       : s.source_type === "ontario_news"
         ? "news"
@@ -20,10 +20,11 @@ export const familyOf = (s: { source_type: string }): SignalFamily =>
 
 // Space-related activity: permits that score 2+ (new building, addition, change
 // of use, major fit-out, racking/equipment, small structures) and facility or
-// equipment grants. Contract awards alone are sales, not space.
+// equipment grants (federal disclosure or FedDev announcements). Contract awards
+// alone are sales, not space.
 export function isPhysical(s: RecordSignal): boolean {
   if (s.source_type.startsWith("permit_")) return signalWeight(s).weight >= 2;
-  if (s.source_type === "federal_grant") {
+  if (s.source_type === "federal_grant" || s.source_type === "feddev_news") {
     const kind = s.raw && typeof s.raw === "object" ? (s.raw as Record<string, unknown>).grant_kind : null;
     return kind === "facility" || kind === "equipment";
   }

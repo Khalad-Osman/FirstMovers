@@ -7,7 +7,7 @@ import { toRecordSource, type RecordSignal } from "@/lib/research/records";
 
 export type TimelineItem = {
   date: string; // YYYY-MM-DD
-  dateKind: "event" | "published" | "agreement start" | "issued";
+  dateKind: "event" | "published" | "agreement start" | "issued" | "applied";
   kind: "evidence" | "record";
   text: string; // finding (evidence) or record title
   publisher: string;
@@ -18,6 +18,9 @@ export type TimelineItem = {
 const RECORD_DATE_KIND: Record<string, TimelineItem["dateKind"]> = {
   federal_grant: "agreement start",
   canadabuys_award: "published",
+  ontario_news: "published",
+  feddev_news: "published",
+  ero_approval: "published",
 };
 
 export function buildTimeline(input: {
@@ -46,7 +49,11 @@ export function buildTimeline(input: {
     if (!date || byUrl.has(r.url)) continue; // already in a brief as evidence
     byUrl.set(r.url, {
       date,
-      dateKind: s.event_at ? "event" : (RECORD_DATE_KIND[s.source_type] ?? "issued"),
+      dateKind: s.event_at
+        ? "event"
+        : s.raw && typeof s.raw === "object" && (s.raw as Record<string, unknown>).stage === "application"
+          ? "applied"
+          : (RECORD_DATE_KIND[s.source_type] ?? "issued"),
       kind: "record",
       text: s.title ?? r.title,
       publisher: r.publisher,

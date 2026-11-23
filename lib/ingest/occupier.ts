@@ -12,7 +12,7 @@ const NAME = String.raw`[A-Z0-9][A-Za-z0-9&'.,\- ]{1,80}?`;
 
 // Words that show a phrase is work, not a business ("FASCIA SIGN - ILLUMINATED").
 const NOT_A_NAME =
-  /^(?:the\s)?(?:illuminated|non[- ]?illuminated|existing|new|proposed|interior|exterior|tenant|landlord|unit|suite|building|bldg|warehouse|office|signage?|sign|fascia|pylon|ground|channel letters?|letters?|logo|face change|alterations?|renovations?|revision|demo(?:lition)?|sprinklers?|racking|mezzanine|addition|change of use|storage|retail|industrial|commercial|n\/?a|tbd|various|see plans?)\b/i;
+  /^(?:the\s)?(?:illuminated|non[- ]?illuminated|existing|new|proposed|interior|exterior|tenants?'?|landlords?'?s?|unit|suite|building|bldg|warehouse|office|signage?|sign|fascia|pylon|ground|channel letters?|letters?|logo|face change|alterations?|renovations?|revision|demo(?:lition)?|sprinklers?|racking|mezzanine|addition|change of use|storage|retail|industrial|commercial|n\/?a|tbd|various|see plans?)\b/i;
 
 // Landlords and property companies appear on leasing signs and base-building
 // work; they are not the occupier.
@@ -25,7 +25,7 @@ const NOT_A_BUSINESS = /^(?:a|an)\s|^(?:future|prospective|new|potential)\s+tena
 const LEGAL_END = new RegExp(String.raw`\s${LEGAL}$`, "i");
 // A phrase ending in a kind of premises, or "with accessory …", is a use description.
 const GENERIC_USE =
-  /\b(?:factory|warehouse|plant|restaurant|bakery|kitchen|offices?|storage|showroom|store|shop|facility|space|unit|premises|use)\s*\.?$|\bwith accessory\b/i;
+  /\b(?:factory|warehouse|plant|restaurant|bakery|kitchen|offices?|storage|showroom|store|shop|facility|space|unit|premises|use|manufacturing|processing|production)\s*\.?$|\bwith accessory\b/i;
 // Numbered Ontario/Canada companies: "16295932 CANADA INC"
 const NUMBERED = new RegExp(String.raw`\b\d{6,10}\s+(?:canada|ontario)\s+${LEGAL}`, "i");
 
@@ -76,9 +76,31 @@ const PATTERNS: RegExp[] = [
   new RegExp(String.raw`\b(${NAME}\s${LEGAL})(?=$|[\s;,()\n])`, "i"),
 ];
 
+// Caledon and Oakville wording (added 2026-11-23). The captured name can carry
+// a trailing use word ("TD SYNNEX Office's"), which is trimmed for these only.
+const USE_TAIL = /\s+(?:office'?s?|offices|warehouse|facility|plant|building|operations?)\.?$/i;
+const TRIMMED: RegExp[] = [
+  // "(Tenant Fit-Out - TD SYNNEX Office's)"
+  new RegExp(String.raw`\bfit[- ]?(?:out|up)\s*[-–:]\s*(${NAME})\s*(?:$|[;()\n]|\s-\s)`, "i"),
+  // "industrial building for Concast manufacturing facility"
+  new RegExp(String.raw`\b(?:building|facility|warehouse|plant)\s+for\s+(${NAME})\s+(?:manufacturing|production|processing|distribution|warehousing)?\s*(?:facility|plant|operations|use)\b`, "i"),
+  // "... office area for North Keg-Unit D1" / "for Sir Corp. – Unit D2"
+  new RegExp(String.raw`\sfor\s+(${NAME})\s*[-–]\s*(?:unit|suite)\b`, "i"),
+  // "(Work Platform to Support Conveyor) - NLS, (Building H)"
+  new RegExp(String.raw`\)\s*[-–]\s*(${NAME})\s*(?:,|\(|$)`, "i"),
+];
+
 export function resolveOccupier(description: string | null | undefined): Occupier {
   const text = (description ?? "").trim();
   if (!text) return { name: null, entityKey: null, status: "unresolved" };
+  for (const re of TRIMMED) {
+    const m = re.exec(text);
+    const name = m ? clean(m[1].replace(USE_TAIL, "")) : null;
+    if (name) {
+      const key = normalizeCompanyName(name);
+      if (key.length >= 3) return { name, entityKey: key, status: "named" };
+    }
+  }
   for (const re of PATTERNS) {
     const m = re.exec(text);
     const name = m ? clean(m[1]) : null;

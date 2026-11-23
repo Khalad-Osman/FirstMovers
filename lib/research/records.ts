@@ -1,4 +1,5 @@
 import { BRAMPTON, CKAN, MISSISSAUGA, TORONTO_RESOURCES } from "@/lib/ingest/permits";
+import { CALEDON, OAKVILLE } from "@/lib/ingest/permits-halton-peel";
 import { signalWeight, type SignalForCandidate } from "@/lib/discovery/candidates";
 
 // Stored signals (building permits, contract awards) as analysis evidence.
@@ -29,6 +30,9 @@ const PUBLISHER: Record<string, string> = {
   federal_grant: "Government of Canada – Grants and contributions",
   ontario_news: "Government of Ontario – Newsroom",
   ero_approval: "Environmental Registry of Ontario",
+  permit_caledon: "Town of Caledon – Building permits",
+  permit_oakville: "Town of Oakville – Building permits",
+  feddev_news: "FedDev Ontario – News release",
 };
 
 const KIND: Record<string, string> = {
@@ -39,6 +43,9 @@ const KIND: Record<string, string> = {
   permit_mississauga: "Issued building permit (City of Mississauga open data)",
   permit_brampton: "Issued building permit (City of Brampton open data)",
   permit_toronto: "Issued building permit (City of Toronto open data)",
+  permit_caledon: "Building permit or permit application (Town of Caledon open data)",
+  permit_oakville: "Building permit or permit application (Town of Oakville open data)",
+  feddev_news: "Government of Canada (FedDev Ontario) news release announcing funding for a named company",
 };
 
 const STRENGTH_LABEL: Record<string, string> = {
@@ -73,7 +80,12 @@ export function recordUrl(s: RecordSignal): string | null {
     case "federal_grant":
     case "ontario_news":
     case "ero_approval":
+    case "feddev_news":
       return s.url;
+    case "permit_caledon":
+      return q(`${CALEDON}/query`, { where: `CUSTOMFOLDERNUMBER='${id.replace(/'/g, "''")}'`, outFields: "*", f: "html" });
+    case "permit_oakville":
+      return q(`${OAKVILLE}/query`, { where: `CUSTOMFOLDERNUMBER='${id.replace(/'/g, "''")}'`, outFields: "*", f: "html" });
     case "permit_mississauga":
       return q(`${MISSISSAUGA}/query`, { where: `BP_NO='${id.replace(/'/g, "''")}'`, outFields: "*", f: "html" });
     case "permit_brampton": // HTML output is disabled on this server; JSON shows the same record
@@ -92,7 +104,7 @@ export function recordUrl(s: RecordSignal): string | null {
 
 // Fields never copied into the excerpt: internal ids, and builder/contractor
 // names, which are not the occupier (CLAUDE.md §5).
-const SKIP_FIELD = /^(objectid|_id|_resource_id|globalid|shape.*|builder.*|contractor.*|x|y|geo_id|ward_grid)$/i;
+const SKIP_FIELD = /^(objectid|objectid_1|join_objectid|propertyrsn|civicid|propgisid1|_id|_resource_id|globalid|shape.*|builder.*|contractor.*|x|y|geo_id|ward_grid)$/i;
 
 function fieldValue(key: string, v: unknown): string {
   if (typeof v === "number" && /date/i.test(key) && v > 1e11) return new Date(v).toISOString().slice(0, 10);
@@ -124,6 +136,17 @@ const NEWS_FIELDS: [string, string][] = [
   ["Jobs", "jobs"],
   ["Lead", "lead"],
   ["Body", "body"],
+];
+
+const FEDDEV_FIELDS: [string, string][] = [
+  ["Release title", "release_title"],
+  ["Company", "company"],
+  ["Purpose of funding", "purpose"],
+  ["About the company", "about"],
+  ["FedDev Ontario contribution ($)", "contribution"],
+  ["Total project cost ($)", "project_cost"],
+  ["City", "city"],
+  ["Backgrounder", "backgrounder_url"],
 ];
 
 const ERO_FIELDS: [string, string][] = [
@@ -164,7 +187,9 @@ export function recordExcerpt(s: RecordSignal): string {
         ? `Agreement start: ${s.published_at} (the disclosure data has no separate publication date)`
         : s.source_type === "ero_approval"
           ? `Posted: ${s.published_at} (proposal or decision notice; the change may not be in place yet)`
-          : `${s.source_type === "canadabuys_award" || s.source_type === "ontario_news" ? "Published" : "Issued"}: ${s.published_at}`
+          : r.stage === "application"
+            ? `Application received: ${s.published_at} (in review, not issued yet; the work may not go ahead as described)`
+            : `${s.source_type === "canadabuys_award" || s.source_type === "ontario_news" || s.source_type === "feddev_news" ? "Published" : "Issued"}: ${s.published_at}`
       : null,
     s.event_at ? `Awarded: ${s.event_at}` : null,
     s.location ? `Location: ${s.location}` : null,
@@ -182,6 +207,8 @@ export function recordExcerpt(s: RecordSignal): string {
           ? NEWS_FIELDS.map(([label, key]) => [label, str(r[key])] as const)
           : s.source_type === "ero_approval"
             ? ERO_FIELDS.map(([label, key]) => [label, str(r[key])] as const)
+            : s.source_type === "feddev_news"
+              ? FEDDEV_FIELDS.map(([label, key]) => [label, str(r[key])] as const)
             : Object.entries(r)
           .filter(([k]) => !SKIP_FIELD.test(k))
           .map(([k, v]) => [k, fieldValue(k, v)] as const);
