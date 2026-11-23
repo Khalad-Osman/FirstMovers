@@ -30,13 +30,16 @@ The analytical model the product runs on is in `docs/intelligence-model.md`. It 
 
 ### Brief view
 Sections in this order:
+00. **Deal potential** (added 2026-11-23): a one-sentence summary a broker reads first, then up to 3 opportunities (site search, land purchase, build-to-suit, lease, purchase, sublease, disposition, backfill, lease renewal, expansion in place), each with a size and location only as a cited source states them. Model-written (`dealPotential`); `lib/analysis/build.ts` (`groundingErrors`) rejects a size whose numbers aren't in the cited sources' text, and `integrity.ts` allows new-space deals only for Worth Monitoring / Strong Signal and sublease/disposition/backfill only with vacated space likely or possible. Separate from the rating. The feed row shows the summary.
 0. **Broker angle** (added 2026-11-17): type, urgency, a one-sentence reason to call and 1–3 cited talking points. Model-written (`brokerAngle`); urgency computed in code from the cited Signal sources' dates (≤ 90 days act now, ≤ 12 months follow up, else watch; `lib/brief/angle.ts`). Briefs saved before angles show one **derived** in code from their fields, labelled as such. Admins can **Re-analyze from stored sources** (one model call, no Firecrawl credits) to get a written angle; it opens the research page and Add to feed saves a new version.
-1. Company and entity, with the established local connection
+1. Company and entity, with the established local connection. Then **Contacts and premises** (added 2026-11-23, `contacts`): website, main phone, named people with roles, known Ontario addresses (with a map link), each only as a cited source states it; names, phone digits, website host and the street number and name are checked against the cited sources' text (`groundingErrors`).
 2. Five-step chain: What changed → Operational consequence → Facility pressure → Forcing event → Real-estate decision. Each step marked **Supported / Inferred / Unknown**.
 3. Evidence ledger: each entry has an evidence type, a relevance label, source link, publisher, publication date (and event date if different), and a one-line finding.
 4. Counts at the top: number of Signal / Context / Not relevant sources.
 5. Countercase, working hypothesis, unknowns, space likely to be vacated (when likely or possible: badge, the other address as written, what the sources show, cited sources), decisive next step (with the validating question). Briefs saved before 2026-11-16 have no vacated-space field.
 6. Signal rating with a one-line reason, and opportunity stage.
+
+Display (2026-11-23): permit addresses in capitals are shown in normal case (`normalAddressCase`, display only), source ids written inline by the model ("(S1, S3)") render as small ledger links (`citationParts`, `components/cited-text.tsx`), and repeat coverage is listed under the entry it repeats ("Also reported by…", each keeping its `#source-S…` anchor). The output contract asks for broker voice: opportunity first, caveats once, brokerage services only (no operations or facility-planning reviews). Briefs saved before 2026-11-23 have no deal potential or contacts; re-analyzing from stored sources adds them.
 
 ### Watchlist
 - Companies the team is tracking. Shows each company's latest brief (rating, what changed, analysis date) with a link to the full brief.
@@ -256,6 +259,18 @@ These rules apply on top of `docs/intelligence-model.md`.
 **Broker angle**
 - Every brief states a broker angle: the most useful reason for a conversation that the evidence supports. Types: **new requirement** (an external space need; only when the rating is Worth Monitoring or Strong Signal), **vacated space** (only when vacated space is likely or possible), **capacity conversation** (investment or expansion at existing premises: ask about future space needs), **relationship** (funding, ownership, leadership or similar trigger to reconnect, without implying a property need), or **monitor only**.
 - The angle is a reason to talk, not a claim. It must not imply a requirement the rating doesn't support, and every talking point cites the sources it rests on. Never state timing; urgency is computed from the sources' dates.
+
+**Deal potential**
+- Every brief states its deal potential: the transactions a broker could pursue if the evidence holds (site search, land purchase, build-to-suit, lease, purchase, sublease, disposition, backfill, lease renewal, expansion in place). It is separate from the rating and is not a claim that a deal exists.
+- New-space deals (site search, land purchase, build-to-suit, lease, purchase) only when the rating is Worth Monitoring or Strong Signal, and not for a facility the sources show is already site-controlled, built or open. Sublease, disposition or backfill only when vacated space is likely or possible.
+- State a size or a location only as a cited source states it.
+
+**Contacts and premises**
+- List the company's website, main phone, named people and known Ontario addresses only when a source states them, each with the source. Never guess a contact, a title or an address.
+
+**Writing for brokers**
+- Write for an industrial real-estate broker: plain words, the opportunity first. The countercase and unknowns carry the caveats; don't repeat them in every section.
+- Offer only brokerage services (site search, land acquisition, build-to-suit, lease or buy analysis, lease negotiation and renewal, sublease, disposition, backfill), never operations, engineering or facility-planning consulting.
 
 **Output**
 - The LLM returns structured JSON validated with Zod. On validation failure, retry once, then record an error. Never show unvalidated output.

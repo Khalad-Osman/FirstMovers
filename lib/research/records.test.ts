@@ -154,7 +154,7 @@ describe("recordExcerpt / toRecordSource", () => {
         otherPremises: { assessment: "not_indicated", address: null, text: "No other premises identified.", sourceIds: [] },
         companyType: "unknown",
         dealIndicators: [],
-        brokerAngle: { type: "monitor_only", headline: "Nothing to act on yet.", talkingPoints: [] },
+        brokerAngle: { type: "monitor_only", headline: "Nothing to act on yet.", talkingPoints: [] }, dealPotential: { summary: "No transaction indicated yet.", opportunities: [] }, contacts: { website: null, phone: null, people: [], premises: [] },
         workingHypothesis: null,
         unknowns: [],
         commercialValue: null,

@@ -32,6 +32,7 @@ export type FeedEntry = {
   vacancy: { assessment: "likely" | "possible"; address: string } | null;
   fit?: FitLevel; // past deal fit; absent when no deals are uploaded
   angle: BrokerAngle; // stored, or derived for briefs saved before angles
+  dealSummary: string | null; // deal potential summary (briefs from 2026-11-23)
 };
 
 export type InvalidBrief = { briefId: string; companyName: string; analyzedAt: string };
@@ -41,12 +42,13 @@ const BRIEF_COLUMNS =
 
 function toEntry(
   analysis: BriefAnalysis,
-  meta: Omit<FeedEntry, "companyName" | "localConnection" | "whatChanged" | "facilityPressure" | "countercase" | "rating" | "stage" | "vacancy" | "angle">,
+  meta: Omit<FeedEntry, "companyName" | "localConnection" | "whatChanged" | "facilityPressure" | "countercase" | "rating" | "stage" | "vacancy" | "angle" | "dealSummary">,
   companyName: string,
 ): FeedEntry {
   const op = analysis.otherPremises;
   return {
     angle: effectiveAngle(analysis, meta.analyzedAt),
+    dealSummary: analysis.dealPotential?.summary ?? null,
     vacancy: op && op.assessment !== "not_indicated" && op.address ? { assessment: op.assessment, address: op.address } : null,
     ...meta,
     companyName,

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ANGLE_LABEL, ORIGIN_LABEL, URGENCY_LABEL, VACANCY_LABEL } from "@/lib/brief/schema";
 import { URGENCY_CLASS } from "./brief-view";
 import type { FeedEntry } from "@/lib/data/briefs";
-import { formatDate, stripLabel } from "@/lib/format";
+import { formatDate, normalAddressCase, stripLabel } from "@/lib/format";
 import { addToWatchlist, dismissBrief } from "@/app/(app)/actions";
 import { ActionButton } from "./action-button";
 import { RatingBadge, SampleBadge, StageBadge } from "./badges";
@@ -38,6 +38,13 @@ export function FeedRow({ entry, watched, isAdmin }: Props) {
           <span className={`badge ${URGENCY_CLASS[entry.angle.urgency]}`}>{URGENCY_LABEL[entry.angle.urgency]}</span>
           <span className="min-w-0 basis-full sm:basis-auto">{entry.angle.headline}</span>
           {entry.angle.derived && <span className="text-[0.8125rem] text-meta">(worked out from an older brief)</span>}
+        </p>
+      )}
+
+      {entry.dealSummary && (
+        <p className="text-[0.9375rem]">
+          <span className="label mr-2">Deal potential</span>
+          {normalAddressCase(entry.dealSummary.replace(/\s*[([]\s*S\d+(?:\s*[,;]\s*S\d+)*\s*[)\]]/g, ""))}
         </p>
       )}
 
@@ -85,7 +92,7 @@ function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
       <dt className="label">{label}</dt>
-      <dd className="mt-0.5">{stripLabel(value, label)}</dd>
+      <dd className="mt-0.5">{normalAddressCase(stripLabel(value, label).replace(/\s*[([]\s*S\d+(?:\s*[,;]\s*S\d+)*\s*[)\]]/g, ""))}</dd>
     </div>
   );
 }

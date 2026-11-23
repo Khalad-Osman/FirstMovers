@@ -117,6 +117,51 @@ export const brokerAngleSchema = modelBrokerAngleSchema.extend({
 });
 export type BrokerAngle = z.infer<typeof brokerAngleSchema>;
 
+// Deal potential (added 2026-11-23): the transactions a broker could pursue if
+// the evidence holds, with size and location only as a source states them
+// (checked against the cited sources' text in lib/analysis/build.ts).
+// Separate from the rating; not a claim that a deal exists.
+export const dealTypeSchema = z.enum([
+  "site_search",
+  "land_purchase",
+  "build_to_suit",
+  "lease",
+  "purchase",
+  "sublease",
+  "disposition",
+  "backfill",
+  "lease_renewal",
+  "expansion_in_place",
+]);
+export const NEW_SPACE_DEALS = ["site_search", "land_purchase", "build_to_suit", "lease", "purchase"] as const;
+export const RELEASE_DEALS = ["sublease", "disposition", "backfill"] as const;
+export const dealPotentialSchema = z.object({
+  summary: z.string().min(1), // one sentence a broker reads first
+  opportunities: z
+    .array(
+      z.object({
+        dealType: dealTypeSchema,
+        description: z.string().min(1),
+        statedSize: z.string().nullable(), // as a source states it, e.g. "100,000 square feet"
+        location: z.string().nullable(), // as a source states it
+        sourceIds: z.array(z.string()),
+      }),
+    )
+    .max(3),
+});
+export type DealPotential = z.infer<typeof dealPotentialSchema>;
+
+// Contacts and premises (added 2026-11-23): only what a source states, each
+// with its source; checked against the cited sources' text in build.ts.
+const citedValue = <T extends z.ZodRawShape>(shape: T) => z.object({ ...shape, sourceIds: z.array(z.string()) });
+export const contactsSchema = z.object({
+  website: citedValue({ url: z.string().min(1) }).nullable(),
+  phone: citedValue({ number: z.string().min(1) }).nullable(),
+  people: z.array(citedValue({ name: z.string().min(1), role: z.string().nullable() })).max(4),
+  premises: z.array(citedValue({ address: z.string().min(1), use: z.string().nullable() })).max(5),
+});
+export type Contacts = z.infer<typeof contactsSchema>;
+
 export const modelOutputSchema = z.object({
   company: companySchema,
   ledger: z.array(modelLedgerEntrySchema),
@@ -125,6 +170,8 @@ export const modelOutputSchema = z.object({
   companyType: companyTypeSchema,
   dealIndicators: z.array(dealIndicatorSchema),
   brokerAngle: modelBrokerAngleSchema,
+  dealPotential: dealPotentialSchema,
+  contacts: contactsSchema,
 });
 
 // ---------- Stored brief ----------
@@ -151,7 +198,22 @@ export const briefAnalysisSchema = z.object({
   companyType: companyTypeSchema.optional(), // absent before 2026-11-17
   dealIndicators: z.array(dealIndicatorSchema).optional(), // absent before 2026-11-17
   brokerAngle: brokerAngleSchema.optional(), // absent before 2026-11-17 (a derived one is shown instead)
+  dealPotential: dealPotentialSchema.optional(), // absent before 2026-11-23
+  contacts: contactsSchema.optional(), // absent before 2026-11-23
 });
+
+export const DEAL_TYPE_LABEL: Record<z.infer<typeof dealTypeSchema>, string> = {
+  site_search: "Site search",
+  land_purchase: "Land purchase",
+  build_to_suit: "Build-to-suit",
+  lease: "Lease",
+  purchase: "Purchase",
+  sublease: "Sublease",
+  disposition: "Disposition / sale",
+  backfill: "Backfill / re-leasing",
+  lease_renewal: "Lease renewal",
+  expansion_in_place: "Expansion in place",
+};
 
 export const ANGLE_LABEL: Record<z.infer<typeof angleTypeSchema>, string> = {
   new_requirement: "New requirement",

@@ -1,5 +1,5 @@
 import type { BriefAnalysis, LedgerEntry } from "./schema";
-import { CHAIN_STEPS } from "./schema";
+import { CHAIN_STEPS, NEW_SPACE_DEALS, RELEASE_DEALS } from "./schema";
 
 // Code-level enforcement of CLAUDE.md §7 on a stored brief. Each message names
 // the rule so it can be fed back to the model on retry.
@@ -127,6 +127,44 @@ export function checkBriefIntegrity(brief: BriefAnalysis): string[] {
     }
     if (angle.type === "vacated_space" && !(brief.otherPremises && brief.otherPremises.assessment !== "not_indicated")) {
       errors.push('Broker angle: "vacated_space" requires otherPremises to be likely or possible.');
+    }
+  }
+
+  // --- Deal potential (optional on briefs saved before 2026-11-23)
+  const deal = brief.dealPotential;
+  if (deal) {
+    for (const o of deal.opportunities) {
+      const label = `Deal potential (${o.dealType})`;
+      if (o.sourceIds.length === 0) errors.push(`${label}: must cite the sources it rests on.`);
+      o.sourceIds.forEach((id) => {
+        if (!byId.has(id)) errors.push(`${label}: cites ${id}, which is not in the ledger.`);
+      });
+      if ((NEW_SPACE_DEALS as readonly string[]).includes(o.dealType) && brief.rating === "no_meaningful_signal") {
+        errors.push(`${label}: a new-space deal is inconsistent with a No Meaningful Signal rating. Use sublease, disposition, backfill, lease renewal or expansion in place, or leave opportunities empty.`);
+      }
+      if ((RELEASE_DEALS as readonly string[]).includes(o.dealType) && !(brief.otherPremises && brief.otherPremises.assessment !== "not_indicated")) {
+        errors.push(`${label}: requires otherPremises to be likely or possible.`);
+      }
+    }
+    if (deal.opportunities.length > 0 && brief.company.entityStatus !== "verified") {
+      errors.push("Deal potential: an unverified entity cannot have deal opportunities.");
+    }
+  }
+
+  // --- Contacts and premises (optional on briefs saved before 2026-11-23)
+  const c = brief.contacts;
+  if (c) {
+    const items: [string, string[]][] = [
+      ...(c.website ? [["website", c.website.sourceIds] as [string, string[]]] : []),
+      ...(c.phone ? [["phone", c.phone.sourceIds] as [string, string[]]] : []),
+      ...c.people.map((p) => [`person ${p.name}`, p.sourceIds] as [string, string[]]),
+      ...c.premises.map((p) => [`premises ${p.address}`, p.sourceIds] as [string, string[]]),
+    ];
+    for (const [what, ids] of items) {
+      if (ids.length === 0) errors.push(`Contacts: ${what} must cite the source that states it.`);
+      ids.forEach((id) => {
+        if (!byId.has(id)) errors.push(`Contacts: ${what} cites ${id}, which is not in the ledger.`);
+      });
     }
   }
 

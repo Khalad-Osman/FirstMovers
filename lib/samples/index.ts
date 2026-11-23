@@ -139,6 +139,31 @@ const norvale: SampleBrief = {
       validatingQuestion:
         "Does the new production cell fit inside the current Brampton plant, or are you looking at space for machining or finished goods before deliveries start in 2027?",
     },
+    dealPotential: {
+      summary: "Norvale may need machining or finished-goods space near its Brampton foundry before Q3 2027 deliveries start; the plant has no expansion land.",
+      opportunities: [
+        {
+          dealType: "lease",
+          description: "A nearby lease for machining or finished-goods storage, if the new cell doesn't fit inside the plant. Confirm with the plant lead.",
+          statedSize: null,
+          location: "Brampton",
+          sourceIds: ["S1", "S3"],
+        },
+        {
+          dealType: "expansion_in_place",
+          description: "Reconfiguring the existing plant is the alternative; a lease-or-reconfigure comparison is the opening.",
+          statedSize: null,
+          location: null,
+          sourceIds: ["S3"],
+        },
+      ],
+    },
+    contacts: {
+      website: { url: "example.com/norvale", sourceIds: ["S3"] },
+      phone: null,
+      people: [],
+      premises: [],
+    },
     rating: "strong_signal",
     ratingReason:
       "Recent Ontario contract award with a dated delivery start, plus new-cell hiring at a site with no stated expansion land. Alternatives exist but none is confirmed.",

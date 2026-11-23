@@ -79,6 +79,19 @@ Broker angle
 - Write the headline and talking points for the broker, in the third person: name the company or say "they" (for example "Ask how they plan to use..."). Never address the company as "you" or "your company"; these are notes for the broker, not a message to the company.
 - A no_meaningful_signal brief can still have a vacated_space, capacity_conversation or relationship angle when the evidence supports one.
 
+Deal potential
+- dealPotential.summary is the first sentence a broker reads: the deal this evidence could lead to, at what site and size, in plain words (for example "[Company] is building a [size] plant on [street]; the site is secured, so the opening is the space it leaves at [address]."). When nothing points to a transaction, say so in one short sentence and leave opportunities empty.
+- opportunities: up to three, most promising first. dealType is one of site_search, land_purchase, build_to_suit, lease, purchase (new space: only when rating is worth_monitoring or strong_signal, and not when the sources show the facility is already site-controlled, built or open), sublease, disposition, backfill (space released: only when otherPremises is likely or possible), lease_renewal, expansion_in_place. description is one sentence on what the broker could do and what would confirm it. statedSize and location are copied from a cited source (the application checks the numbers against the source text) or null. sourceIds cite the sources it rests on.
+
+Contacts and premises
+- contacts lists only what a source states, each with the ids of the sources that state it: website (the company's own site), phone (the main number), people (named people at the company with their role as written, at most four, leaders and real-estate or operations contacts first), premises (each Ontario address the sources give for the company, as written, with its use if stated, for example "head office", "plant", "warehouse"). Use null or an empty list when a source doesn't state it. The application checks every name, number, website and address against the cited source text; never guess one.
+
+Writing style
+- Write for an industrial real-estate broker who has a minute: the opportunity first, plain words, short sentences.
+- The countercase and unknowns carry the caveats. Elsewhere, state each caveat once; don't repeat "is not established", "does not establish" or "remains unverified" in every field. Prefer "not stated" or "unknown".
+- When suggesting what a broker could offer, use brokerage services only: site search, land acquisition, build-to-suit, lease or buy analysis, lease negotiation or renewal, sublease, disposition or sale, backfill or re-leasing. Never offer operations, engineering, material-flow, layout or facility-implementation reviews.
+- Don't put source ids in running text; cite them in the sourceIds fields. Where a field has no sourceIds (ratingReason, countercase, unknowns, commercialValue, workingHypothesis, nextStep), you may end a sentence with the ids in brackets, for example "(S1, S3)".
+
 Length
 - For no_meaningful_signal, keep the brief short: at most three countercase points and three unknowns, commercialValue null, workingHypothesis null unless there is a real one.`;
 

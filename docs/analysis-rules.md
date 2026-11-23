@@ -43,6 +43,18 @@ These rules apply on top of `docs/intelligence-model.md`.
 - Every brief states a broker angle: the most useful reason for a conversation that the evidence supports. Types: **new requirement** (an external space need; only when the rating is Worth Monitoring or Strong Signal), **vacated space** (only when vacated space is likely or possible), **capacity conversation** (investment or expansion at existing premises: ask about future space needs), **relationship** (funding, ownership, leadership or similar trigger to reconnect, without implying a property need), or **monitor only**.
 - The angle is a reason to talk, not a claim. It must not imply a requirement the rating doesn't support, and every talking point cites the sources it rests on. Never state timing; urgency is computed from the sources' dates.
 
+**Deal potential**
+- Every brief states its deal potential: the transactions a broker could pursue if the evidence holds (site search, land purchase, build-to-suit, lease, purchase, sublease, disposition, backfill, lease renewal, expansion in place). It is separate from the rating and is not a claim that a deal exists.
+- New-space deals (site search, land purchase, build-to-suit, lease, purchase) only when the rating is Worth Monitoring or Strong Signal, and not for a facility the sources show is already site-controlled, built or open. Sublease, disposition or backfill only when vacated space is likely or possible.
+- State a size or a location only as a cited source states it.
+
+**Contacts and premises**
+- List the company's website, main phone, named people and known Ontario addresses only when a source states them, each with the source. Never guess a contact, a title or an address.
+
+**Writing for brokers**
+- Write for an industrial real-estate broker: plain words, the opportunity first. The countercase and unknowns carry the caveats; don't repeat them in every section.
+- Offer only brokerage services (site search, land acquisition, build-to-suit, lease or buy analysis, lease negotiation and renewal, sublease, disposition, backfill), never operations, engineering or facility-planning consulting.
+
 **Output**
 - The LLM returns structured JSON validated with Zod. On validation failure, retry once, then record an error. Never show unvalidated output.
 - Before saving a brief, verify in code that every FACT links to a collected source and that its dates match the source record.
