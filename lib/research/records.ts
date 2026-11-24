@@ -42,6 +42,9 @@ const PUBLISHER: Record<string, string> = {
   permit_barrie: "City of Barrie – Building permits",
   permit_ottawa: "City of Ottawa – Building permits",
   agco_cannabis: "AGCO – Cannabis retail store authorizations",
+  agco_liquor: "AGCO – Liquor licence applications",
+  ccaa_filing: "Office of the Superintendent of Bankruptcy – CCAA records",
+  newswire_release: "Newswire.ca – News release",
 };
 
 const KIND: Record<string, string> = {
@@ -61,6 +64,9 @@ const KIND: Record<string, string> = {
   permit_barrie: "Issued building permit (City of Barrie open data)",
   permit_ottawa: "Issued building permit (City of Ottawa monthly permit report)",
   agco_cannabis: "Cannabis retail store authorization status (AGCO store map). The list has no application or cancellation dates: the date shown is the public notice start or the day the store was first seen in the list",
+  agco_liquor: "Liquor sales licence application in public notice (AGCO list). The list has no filing date: the date shown is the day the application was first seen in the list",
+  ccaa_filing: "Creditor protection under the Companies' Creditors Arrangement Act (OSB CCAA records). A restructuring may close or sell plants and stores; the record does not say which",
+  newswire_release: "Company news release distributed on newswire.ca, issued by the company named in its SOURCE line",
 };
 
 const STRENGTH_LABEL: Record<string, string> = {
@@ -74,7 +80,8 @@ const STRENGTH_LABEL: Record<string, string> = {
   grant: "Grant or contribution",
   announcement: "Investment announcement",
   env_approval: "Environmental approval",
-  store_licence: "Store authorization",
+  store_licence: "Store or liquor licence",
+  insolvency: "Creditor protection (CCAA)",
   other: "Other",
 };
 
@@ -98,6 +105,9 @@ export function recordUrl(s: RecordSignal): string | null {
     case "ero_approval":
     case "feddev_news":
     case "permit_ottawa": // monthly Excel file; no page per permit
+    case "agco_liquor": // daily list; no page per application
+    case "ccaa_filing": // the monitor's page for the proceeding, else the dataset
+    case "newswire_release":
       return s.url;
     case "agco_cannabis": {
       const layer = str(raw(s).layer) as AgcoLayer;
@@ -220,8 +230,12 @@ export function recordExcerpt(s: RecordSignal): string {
         ? `Agreement start: ${s.published_at} (the disclosure data has no separate publication date)`
         : s.source_type === "ero_approval"
           ? `Posted: ${s.published_at} (proposal or decision notice; the change may not be in place yet)`
-          : s.source_type === "agco_cannabis"
+          : s.source_type === "agco_cannabis" || s.source_type === "agco_liquor"
             ? `Date: ${s.published_at} (${str(r.date_basis) || "first seen in the AGCO list"}; the AGCO list publishes no application or cancellation dates)`
+            : s.source_type === "ccaa_filing"
+              ? `Initial order: ${s.published_at}`
+              : s.source_type === "newswire_release"
+                ? `Published: ${s.published_at}`
             : r.stage === "application"
             ? `Application received: ${s.published_at} (in review, not issued yet; the work may not go ahead as described)`
             : `${s.source_type === "canadabuys_award" || s.source_type === "ontario_news" || s.source_type === "feddev_news" ? "Published" : "Issued"}: ${s.published_at}`

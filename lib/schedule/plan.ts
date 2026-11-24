@@ -72,8 +72,9 @@ export function scheduleStatus(s: { schedule_discovery_enabled: boolean; discove
 }
 
 // Daily ingestion order: sources that read page by page and continue next run
-// go last, so the fast sources always run and the slow one gets the time left.
-const RESUMABLE = new Set(["ero_approval"]);
+// go last, so the fast sources always run and the slow ones get the time left
+// (newswire.ca is capped at 90 s; the registry scraper uses what remains).
+const RESUMABLE = new Set(["newswire_release", "ero_approval"]);
 export const dailyOrder = <T extends { source: string }>(sources: T[]): T[] => [
   ...sources.filter((s) => !RESUMABLE.has(s.source)),
   ...sources.filter((s) => RESUMABLE.has(s.source)),

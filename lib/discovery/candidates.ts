@@ -105,9 +105,13 @@ function retailWeight(s: SignalForCandidate): { weight: number; label: string } 
     case "store_licence": {
       // AGCO cannabis store authorizations (lib/ingest/agco.ts).
       const kind = s.raw && typeof s.raw === "object" ? (s.raw as Record<string, unknown>).kind : null;
-      return kind === "closing"
-        ? { weight: 3, label: "retail: store authorization cancelled (store closing)" }
-        : { weight: 4, label: "retail: new store application" };
+      if (kind === "closing") return { weight: 3, label: "retail: store authorization cancelled (store closing)" };
+      // AGCO liquor licence applications (lib/ingest/agco-liquor.ts): the site is usually secured already.
+      if (kind === "liquor_new") return { weight: 3, label: "retail: new liquor licence application (new restaurant or venue)" };
+      if (kind === "liquor_rebrand") return { weight: 2, label: "retail: liquor licence under a new name or operator" };
+      if (kind === "liquor_expansion") return { weight: 2, label: "retail: licensed area added (expansion in place)" };
+      if (kind === "liquor_change") return { weight: 1, label: "retail: liquor licence change" };
+      return { weight: 4, label: "retail: new store application" };
     }
     default:
       return null; // grants and others score as for industrial
@@ -144,7 +148,13 @@ function baseWeight(s: SignalForCandidate): { weight: number; label: string } {
     case "announcement": {
       // Ontario newsroom: a named company's investment or new facility (early, specific).
       const kind = s.raw && typeof s.raw === "object" ? (s.raw as Record<string, unknown>).kind : null;
-      return kind === "new_facility" ? { weight: 5, label: "Ontario announcement: new facility" } : { weight: 4, label: "Ontario announcement: investment or expansion" };
+      const src = s.source_type === "newswire_release" ? "news release" : "Ontario announcement";
+      if (kind === "closing") return { weight: 3, label: `${src}: closing (space may be released)` };
+      if (kind === "acquisition") return { weight: 2, label: `${src}: acquisition` };
+      return kind === "new_facility" ? { weight: 5, label: `${src}: new facility` } : { weight: 4, label: `${src}: investment or expansion` };
+    }
+    case "insolvency": {
+      return { weight: 3, label: "creditor protection (CCAA): plants or stores may be released" };
     }
     case "env_approval": {
       // Environmental approval: production changes, usually before installation.
@@ -323,8 +333,8 @@ export function buildCandidates(
 export type CandidateFamily = "permit" | "grant" | "award";
 export function candidateFamily(c: Candidate): CandidateFamily {
   if (c.signals.some((s) => s.source_type.startsWith("permit_"))) return "permit";
-  if (c.signals.some((s) => s.source_type === "ero_approval" || s.source_type === "agco_cannabis")) return "permit"; // physical, like a permit
-  if (c.signals.some((s) => s.source_type === "federal_grant" || s.source_type === "feddev_news" || s.source_type === "ontario_news")) return "grant"; // funding / announcements
+  if (c.signals.some((s) => s.source_type === "ero_approval" || s.source_type === "agco_cannabis" || s.source_type === "agco_liquor")) return "permit"; // physical, like a permit
+  if (c.signals.some((s) => s.source_type === "federal_grant" || s.source_type === "feddev_news" || s.source_type === "ontario_news" || s.source_type === "newswire_release" || s.source_type === "ccaa_filing")) return "grant"; // funding / announcements / restructurings
   return "award";
 }
 

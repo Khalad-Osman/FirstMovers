@@ -11,7 +11,7 @@ import { SECTORS, SECTOR_LABEL } from "@/lib/sector";
 export const metadata: Metadata = { title: "Prospects · First Movers" };
 
 const PAGE = 50;
-const FAMILY_LABEL: Record<SignalFamily, string> = { permit: "Permit", grant: "Grant", award: "Award", news: "Ontario news", approval: "Env. approval", licence: "Store licence" };
+const FAMILY_LABEL: Record<SignalFamily, string> = { permit: "Permit", grant: "Grant", award: "Award", news: "Ontario news", approval: "Env. approval", licence: "Store licence", insolvency: "Creditor protection" };
 const money = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
 
 export default async function ProspectsPage({ searchParams }: PageProps<"/prospects">) {
@@ -35,7 +35,7 @@ export default async function ProspectsPage({ searchParams }: PageProps<"/prospe
         title="Prospects"
         description={
           filters.sector === "retail"
-            ? "Every named retail business (stores, restaurants, clinics, studios…) in the stored permits, grants and cannabis store authorizations with recent store activity: new store fit-outs, store signs, changes of use, new buildings, store openings and closings. Ranked by the rule score. Public records only: no AI, no credits. Use Research for a full brief."
+            ? "Every named retail business (stores, restaurants, clinics, studios…) in the stored permits, grants, cannabis and liquor licence applications, news releases and creditor-protection filings with recent store activity: new store fit-outs, store signs, changes of use, new buildings, store openings and closings. Ranked by the rule score. Public records only: no AI, no credits. Use Research for a full brief."
             : "Every named company in the stored permits, grants and contract awards with recent physical activity, ranked by the discovery rule score. Public records only: no AI, no credits. Use Research for a full brief."
         }
       >
@@ -76,7 +76,7 @@ export default async function ProspectsPage({ searchParams }: PageProps<"/prospe
           <fieldset className="grid gap-1.5">
             <legend className="field-label mb-1">Signal type</legend>
             <div className="flex flex-wrap gap-2">
-              {(filters.sector === "retail" ? (["permit", "grant", "licence"] as const) : (["permit", "grant", "award", "news", "approval"] as const)).map((t) => (
+              {(filters.sector === "retail" ? (["permit", "grant", "licence", "news", "insolvency"] as const) : (["permit", "grant", "award", "news", "approval", "insolvency"] as const)).map((t) => (
                 <label key={t} className="inline-flex items-center gap-1.5 rounded-[3px] border border-line bg-white px-2.5 py-1.5 text-[0.9375rem]">
                   <input type="checkbox" name="type" value={t} defaultChecked={filters.families.includes(t)} className="h-4 w-4" />
                   {FAMILY_LABEL[t]}
