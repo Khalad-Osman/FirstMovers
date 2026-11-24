@@ -1,5 +1,8 @@
 import { BRAMPTON, CKAN, MISSISSAUGA, TORONTO_RESOURCES } from "@/lib/ingest/permits";
 import { CALEDON, OAKVILLE } from "@/lib/ingest/permits-halton-peel";
+import { BARRIE, KINGSTON, KITCHENER, WATERLOO } from "@/lib/ingest/permits-ontario";
+import { AGCO_LAYERS, type AgcoLayer } from "@/lib/ingest/agco";
+import { addressMatchOf } from "@/lib/discovery/address";
 import { signalWeight, type SignalForCandidate } from "@/lib/discovery/candidates";
 
 // Stored signals (building permits, contract awards) as analysis evidence.
@@ -33,6 +36,12 @@ const PUBLISHER: Record<string, string> = {
   permit_caledon: "Town of Caledon – Building permits",
   permit_oakville: "Town of Oakville – Building permits",
   feddev_news: "FedDev Ontario – News release",
+  permit_kitchener: "City of Kitchener – Building permits",
+  permit_waterloo: "City of Waterloo – Building permits",
+  permit_kingston: "City of Kingston – Building permits",
+  permit_barrie: "City of Barrie – Building permits",
+  permit_ottawa: "City of Ottawa – Building permits",
+  agco_cannabis: "AGCO – Cannabis retail store authorizations",
 };
 
 const KIND: Record<string, string> = {
@@ -46,6 +55,12 @@ const KIND: Record<string, string> = {
   permit_caledon: "Building permit or permit application (Town of Caledon open data)",
   permit_oakville: "Building permit or permit application (Town of Oakville open data)",
   feddev_news: "Government of Canada (FedDev Ontario) news release announcing funding for a named company",
+  permit_kitchener: "Building permit or permit application (City of Kitchener open data)",
+  permit_waterloo: "Issued building permit (City of Waterloo open data)",
+  permit_kingston: "Building permit or permit application (City of Kingston open data)",
+  permit_barrie: "Issued building permit (City of Barrie open data)",
+  permit_ottawa: "Issued building permit (City of Ottawa monthly permit report)",
+  agco_cannabis: "Cannabis retail store authorization status (AGCO store map). The list has no application or cancellation dates: the date shown is the public notice start or the day the store was first seen in the list",
 };
 
 const STRENGTH_LABEL: Record<string, string> = {
@@ -59,6 +74,7 @@ const STRENGTH_LABEL: Record<string, string> = {
   grant: "Grant or contribution",
   announcement: "Investment announcement",
   env_approval: "Environmental approval",
+  store_licence: "Store authorization",
   other: "Other",
 };
 
@@ -81,7 +97,24 @@ export function recordUrl(s: RecordSignal): string | null {
     case "ontario_news":
     case "ero_approval":
     case "feddev_news":
+    case "permit_ottawa": // monthly Excel file; no page per permit
       return s.url;
+    case "agco_cannabis": {
+      const layer = str(raw(s).layer) as AgcoLayer;
+      const url = AGCO_LAYERS[layer];
+      if (!url) return s.url;
+      const name = str(raw(s).PremisesName).replace(/'/g, "''");
+      const address = str(raw(s).Address).replace(/'/g, "''");
+      return q(`${url}/query`, { where: `PremisesName='${name}' AND Address='${address}'`, outFields: "*", f: "html" });
+    }
+    case "permit_kitchener":
+      return q(`${KITCHENER}/query`, { where: `PERMITNO='${id.replace(/'/g, "''")}'`, outFields: "*", f: "html" });
+    case "permit_waterloo":
+      return q(`${WATERLOO}/query`, { where: `PERMIT_NUM='${id.replace(/'/g, "''")}'`, outFields: "*", f: "html" });
+    case "permit_kingston":
+      return q(`${KINGSTON}/query`, { where: `PERMIT_NUMBER='${id.replace(/'/g, "''")}'`, outFields: "*", f: "html" });
+    case "permit_barrie":
+      return q(`${BARRIE}/query`, { where: `RECORD_ID='${id.replace(/'/g, "''")}'`, outFields: "*", f: "html" });
     case "permit_caledon":
       return q(`${CALEDON}/query`, { where: `CUSTOMFOLDERNUMBER='${id.replace(/'/g, "''")}'`, outFields: "*", f: "html" });
     case "permit_oakville":
@@ -187,14 +220,20 @@ export function recordExcerpt(s: RecordSignal): string {
         ? `Agreement start: ${s.published_at} (the disclosure data has no separate publication date)`
         : s.source_type === "ero_approval"
           ? `Posted: ${s.published_at} (proposal or decision notice; the change may not be in place yet)`
-          : r.stage === "application"
+          : s.source_type === "agco_cannabis"
+            ? `Date: ${s.published_at} (${str(r.date_basis) || "first seen in the AGCO list"}; the AGCO list publishes no application or cancellation dates)`
+            : r.stage === "application"
             ? `Application received: ${s.published_at} (in review, not issued yet; the work may not go ahead as described)`
             : `${s.source_type === "canadabuys_award" || s.source_type === "ontario_news" || s.source_type === "feddev_news" ? "Published" : "Issued"}: ${s.published_at}`
       : null,
     s.event_at ? `Awarded: ${s.event_at}` : null,
     s.location ? `Location: ${s.location}` : null,
     `Work or record class: ${STRENGTH_LABEL[s.signal_strength] ?? s.signal_strength}`,
-    s.raw_entity_name ? `Business named in the record: ${s.raw_entity_name}` : null,
+    addressMatchOf(r)
+      ? `Business named in the record: none. Linked by address: another stored record at this address names ${addressMatchOf(r)!.name}; this record does not confirm who did the work`
+      : s.raw_entity_name
+        ? `Business named in the record: ${s.raw_entity_name}`
+        : null,
     s.summary ? `Summary: ${s.summary}` : null,
   ].filter(Boolean);
 

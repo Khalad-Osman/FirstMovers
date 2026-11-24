@@ -31,6 +31,8 @@ export type IngestContext = {
   grantsMinValue: number;
   // Range of record ids already stored for this source (sources that scan sequential ids).
   known?: { newestId: string | null; oldestId: string | null; oldestDate: string | null };
+  // Snapshot sources (no dates in the data): stored record ids and their dates.
+  stored?: Map<string, string | null>;
   // Stop starting new work after this time (epoch ms); unset when run from the CLI.
   deadline?: number;
   fetchImpl: typeof fetch;
@@ -41,6 +43,8 @@ export type IngestSource = {
   source: SourceType;
   label: string;
   description: string;
+  // Load ctx.stored before the run (sources dated by first sighting).
+  snapshot?: boolean;
   run: (ctx: IngestContext) => AsyncGenerator<IngestItem>;
 };
 

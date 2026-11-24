@@ -79,6 +79,7 @@ export function sampleToEntry(sample: SampleBrief): FeedEntry {
       surfacedBy: sample.surfacedBy,
     },
     sample.analysis.company.name,
+    sample.sector,
   );
 }
 

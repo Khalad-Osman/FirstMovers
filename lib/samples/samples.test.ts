@@ -5,12 +5,13 @@ import { recencyTier } from "@/lib/analysis/recency";
 import { SAMPLE_BRIEFS } from "./index";
 
 describe("sample briefs", () => {
-  it("there are three, one per rating", () => {
-    expect(SAMPLE_BRIEFS.map((s) => s.analysis.rating).sort()).toEqual([
+  it("there are four: one per rating for industrial, plus one retail", () => {
+    expect(SAMPLE_BRIEFS.filter((s) => s.sector !== "retail").map((s) => s.analysis.rating).sort()).toEqual([
       "no_meaningful_signal",
       "strong_signal",
       "worth_monitoring",
     ]);
+    expect(SAMPLE_BRIEFS.filter((s) => s.sector === "retail").map((s) => s.slug)).toEqual(["larchmere-finch-bakehouse"]);
   });
 
   for (const sample of SAMPLE_BRIEFS) {

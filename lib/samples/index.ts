@@ -1,4 +1,5 @@
 import type { BriefAnalysis, Origin } from "@/lib/brief/schema";
+import type { Sector } from "@/lib/sector";
 
 // Fictional sample briefs. They live in code only, never in the database, and
 // are always shown with a "Sample" label. Company names were checked against
@@ -11,6 +12,7 @@ export type SampleBrief = {
   surfacedBy: string;
   analyzedAt: string; // ISO date
   analysis: BriefAnalysis;
+  sector?: Sector; // default industrial
 };
 
 const norvale: SampleBrief = {
@@ -353,7 +355,183 @@ const ardent: SampleBrief = {
   },
 };
 
-export const SAMPLE_BRIEFS: readonly SampleBrief[] = [norvale, kestrel, ardent];
+// Retail sample (added 2026-11-23). Name checked against web search
+// (2026-11-23): no matching business.
+const larchmere: SampleBrief = {
+  slug: "larchmere-finch-bakehouse",
+  isSample: true,
+  sector: "retail",
+  origin: "discovered",
+  surfacedBy: "Municipal building permit: tenant fit-up (sample)",
+  analyzedAt: "2026-11-20",
+  analysis: {
+    company: {
+      name: "Larchmere & Finch Bakehouse Inc.",
+      entityNotes: "Privately held bakery-café operator. Its website describes the stores as company-run, not franchised.",
+      localConnection: "Operates bakery-cafés in Mississauga and Oakville, Ontario.",
+      entityStatus: "verified",
+    },
+    chain: {
+      whatChanged: {
+        status: "supported",
+        text: "A permit for a new bakery-café fit-out in Oakville was issued in October 2026, and a store sign permit followed in Mississauga in November (S1, S2).",
+        sourceIds: ["S1", "S2"],
+      },
+      operationalConsequence: {
+        status: "supported",
+        text: "The company says it plans three more GTA cafés in 2027 and is hiring store managers for them (S3).",
+        sourceIds: ["S3"],
+      },
+      facilityPressure: {
+        status: "inferred",
+        text: "A wholesale bakery line and three more cafés point to more baking volume than the original café's back kitchen was built for (S3, S4).",
+        sourceIds: ["S3", "S4"],
+      },
+      forcingEvent: {
+        status: "unknown",
+        text: "No date is given for the 2027 openings.",
+        sourceIds: [],
+      },
+      realEstateDecision: {
+        status: "inferred",
+        text: "Three more café sites, and possibly a central production kitchen, would each need a lease (S3).",
+        sourceIds: ["S3"],
+      },
+    },
+    ledger: [
+      {
+        id: "S1",
+        url: "https://example.com/sample/oakville-fit-up-permit",
+        publisher: "Municipal building permit record (sample)",
+        title: "Interior alterations for Larchmere & Finch Bakehouse, Unit 4",
+        publishedAt: "2026-10-14",
+        eventAt: null,
+        recencyTier: "recent",
+        evidenceType: "fact",
+        relevance: "signal",
+        finding: "Permit issued for a bakery-café fit-out in Unit 4 on Cornwall Road, Oakville. The site is already secured.",
+        repeatCoverageOf: null,
+      },
+      {
+        id: "S2",
+        url: "https://example.com/sample/mississauga-sign-permit",
+        publisher: "Municipal building permit record (sample)",
+        title: "One fascia sign - Larchmere & Finch Bakehouse",
+        publishedAt: "2026-11-05",
+        eventAt: null,
+        recencyTier: "recent",
+        evidenceType: "fact",
+        relevance: "signal",
+        finding: "Sign permit for a second Mississauga storefront on Lakeshore Road West.",
+        repeatCoverageOf: null,
+      },
+      {
+        id: "S3",
+        url: "https://example.com/sample/larchmere-careers",
+        publisher: "Larchmere & Finch careers page (sample)",
+        title: "Store managers wanted: three new cafés in 2027",
+        publishedAt: "2026-11-12",
+        eventAt: null,
+        recencyTier: "recent",
+        evidenceType: "fact",
+        relevance: "signal",
+        finding: "Hiring managers for three new GTA cafés planned for 2027, and a wholesale bakery lead.",
+        repeatCoverageOf: null,
+      },
+      {
+        id: "S4",
+        url: "https://example.com/sample/larchmere-about",
+        publisher: "Larchmere & Finch website (sample)",
+        title: "Our cafés",
+        publishedAt: "2026-09-01",
+        eventAt: null,
+        recencyTier: "recent",
+        evidenceType: "fact",
+        relevance: "context",
+        finding: "Lists the original café at 1180 Queensway East, Mississauga, where all bread is baked in the back kitchen. Phone (905) 555-0142.",
+        repeatCoverageOf: null,
+      },
+    ],
+    countercase: [
+      "The Oakville and Lakeshore sites are already secured; they are not open requirements.",
+      "The 2027 cafés have no stated locations, so they may go into centres where the company already has a landlord relationship.",
+      "Wholesale baking could stay in the Queensway kitchen with an extra shift instead of moving.",
+    ],
+    alternativesAssessment: "alternatives_possible",
+    existingFacilityInvestment: false,
+    otherPremises: {
+      assessment: "possible",
+      address: "1180 Queensway East, Mississauga",
+      text: "If baking moves to a central kitchen, the original café's back kitchen may no longer be needed at its current size. The sources don't say whether the café stays.",
+      sourceIds: ["S3", "S4"],
+    },
+    companyType: "restaurant_food_service",
+    dealIndicators: ["lease"],
+    brokerAngle: {
+      type: "new_requirement",
+      headline: "Two new stores this fall and three more planned for 2027 with no locations named: offer to run the next site search.",
+      talkingPoints: [
+        { text: "Oakville fit-out permit issued and a second Mississauga storefront signed.", sourceIds: ["S1", "S2"] },
+        { text: "Hiring managers for three 2027 cafés and a wholesale bakery lead.", sourceIds: ["S3"] },
+      ],
+      urgency: "act_now",
+    },
+    workingHypothesis:
+      "Larchmere & Finch will lease three more café units in the GTA in 2027, and may need a small production kitchen to supply them.",
+    unknowns: [
+      "Where the 2027 cafés will be and what size they need.",
+      "Whether the original café is leased or owned, and on what term.",
+      "Whether a central kitchen is planned.",
+    ],
+    commercialValue: "Tenant representation for a growing local chain before its 2027 sites are chosen.",
+    nextStep: {
+      action: "validate",
+      text: "Call the company's main line and ask for the person choosing the 2027 sites.",
+      validatingQuestion: "Have you chosen areas for the three 2027 cafés, and will wholesale baking stay at the Queensway kitchen?",
+    },
+    dealPotential: {
+      summary: "Three 2027 café sites still to find in the GTA, and possibly a production kitchen; part of the original Queensway café may later free up.",
+      opportunities: [
+        {
+          dealType: "site_search",
+          description: "Tenant representation for the three 2027 cafés; the sources name no locations yet.",
+          statedSize: null,
+          location: "GTA",
+          sourceIds: ["S3"],
+        },
+        {
+          dealType: "lease",
+          description: "A small production kitchen, if wholesale baking outgrows the café's back kitchen.",
+          statedSize: null,
+          location: null,
+          sourceIds: ["S3", "S4"],
+        },
+        {
+          dealType: "sublease",
+          description: "Part of the Queensway unit, if baking moves out. Confirm before raising it.",
+          statedSize: null,
+          location: "1180 Queensway East, Mississauga",
+          sourceIds: ["S4"],
+        },
+      ],
+    },
+    contacts: {
+      website: { url: "example.com/larchmere", sourceIds: ["S4"] },
+      phone: { number: "(905) 555-0142", sourceIds: ["S4"] },
+      people: [],
+      premises: [
+        { address: "1180 Queensway East, Mississauga", use: "Original café and bakery kitchen", sourceIds: ["S4"] },
+        { address: "Unit 4, Cornwall Road, Oakville", use: "New café (fit-out permit issued)", sourceIds: ["S1"] },
+      ],
+    },
+    rating: "worth_monitoring",
+    ratingReason:
+      "Recent store permits and stated plans for three more 2027 cafés; the next sites are not chosen, and the two current ones are already secured.",
+    stage: "pre_shop",
+  },
+};
+
+export const SAMPLE_BRIEFS: readonly SampleBrief[] = [norvale, kestrel, ardent, larchmere];
 
 export function getSample(slug: string): SampleBrief | undefined {
   return SAMPLE_BRIEFS.find((s) => s.slug === slug);

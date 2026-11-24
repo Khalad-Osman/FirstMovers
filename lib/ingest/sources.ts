@@ -5,6 +5,8 @@ import { eroApprovals } from "./ero";
 import { bramptonPermits, mississaugaPermits, torontoPermits } from "./permits";
 import { caledonPermits, oakvillePermits } from "./permits-halton-peel";
 import { feddevNews } from "./feddev";
+import { agcoCannabis } from "./agco";
+import { barriePermits, kingstonPermits, kitchenerPermits, ottawaPermits, waterlooPermits } from "./permits-ontario";
 import type { IngestSource, SourceType } from "./types";
 
 // Order = build order in CLAUDE.md §11 Phase 4. Job Bank is deferred: its open
@@ -20,6 +22,13 @@ export const INGEST_SOURCES: IngestSource[] = [
   torontoPermits,
   caledonPermits,
   oakvillePermits,
+  // Outside the GTA (added 2026-11-23)
+  kitchenerPermits,
+  waterlooPermits,
+  kingstonPermits,
+  barriePermits,
+  ottawaPermits,
+  agcoCannabis,
 ];
 
 export function getIngestSource(source: string): IngestSource | undefined {

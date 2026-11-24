@@ -1,3 +1,4 @@
+import { addressMatchOf, attachByAddress } from "./address";
 import { normalizeCompanyName } from "@/lib/research/normalize";
 
 // Step 2 of the pipeline (CLAUDE.md §4): group stored signals by entity, merge
@@ -64,7 +65,7 @@ function permitSize(raw: unknown): { value: number | null; area: number | null }
     const n = typeof v === "number" ? v : Number(String(v ?? "").replace(/[^0-9.]/g, ""));
     return Number.isFinite(n) && n > 0 ? n : null;
   };
-  return { value: num(r.EST_CON_VALUE ?? r.EST_CONST_COST ?? r.CONSTVALUE ?? r.Construction_Value), area: num(r.APPL_AREA ?? r.WORKAREA ?? r.GFA) };
+  return { value: num(r.EST_CON_VALUE ?? r.EST_CONST_COST ?? r.CONSTVALUE ?? r.Construction_Value ?? r.est_value), area: num(r.APPL_AREA ?? r.WORKAREA ?? r.GFA ?? r.area_m2) };
 }
 
 // A "new building" or "addition" this small is an accessory structure (a fire
@@ -101,12 +102,25 @@ function retailWeight(s: SignalForCandidate): { weight: number; label: string } 
       return isMajorFitOut(s.raw) ? { weight: 4, label: "retail: major store fit-out" } : { weight: 3, label: "retail: store fit-out" };
     case "sign":
       return s.raw_entity_name ? { weight: 3, label: "retail: store sign (new or rebranded store)" } : { weight: 0.5, label: "sign permit" };
+    case "store_licence": {
+      // AGCO cannabis store authorizations (lib/ingest/agco.ts).
+      const kind = s.raw && typeof s.raw === "object" ? (s.raw as Record<string, unknown>).kind : null;
+      return kind === "closing"
+        ? { weight: 3, label: "retail: store authorization cancelled (store closing)" }
+        : { weight: 4, label: "retail: new store application" };
+    }
     default:
       return null; // grants and others score as for industrial
   }
 }
 
+// A permit linked to the company only by its address says so in the reason.
 export function signalWeight(s: SignalForCandidate): { weight: number; label: string } {
+  const w = baseWeight(s);
+  return addressMatchOf(s.raw) ? { ...w, label: `${w.label} (same address; the permit names no business)` } : w;
+}
+
+function baseWeight(s: SignalForCandidate): { weight: number; label: string } {
   const retail = retailWeight(s);
   if (retail) return retail;
   switch (s.signal_strength) {
@@ -214,7 +228,8 @@ export function buildCandidates(
   opts: { today: string; skipKeys: Set<string>; sector?: "industrial" | "retail" },
 ): { candidates: Candidate[]; skipped: { key: string; displayName: string; reason: string }[] } {
   const groups = new Map<string, SignalForCandidate[]>();
-  for (const s of signals) {
+  // Permits naming no business join a company named at the same address (lib/discovery/address.ts).
+  for (const s of [...signals, ...attachByAddress(signals, groupKey)]) {
     if (!s.raw_entity_name || !s.entity_key) continue; // address-only permits are not candidates
     const key = groupKey(s.raw_entity_name);
     if (key.length < 3) continue;
@@ -308,7 +323,7 @@ export function buildCandidates(
 export type CandidateFamily = "permit" | "grant" | "award";
 export function candidateFamily(c: Candidate): CandidateFamily {
   if (c.signals.some((s) => s.source_type.startsWith("permit_"))) return "permit";
-  if (c.signals.some((s) => s.source_type === "ero_approval")) return "permit"; // physical, like a permit
+  if (c.signals.some((s) => s.source_type === "ero_approval" || s.source_type === "agco_cannabis")) return "permit"; // physical, like a permit
   if (c.signals.some((s) => s.source_type === "federal_grant" || s.source_type === "feddev_news" || s.source_type === "ontario_news")) return "grant"; // funding / announcements
   return "award";
 }

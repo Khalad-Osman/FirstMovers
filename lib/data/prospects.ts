@@ -19,7 +19,8 @@ export const getProspects = cache(async (sector: Sector = "industrial"): Promise
       .from("signals")
       .select("id, source_type, source_record_id, raw_entity_name, entity_key, signal_strength, title, summary, url, published_at, event_at, location, raw, sector")
       .eq("sector", sector)
-      .not("entity_key", "is", null)
+      // Named signals, plus permits naming no business (matched by address).
+      .or("entity_key.not.is.null,occupier_status.eq.unresolved")
       .gte("published_at", monthsBefore(today, 12))
       .order("id")
       .range(from, from + 999);

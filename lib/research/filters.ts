@@ -13,6 +13,10 @@ export const REGIONS = {
   toronto: { label: "Toronto", places: ["Toronto", "Etobicoke", "Scarborough", "North York", "East York"] },
   hamilton_niagara: { label: "Hamilton/Niagara", places: ["Hamilton", "Stoney Creek", "Ancaster", "Grimsby", "Niagara", "St. Catharines", "Welland", "Thorold", "Fort Erie"] },
   waterloo: { label: "Waterloo", places: ["Waterloo", "Kitchener", "Cambridge"] },
+  // Added 2026-11-23 with their permit sources.
+  ottawa: { label: "Ottawa", places: ["Ottawa", "Kanata", "Nepean", "Gloucester", "Orleans", "Orléans"] },
+  kingston: { label: "Kingston", places: ["Kingston"] },
+  barrie_simcoe: { label: "Barrie/Simcoe", places: ["Barrie", "Simcoe County", "Innisfil", "Orillia"] },
   wider_ontario: { label: "Wider Ontario", places: [] as string[] },
 } as const;
 export type RegionKey = keyof typeof REGIONS;

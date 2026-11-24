@@ -7,7 +7,7 @@ import { toRecordSource, type RecordSignal } from "@/lib/research/records";
 // the stored signals with recent physical activity, ranked with the discovery
 // rule score. Discovery and Live Research are the deep dive; this is the wide view.
 
-export type SignalFamily = "permit" | "grant" | "award" | "news" | "approval";
+export type SignalFamily = "permit" | "grant" | "award" | "news" | "approval" | "licence";
 export const familyOf = (s: { source_type: string }): SignalFamily =>
   s.source_type.startsWith("permit_")
     ? "permit"
@@ -17,7 +17,9 @@ export const familyOf = (s: { source_type: string }): SignalFamily =>
         ? "news"
         : s.source_type === "ero_approval"
           ? "approval"
-          : "award";
+          : s.source_type === "agco_cannabis"
+            ? "licence"
+            : "award";
 
 // Space-related activity: permits that score 2+ (new building, addition, change
 // of use, major fit-out, racking/equipment, small structures) and facility or
@@ -30,6 +32,7 @@ export function isPhysical(s: RecordSignal): boolean {
     return kind === "facility" || kind === "equipment";
   }
   if (s.source_type === "ontario_news") return true; // a named company's investment or facility
+  if (s.source_type === "agco_cannabis") return Boolean(s.published_at); // a store opening or closing (undated closures are older)
   if (s.source_type === "ero_approval") {
     // A production change or growth; administrative renewals alone don't count.
     const kind = s.raw && typeof s.raw === "object" ? (s.raw as Record<string, unknown>).kind : null;
@@ -157,7 +160,7 @@ export function parseProspectFilters(params: Record<string, string | string[] | 
     : regionParam.length
       ? (regionParam.filter((r) => r in REGIONS) as RegionKey[])
       : GTA_REGIONS;
-  const families = list(params.type).filter((t): t is SignalFamily => ["permit", "grant", "award", "news", "approval"].includes(t));
+  const families = list(params.type).filter((t): t is SignalFamily => ["permit", "grant", "award", "news", "approval", "licence"].includes(t));
   const min = Number(String(params.min ?? "").replace(/[^0-9]/g, ""));
   return { sector: parseSector(params.sector), regions, families, neverAnalyzed: params.new === "1", minValue: min > 0 ? min : null };
 }

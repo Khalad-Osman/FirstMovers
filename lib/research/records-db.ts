@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeCompanyName } from "./normalize";
 import { selectRecords, toRecordSource, type RecordSignal } from "./records";
+import { addressKey, attachByAddress } from "@/lib/discovery/address";
+import { groupKey } from "@/lib/discovery/candidates";
 
 type Db = ReturnType<typeof createAdminClient>;
 
@@ -12,6 +14,26 @@ export type RecordLookup = {
   mustInclude?: string | null; // signal id that surfaced the company (discovery)
   today: string;
 };
+
+const COLUMNS = "id, source_type, source_record_id, raw_entity_name, entity_key, signal_strength, title, summary, url, published_at, event_at, location, raw";
+
+// Permits naming no business at the company's own addresses (lib/discovery/address.ts):
+// up to 5 addresses, each read with every record stored there so a shared
+// building (two companies named) is not linked.
+async function addressMatches(db: Db, named: RecordSignal[], keys: string[]): Promise<RecordSignal[]> {
+  const streets = [...new Set(named.map((s) => addressKey(s.location)?.street).filter((x): x is string => Boolean(x)))].slice(0, 5);
+  if (!streets.length) return [];
+  const own = new Set(keys.map(groupKey));
+  const out: RecordSignal[] = [];
+  for (const street of streets) {
+    const [num, word] = street.split(" ");
+    const pattern = `%${num} ${word}%`.replace(/[_\\]/g, ""); // no LIKE wildcards from the data
+    const { data } = await db.from("signals").select(COLUMNS).ilike("location", pattern).limit(100);
+    const here = (data ?? []) as RecordSignal[];
+    for (const m of attachByAddress(here, groupKey)) if (own.has(groupKey(m.raw_entity_name!))) out.push(m);
+  }
+  return out;
+}
 
 // Find a company's stored signals, pick up to MAX_RECORDS, and save each as a
 // source (date_method 'public_record', linked by signal_id). Returns source ids
@@ -32,7 +54,8 @@ export async function attachRecords(db: Db, lookup: RecordLookup): Promise<strin
     .limit(200);
   if (error) throw new Error(`Could not load public records: ${error.message}`);
 
-  const picked = selectRecords(data as RecordSignal[], { today: lookup.today, mustInclude: lookup.mustInclude });
+  const records = [...(data as RecordSignal[]), ...(await addressMatches(db, data as RecordSignal[], keys))];
+  const picked = selectRecords(records, { today: lookup.today, mustInclude: lookup.mustInclude });
   const ids: string[] = [];
   for (const s of picked) {
     const r = toRecordSource(s);

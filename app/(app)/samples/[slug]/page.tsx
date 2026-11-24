@@ -29,6 +29,7 @@ export default async function SamplePage({ params }: PageProps<"/samples/[slug]"
         analyzedAt={sample.analyzedAt}
         origin={sample.origin}
         surfacedBy={sample.surfacedBy}
+        sector={sample.sector}
       />
     </div>
   );

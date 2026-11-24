@@ -69,6 +69,18 @@ async function knownRange(db: ReturnType<typeof createAdminClient>, source: stri
   return { newestId: newest?.source_record_id ?? null, oldestId: oldest?.source_record_id ?? null, oldestDate: oldest?.published_at ?? null };
 }
 
+// Every stored record id of a snapshot source, with its date (paged: the API
+// returns at most 1,000 rows per request).
+async function storedRows(db: ReturnType<typeof createAdminClient>, source: string): Promise<Map<string, string | null>> {
+  const out = new Map<string, string | null>();
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await db.from("signals").select("source_record_id, published_at").eq("source_type", source as never).order("source_record_id").range(from, from + 999);
+    if (error) throw new Error(`Could not read stored records: ${error.message}`);
+    for (const r of data) out.set(r.source_record_id, r.published_at);
+    if (data.length < 1000) return out;
+  }
+}
+
 // Background job (after()). Never throws: the outcome is written to ingestion_runs.
 export async function runIngestionJob(runId: string, sourceType: string, opts: { deadline?: number } = {}): Promise<void> {
   const db = createAdminClient();
@@ -91,6 +103,7 @@ export async function runIngestionJob(runId: string, sourceType: string, opts: {
       canadabuysMinValue: Number(settings?.canadabuys_min_value ?? 100000),
       grantsMinValue: Number(settings?.grants_min_value ?? 100000),
       known: await knownRange(db, source.source),
+      stored: source.snapshot ? await storedRows(db, source.source) : undefined,
       deadline: Math.min(Date.now() + RUN_BUDGET_MS, opts.deadline ?? Infinity),
       fetchImpl: ingestFetch,
       progress: (message: string) => update({ progress: message }),
