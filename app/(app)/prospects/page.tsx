@@ -6,6 +6,7 @@ import { REGIONS, REGION_KEYS } from "@/lib/research/filters";
 import { ANGLE_LABEL, RATING_LABEL, type Rating } from "@/lib/brief/schema";
 import { formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
+import { SECTORS, SECTOR_LABEL } from "@/lib/sector";
 
 export const metadata: Metadata = { title: "Prospects · First Movers" };
 
@@ -16,7 +17,7 @@ const money = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
 export default async function ProspectsPage({ searchParams }: PageProps<"/prospects">) {
   const params = await searchParams;
   const filters = parseProspectFilters(params);
-  const all = await getProspects();
+  const all = await getProspects(filters.sector);
   const list = filterProspects(all, filters);
   const page = Math.max(1, Number(params.page) || 1);
   const shown = list.slice((page - 1) * PAGE, page * PAGE);
@@ -32,7 +33,11 @@ export default async function ProspectsPage({ searchParams }: PageProps<"/prospe
     <div className="grid gap-6">
       <PageHeader
         title="Prospects"
-        description="Every named company in the stored permits, grants and contract awards with recent physical activity, ranked by the discovery rule score. Public records only: no AI, no credits. Use Research for a full brief."
+        description={
+          filters.sector === "retail"
+            ? "Every named retail business (stores, restaurants, clinics, studios…) in the stored permits and grants with recent store activity: new store fit-outs, store signs, changes of use, new buildings. Ranked by the rule score. Public records only: no AI, no credits. Use Research for a full brief."
+            : "Every named company in the stored permits, grants and contract awards with recent physical activity, ranked by the discovery rule score. Public records only: no AI, no credits. Use Research for a full brief."
+        }
       >
         <a href={`/prospects/export?${query}`} className="btn">
           Export CSV
@@ -40,6 +45,17 @@ export default async function ProspectsPage({ searchParams }: PageProps<"/prospe
       </PageHeader>
 
       <form method="get" className="grid gap-3 border border-line bg-panel p-4">
+        <fieldset className="grid gap-1.5">
+          <legend className="field-label mb-1">Sector</legend>
+          <div className="flex flex-wrap gap-2">
+            {SECTORS.map((s) => (
+              <label key={s} className="inline-flex items-center gap-1.5 rounded-[3px] border border-line bg-white px-2.5 py-1.5 text-[0.9375rem]">
+                <input type="radio" name="sector" value={s} defaultChecked={filters.sector === s} className="h-4 w-4" />
+                {SECTOR_LABEL[s]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <fieldset className="grid gap-1.5">
           <legend className="field-label mb-1">Region</legend>
           <div className="flex flex-wrap gap-2">
@@ -60,7 +76,7 @@ export default async function ProspectsPage({ searchParams }: PageProps<"/prospe
           <fieldset className="grid gap-1.5">
             <legend className="field-label mb-1">Signal type</legend>
             <div className="flex flex-wrap gap-2">
-              {(["permit", "grant", "award", "news", "approval"] as const).map((t) => (
+              {(filters.sector === "retail" ? (["permit", "grant"] as const) : (["permit", "grant", "award", "news", "approval"] as const)).map((t) => (
                 <label key={t} className="inline-flex items-center gap-1.5 rounded-[3px] border border-line bg-white px-2.5 py-1.5 text-[0.9375rem]">
                   <input type="checkbox" name="type" value={t} defaultChecked={filters.families.includes(t)} className="h-4 w-4" />
                   {FAMILY_LABEL[t]}
@@ -142,7 +158,7 @@ export default async function ProspectsPage({ searchParams }: PageProps<"/prospe
                 ))}
               </ul>
               <div className="flex flex-wrap items-center gap-3">
-                <Link href={`/research?company=${encodeURIComponent(p.name)}`} className="btn">
+                <Link href={`/research?company=${encodeURIComponent(p.name)}&sector=${filters.sector}`} className="btn">
                   Research
                 </Link>
                 {p.signals.length > 3 && (

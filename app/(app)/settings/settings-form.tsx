@@ -19,6 +19,7 @@ export type SettingsValues = {
   discovery_weekdays: number[];
   discovery_month_day: number;
   firecrawl_monthly_budget: number;
+  discovery_sector: "industrial" | "retail";
 };
 
 type Props = { values: SettingsValues; envModels: { screening: string | null; analysis: string | null }; canEdit: boolean };
@@ -50,6 +51,18 @@ export function SettingsForm({ values, envModels, canEdit }: Props) {
         <Group title="Schedule" id="schedule">
           <Check name="schedule_ingestion_enabled" label="Run ingestion every day" checked={values.schedule_ingestion_enabled} hint="All structured sources, after their morning refresh. Free." />
           <Check name="schedule_discovery_enabled" label="Run discovery automatically" checked={values.schedule_discovery_enabled} hint="Spends Firecrawl and LLM credits within the caps above. Everyone is notified in the app when a run finishes." />
+          <fieldset className="grid content-start gap-2 sm:col-span-2">
+            <legend className="field-label">Scheduled discovery sector</legend>
+            <div className="flex flex-wrap gap-4">
+              {(["industrial", "retail"] as const).map((s) => (
+                <label key={s} className="inline-flex items-center gap-2 text-[0.9375rem]">
+                  <input type="radio" name="discovery_sector" value={s} defaultChecked={values.discovery_sector === s} disabled={disabled} />
+                  {s === "industrial" ? "Industrial" : "Retail"}
+                </label>
+              ))}
+            </div>
+            <span className="field-hint">One scheduled run per discovery day; manual runs choose their own sector.</span>
+          </fieldset>
           <fieldset className="grid content-start gap-2 sm:col-span-2">
             <legend className="field-label">Discovery frequency</legend>
             <div className="flex flex-wrap gap-2">

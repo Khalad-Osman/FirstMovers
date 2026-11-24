@@ -67,7 +67,7 @@ export async function analyzeSession(
         analysisDate: deps.today,
         sources,
       },
-      { provider: deps.provider, model: deps.model },
+      { provider: deps.provider, model: deps.model, sector: session.sector },
     );
     const usage = addUsage(session.usage, {
       llm_calls: result.usage.llmCalls,
@@ -175,6 +175,7 @@ export async function saveSessionToFeed(sessionId: string, userId: string | null
       analysis: brief as unknown as JsonObject,
       model: session.analysis_model ?? "unknown",
       created_by: userId,
+      sector: session.sector,
       // version is assigned by the briefs_assign_version trigger (next per company)
     } as Omit<TablesInsert<"briefs">, "version"> as TablesInsert<"briefs">)
     .select("id")

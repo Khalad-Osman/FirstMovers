@@ -1,5 +1,6 @@
 import { arcgisQuery } from "./arcgis";
 import { resolveOccupier } from "./occupier";
+import { RETAIL_USE } from "@/lib/sector";
 import { isoFromEpoch, money, type IngestContext, type IngestItem, type IngestSource, type SignalStrength } from "./types";
 
 // Building permits: Mississauga (ArcGIS), Brampton (ArcGIS), Toronto (CKAN).
@@ -60,6 +61,8 @@ export function mapMississauga(a: Record<string, unknown>, ctx: Pick<IngestConte
       event_at: null,
       location: address ? `${address}, Mississauga, Ontario` : "Mississauga, Ontario",
       raw: a,
+      // COMMERCIAL file types are read only for retail buildings (runMississauga).
+      sector: str(a.FILE_TYPE) === "COMMERCIAL" ? "retail" : "industrial",
     },
   };
 }
@@ -68,7 +71,10 @@ async function* runMississauga(ctx: IngestContext): AsyncGenerator<IngestItem> {
   await ctx.progress("Querying Mississauga permits");
   let n = 0;
   for await (const a of arcgisQuery(ctx.fetchImpl, MISSISSAUGA, {
-    where: `FILE_TYPE = 'INDUSTRIAL' AND ISSUE_DATE >= DATE '${ctx.cutoff}'`,
+    // Industrial buildings, plus retail buildings for the retail sector (added
+    // 2026-11-23: ~540 a year, ~160 naming the store, mostly sign and tenant
+    // fit-up permits). Commercial offices are not read.
+    where: `(FILE_TYPE = 'INDUSTRIAL' OR (FILE_TYPE = 'COMMERCIAL' AND (BLDG_TYPE LIKE '%RETAIL%' OR BLDG_TYPE = 'COMMERCIAL - OTHER'))) AND ISSUE_DATE >= DATE '${ctx.cutoff}'`,
     outFields: ["BP_NO", "STATUS", "ADDRESS", "UNIT_NO", "DESCRIPTION", "SCOPE", "FILE_TYPE", "BLDG_TYPE", "APP_DETAIL", "APPL_AREA", "STOREYS", "EST_CON_VALUE", "POSTAL_CODE", "WARD", "APPLICATION_DATE", "ISSUE_DATE", "COMPLETE_DATE"],
     orderBy: "OBJECTID",
     pageSize: 2000,
@@ -142,6 +148,14 @@ export const TORONTO_RESOURCES = [
 ];
 const INDUSTRIAL_USE = /industr|warehouse|manufactur|factory|distribution|logistic|plant\b|storage/i;
 
+// Retail uses (added 2026-11-23). Toronto text rarely names the store, so a
+// retail permit is kept only when a business is named (otherwise ~3,500 a year
+// of address-only rows with nothing to research).
+export function isTorontoRetail(r: Record<string, unknown>): boolean {
+  if (Number(r.MERCANTILE) > 0) return true;
+  return RETAIL_USE.test(`${str(r.CURRENT_USE)} ${str(r.PROPOSED_USE)}`);
+}
+
 export function isTorontoIndustrial(r: Record<string, unknown>): boolean {
   if (Number(r.INDUSTRIAL) > 0) return true;
   return INDUSTRIAL_USE.test(`${str(r.CURRENT_USE)} ${str(r.PROPOSED_USE)} ${str(r.STRUCTURE_TYPE)}`);
@@ -170,11 +184,15 @@ export function mapToronto(
   if (date < ctx.cutoff) return { skip: "older than 12 months" };
   if (date > ctx.today) return { skip: "issue date in the future" };
   if (stage === "application" && DEAD_STATUS.test(str(r.STATUS))) return { skip: "application refused, cancelled or closed" };
-  if (!isTorontoIndustrial(r)) return { skip: "not industrial" };
+  const industrial = isTorontoIndustrial(r);
+  if (!industrial && !isTorontoRetail(r)) return { skip: "not industrial or retail" };
+  // Plumbing / HVAC / drain permits repeat the main retail permit.
+  if (!industrial && /building permit related/i.test(str(r.WORK))) return { skip: "retail: plumbing or HVAC permit for another permit" };
   const work = str(r.WORK);
   const description = str(r.DESCRIPTION);
   const address = [str(r.STREET_NUM), str(r.STREET_NAME), str(r.STREET_TYPE), str(r.STREET_DIRECTION)].filter(Boolean).join(" ");
   const occupier = resolveOccupier(description);
+  if (!industrial && !occupier.name) return { skip: "retail: no business named" };
   const cost = Number(str(r.EST_CONST_COST).replace(/[^0-9.]/g, "")) || 0;
   const uses = [str(r.CURRENT_USE) && `Current use: ${str(r.CURRENT_USE)}`, str(r.PROPOSED_USE) && `Proposed use: ${str(r.PROPOSED_USE)}`];
   return {
@@ -196,6 +214,7 @@ export function mapToronto(
       location: `${address ? `${address}, ` : ""}Toronto, Ontario${str(r.POSTAL) ? ` ${str(r.POSTAL)}` : ""}`,
       // which dataset, for the record link; stage as for Caledon and Oakville
       raw: { ...r, ...(resourceId ? { _resource_id: resourceId } : {}), stage, applied_at: applied, issued_at: issued },
+      sector: industrial ? "industrial" : "retail",
     },
   };
 }

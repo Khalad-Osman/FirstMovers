@@ -1,3 +1,4 @@
+import { parseSector } from "@/lib/sector";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -13,6 +14,7 @@ export default async function ResearchPage({ searchParams }: PageProps<"/researc
   const params = await searchParams;
   const company = typeof params.company === "string" ? params.company : "";
   const companyId = typeof params.companyId === "string" ? params.companyId : undefined;
+  const sector = parseSector(params.sector);
 
   const supabase = await createClient();
   const { data: sessions, error } = await supabase
@@ -34,7 +36,7 @@ export default async function ResearchPage({ searchParams }: PageProps<"/researc
           Re-analysis of <strong>{company}</strong>. Saving creates a new dated version; earlier versions are kept.
         </p>
       )}
-      <ResearchForm initialQuery={company} companyId={companyId} />
+      <ResearchForm initialQuery={company} companyId={companyId} initialSector={sector} />
 
       <section className="grid gap-2">
         <h2 className="label border-b border-line pb-1.5">Recent research</h2>

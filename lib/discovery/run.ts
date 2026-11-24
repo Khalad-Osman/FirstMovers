@@ -1,4 +1,5 @@
 import "server-only";
+import type { Sector } from "@/lib/sector";
 import type { Firecrawl } from "@/lib/firecrawl/client";
 import type { LLMProvider } from "@/lib/llm";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -62,7 +63,7 @@ const addUsage = (a: Usage, b: Usage): Usage => {
 const asArray = <T>(v: Json | null): T[] => (Array.isArray(v) ? (v as unknown as T[]) : []);
 const asUsage = (v: Json | null): Usage => (v && typeof v === "object" && !Array.isArray(v) ? (v as Usage) : {});
 
-export async function createDiscoveryRun(db: Db, startedBy: string | null, trigger: "manual" | "scheduled" = "manual"): Promise<string> {
+export async function createDiscoveryRun(db: Db, startedBy: string | null, trigger: "manual" | "scheduled" = "manual", sector: Sector = "industrial"): Promise<string> {
   const { data: s } = await db.from("settings").select("*").maybeSingle();
   const settings = {
     discovery_cap: s?.discovery_cap ?? 3,
@@ -72,19 +73,20 @@ export async function createDiscoveryRun(db: Db, startedBy: string | null, trigg
   };
   const { data, error } = await db
     .from("discovery_runs")
-    .insert({ started_by: startedBy, status: "queued", progress: "Queued", settings, trigger })
+    .insert({ started_by: startedBy, status: "queued", progress: "Queued", settings, trigger, sector })
     .select("id")
     .single();
   if (error) throw new Error(`Could not start discovery: ${error.message}`);
   return data.id;
 }
 
-async function loadSignals(db: Db, cutoff: string): Promise<SignalForCandidate[]> {
+async function loadSignals(db: Db, cutoff: string, sector: Sector): Promise<SignalForCandidate[]> {
   const out: SignalForCandidate[] = [];
   for (let from = 0; ; from += 1000) {
     const { data, error } = await db
       .from("signals")
-      .select("id, source_type, raw_entity_name, entity_key, signal_strength, title, summary, url, published_at, event_at, location, raw")
+      .select("id, source_type, raw_entity_name, entity_key, signal_strength, title, summary, url, published_at, event_at, location, raw, sector")
+      .eq("sector", sector)
       .not("entity_key", "is", null)
       .gte("published_at", cutoff)
       .order("id")
@@ -134,21 +136,23 @@ function toStored(c: Candidate, verdict: ScreenVerdict | null, screened: boolean
 }
 
 // ---- step 1 -------------------------------------------------------------------
-async function buildAndScreen(runId: string, run: { settings: Json }, deps: DiscoveryDeps) {
+async function buildAndScreen(runId: string, run: { settings: Json; sector: Sector }, deps: DiscoveryDeps) {
   const { db } = deps;
   const settings = (run.settings ?? {}) as Record<string, number>;
   const cap = Math.min(DISCOVERY_CAP_MAX, Math.max(1, settings.discovery_cap ?? 3));
 
   await db.from("discovery_runs").update({ status: "running", progress: "Building candidates from signals" }).eq("id", runId);
-  const signals = await loadSignals(db, monthsBefore(deps.today, 12));
+  const sector = run.sector ?? "industrial";
+  const signals = await loadSignals(db, monthsBefore(deps.today, 12), sector);
   const { candidates, skipped } = buildCandidates(signals, {
+    sector,
     today: deps.today,
     skipKeys: await recentlyAnalyzedKeys(db, settings.skip_window_days ?? 7),
   });
 
   const top = selectForScreening(candidates, settings.screening_top_k ?? SCREEN_TOP_K);
   await db.from("discovery_runs").update({ progress: `Screening ${top.length} of ${candidates.length} candidates`, candidates_found: candidates.length }).eq("id", runId);
-  const screening = await screenCandidates(top, deps.screening);
+  const screening = await screenCandidates(top, { ...deps.screening, sector });
   const chosen = new Set(shortlist(top, screening.verdicts, cap).map((c) => c.key));
   const stored = top.map((c) => toStored(c, screening.verdicts.get(c.key) ?? null, screening.verdicts.has(c.key), chosen.has(c.key)));
 
@@ -166,13 +170,13 @@ async function buildAndScreen(runId: string, run: { settings: Json }, deps: Disc
 }
 
 // ---- step n -------------------------------------------------------------------
-async function processCandidate(runId: string, c: StoredCandidate, startedBy: string | null, settings: Record<string, number>, deps: DiscoveryDeps): Promise<{ outcome: Outcome; usage: Usage; stop?: string }> {
+async function processCandidate(runId: string, c: StoredCandidate, startedBy: string | null, settings: Record<string, number>, deps: DiscoveryDeps, sector: Sector = "industrial"): Promise<{ outcome: Outcome; usage: Usage; stop?: string }> {
   const { db } = deps;
   let sessionId: string | null = null;
   try {
     const { data: session, error } = await db
       .from("research_sessions")
-      .insert({ mode: "company", query: c.displayName, created_by: startedBy, status: "searching", progress: "Starting (discovery)", discovery_run_id: runId })
+      .insert({ mode: "company", query: c.displayName, created_by: startedBy, status: "searching", progress: "Starting (discovery)", discovery_run_id: runId, sector })
       .select("id")
       .single();
     if (error) throw new Error(`Could not create research session: ${error.message}`);
@@ -190,6 +194,7 @@ async function processCandidate(runId: string, c: StoredCandidate, startedBy: st
       today: deps.today,
       maxSources: Math.min(5, settings.sources_per_candidate ?? 5),
       recordSourceIds,
+      sector,
     });
     let { data: s } = await db.from("research_sessions").select("status, error, usage, analysis, analysis_errors").eq("id", sessionId).single();
     if (!s || s.status === "failed") {
@@ -268,7 +273,7 @@ export async function stepDiscovery(runId: string, deps: DiscoveryDeps): Promise
       .select("id");
     if (!claimed?.length) return { done: true };
 
-    const result = await processCandidate(runId, next, run.started_by, settings, deps);
+    const result = await processCandidate(runId, next, run.started_by, settings, deps, run.sector ?? "industrial");
     const { data: fresh } = await db.from("discovery_runs").select("usage, errors").eq("id", runId).single();
     let finalOutcomes: Outcome[] = [...outcomes, result.outcome];
     const errors = asArray<string>(fresh?.errors ?? null);

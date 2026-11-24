@@ -62,8 +62,8 @@ describe("mapGrant", () => {
     [{ recipient_type: "N" }, "recipient not for-profit"],
     [{ agreement_start_date: "2025-01-01" }, "older than 12 months"],
     [{ agreement_start_date: "2027-01-01" }, "starts in the future"],
-    [{ naics_identifier: "54171" }, "not an industrial sector"],
-    [{ naics_identifier: null }, "not an industrial sector"],
+    [{ naics_identifier: "54171" }, "not an industrial or retail sector"],
+    [{ naics_identifier: null }, "not an industrial or retail sector"],
     [{ agreement_value: "63380.0" }, "below minimum grant value"],
   ])("skips %j (%s)", (over, reason) => {
     expect(mapGrant(row(over), ctx)).toEqual({ skip: reason });

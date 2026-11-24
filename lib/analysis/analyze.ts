@@ -15,12 +15,12 @@ export type AnalysisResult =
 const MAX_ATTEMPTS = 2; // CLAUDE.md §7: on validation failure, retry once, then record an error.
 const JSON_SCHEMA = toStrictJsonSchema(modelOutputSchema);
 
-type Options = { provider: LLMProvider; model: string; systemPrompt?: string };
+type Options = { provider: LLMProvider; model: string; systemPrompt?: string; sector?: "industrial" | "retail" };
 
 // Turn collected sources into a validated brief. Never returns unvalidated
 // output: a brief is returned only if it passes the schema, the source join and
 // every rule check in lib/brief/integrity.ts.
-export async function analyzeCompany(rawInput: AnalysisInput, { provider, model, systemPrompt }: Options): Promise<AnalysisResult> {
+export async function analyzeCompany(rawInput: AnalysisInput, { provider, model, systemPrompt, sector }: Options): Promise<AnalysisResult> {
   const usage: AnalysisUsage = { llmCalls: 0, inputTokens: 0, outputTokens: 0 };
   const parsedInput = analysisInputSchema.safeParse(rawInput);
   if (!parsedInput.success) {
@@ -34,7 +34,7 @@ export async function analyzeCompany(rawInput: AnalysisInput, { provider, model,
     };
   }
   const input = parsedInput.data;
-  const system = systemPrompt ?? buildSystemPrompt();
+  const system = systemPrompt ?? buildSystemPrompt(undefined, sector);
   const messages: ChatMessage[] = [{ role: "user", content: buildUserMessage(input) }];
 
   let errors: string[] = [];

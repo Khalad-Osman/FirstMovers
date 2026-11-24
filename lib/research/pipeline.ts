@@ -48,6 +48,7 @@ export type PipelineDeps = {
   // Already-saved public record sources (permits, awards; lib/research/records.ts).
   // They go first in the session and don't count toward maxSources (web pages).
   recordSourceIds?: string[];
+  sector?: "industrial" | "retail"; // search wording (default industrial)
 };
 
 function usageOf(deps: PipelineDeps) {
@@ -188,7 +189,7 @@ export async function runCompanyResearch(sessionId: string, companyName: string,
 
   try {
     // 1. Search
-    const queries = companyQueries(companyName);
+    const queries = companyQueries(companyName, deps.sector);
     const tbs = sinceMonthsTbs(24, today); // older material is Historical anyway
     const results: { query: string; results: SearchResult[] }[] = [];
     const searchErrors: string[] = [];

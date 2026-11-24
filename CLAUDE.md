@@ -11,7 +11,16 @@ This file is the source of truth for this project. Read it at the start of every
 
 The analytical model the product runs on is in `docs/intelligence-model.md`. It is used **word for word** as the system prompt for brief generation. Never summarize or paraphrase it in code.
 
+**Retail (added 2026-11-23, requested by the team):** retail runs **alongside** industrial; nothing industrial was removed. Retail occupiers: stores and chains, restaurants and quick-service food, grocery, franchises, cannabis stores, car dealerships, gyms and personal services, medical and dental clinics. Retail briefs use `docs/retail-intelligence-model.md` (drafted 2026-11-23 with the same structure as the industrial model; **the team should review it**) word for word, plus the shared §7 rules and `RETAIL_NOTES` in `lib/analysis/prompt.ts` (how the contract's industrial field names read for stores).
+
 ## 2. Product features
+
+### Sector (industrial / retail, added 2026-11-23)
+- `lib/sector.ts`. Enum `public.sector` (`industrial` default, `retail`) on `signals`, `research_sessions`, `discovery_runs`, `briefs` and `settings.discovery_sector` (migration `20261124120000_retail_sector.sql`; `latest_briefs` is now latest per company **and sector**; `upsert_signals` carries the sector).
+- **Live Research** and **Discovery** (run confirmation, and the scheduled run's sector in Settings) choose a sector; re-analysis keeps the brief's sector. **Prospects** has a sector switch (`?sector=retail`, default industrial) and passes it to Research. The **feed** has tabs All / Industrial / Retail (`?sector=`), and every feed row and brief shows a sector badge. Brief versions are listed per sector.
+- Retail differs in: search wording (`companyQueries(name, "retail")`: new store, location, opening, closing, franchise, relocation, lease), screening (`RETAIL_SCREENING_SYSTEM`, same output fields: "industrialOccupier" reads as retail occupier, physicalSignal as the store-network consequence), candidate rules (`NON_RETAIL` drops offices, professional services, places of worship and property companies instead of the industrial `NON_INDUSTRIAL` list) and weights (`retailWeight`: new building 5, addition / change of use / major fit-out 4, store fit-out 3, **named store sign 3**; grants as industrial), the analysis model and company types (retailer, restaurant/food service, grocery, franchise, cannabis retail, car dealership, gym/personal services, medical clinic; Live Research filter chips follow the sector).
+- **Retail signals** come from the existing sources (no new source yet): Mississauga `FILE_TYPE = 'COMMERCIAL'` retail buildings (`BLDG_TYPE` like RETAIL or `COMMERCIAL - OTHER`; local 2026-11-23: 538 in 12 months, 161 naming the store, mostly sign and tenant fit-up permits, e.g. Dollarama, Foot Locker, Smash Burger, No Frills, many Tim Hortons); Toronto retail uses (`MERCANTILE > 0` or a retail use) **kept only when a business is named** and not the plumbing/HVAC copies (32); Caledon `FOLDERTYPE = 'COMM'` named only (6); Oakville retail subtypes named only (2); federal grants with NAICS 44, 45, 72, 7139, 812 or 621 (13). FedDev, the Ontario newsroom, CanadaBuys and environmental approvals stay industrial. Name filters added for retail permits: bare business types ("Beauty Salon", "DENTAL"), fragments ("tenant fit up at ground floor…") and shopping-centre landlords (Cadillac Fairview, RioCan, SmartCentres, First Capital, Primaris, Crombie, Morguard…).
+- Retail sources still to check (after the pitch): AGCO cannabis store and liquor licence notices, newswire releases read hourly, receiverships (store closures); Kitchener permits also name retail tenants.
 
 ### Opportunity Feed (primary feature)
 - Shows system-generated briefs **grouped by broker angle** (decided 2026-11-17): New requirement → Vacated space → Capacity conversation → Relationship; within a group, act now → follow up → watch, then the stronger rating, then newest. Every row keeps its rating badge and shows the angle headline. (Previously ranked Strong Signal → Worth Monitoring.)
@@ -270,8 +279,14 @@ These rules apply on top of `docs/intelligence-model.md`.
 - List the company's website, main phone, named people and known Ontario addresses only when a source states them, each with the source. Never guess a contact, a title or an address.
 
 **Writing for brokers**
-- Write for an industrial real-estate broker: plain words, the opportunity first. The countercase and unknowns carry the caveats; don't repeat them in every section.
-- Offer only brokerage services (site search, land acquisition, build-to-suit, lease or buy analysis, lease negotiation and renewal, sublease, disposition, backfill), never operations, engineering or facility-planning consulting.
+- Write for the broker the brief is for (industrial or retail): plain words, the opportunity first. The countercase and unknowns carry the caveats; don't repeat them in every section.
+- Offer only brokerage services (site search, land acquisition, build-to-suit, lease or buy analysis, lease negotiation and renewal, sublease, disposition, backfill), never operations, engineering or facility-planning consulting. Retail briefs offer retail brokerage (site selection, tenant representation, renewal or relocation, sublease or disposition of closing stores, backfill).
+
+**Retail**
+- Retail briefs apply these rules to retail occupiers (stores, restaurants and food service, grocery, franchises, cannabis stores, car dealerships, gyms and personal services, medical and dental clinics), using the retail intelligence model.
+- A store already open, or a store whose fit-out or sign permit is issued, is site-controlled: context for that location, and evidence of a network pattern or of space the business may leave, not an undiscovered requirement.
+- Distinguish the brand or franchisor from a franchisee. A franchise system's growth is not a specific franchisee's commitment, and a national or US chain's activity is not an Ontario signal without an Ontario store, permit or announcement.
+- Closures, banner changes, acquisitions and insolvency are vacated-space signals; never name the stores that close unless a source lists them.
 
 **Output**
 - The LLM returns structured JSON validated with Zod. On validation failure, retry once, then record an error. Never show unvalidated output.

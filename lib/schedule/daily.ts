@@ -100,7 +100,7 @@ export async function runDaily(origin: string, now = new Date()): Promise<DailyS
     summary.discovery = { started: false, reason: `Discovery isn't configured: ${e instanceof Error ? e.message : String(e)}` };
     return summary;
   }
-  const runId = await createDiscoveryRun(db, null, "scheduled");
+  const runId = await createDiscoveryRun(db, null, "scheduled", s?.discovery_sector ?? "industrial");
   try {
     await triggerStep(origin, runId);
   } catch (e) {

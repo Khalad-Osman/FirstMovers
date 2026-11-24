@@ -38,6 +38,7 @@ export const settingsFormSchema = z.object({
     .transform((d) => [...new Set(d)].sort((a, b) => a - b)),
   discovery_month_day: z.coerce.number().int().min(1, "Day of month is 1–28.").max(28, "Day of month is 1–28 (so every month has it)."),
   firecrawl_monthly_budget: z.coerce.number().int().min(0).max(100_000),
+  discovery_sector: z.enum(["industrial", "retail"], { message: "Choose industrial or retail." }),
 }).superRefine((v, ctx) => {
   if (v.discovery_frequency === "weekly" && v.discovery_weekdays.length === 0) {
     ctx.addIssue({ code: "custom", path: ["discovery_weekdays"], message: "Choose at least one day for weekly discovery." });
@@ -64,5 +65,6 @@ export function parseSettingsForm(formData: FormData) {
     discovery_weekdays: formData.getAll("discovery_weekdays").filter((v): v is string => typeof v === "string"),
     discovery_month_day: get("discovery_month_day") ?? "1",
     firecrawl_monthly_budget: get("firecrawl_monthly_budget"),
+    discovery_sector: get("discovery_sector") ?? "industrial",
   });
 }

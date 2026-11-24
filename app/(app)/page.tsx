@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SECTORS, SECTOR_LABEL, parseSectorFilter } from "@/lib/sector";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { getFeed, getSampleEntries, getWatchlist, type FeedEntry } from "@/lib/data/briefs";
@@ -29,7 +30,16 @@ const GROUP_NOTE: Partial<Record<FeedEntry["angle"]["type"], string>> = {
 };
 
 export default async function FeedPage({ searchParams }: PageProps<"/">) {
-  const showSamples = (await searchParams).samples === "1";
+  const params = await searchParams;
+  const showSamples = params.samples === "1";
+  const sector = parseSectorFilter(params.sector);
+  const feedHref = (over: { samples?: boolean; sector?: string }) => {
+    const q = new URLSearchParams();
+    if (over.samples ?? showSamples) q.set("samples", "1");
+    const s = over.sector ?? sector;
+    if (s !== "all") q.set("sector", s);
+    return q.size ? `/?${q}` : "/";
+  };
   const supabase = await createClient();
   const [user, { entries, invalid }, watchlist, { data: schedule }] = await Promise.all([
     getCurrentUser(),
@@ -40,7 +50,7 @@ export default async function FeedPage({ searchParams }: PageProps<"/">) {
   const isAdmin = user?.role === "admin";
   const watched = new Set(watchlist.map((w) => w.companyId));
 
-  const all = showSamples ? [...entries, ...getSampleEntries()] : entries;
+  const all = (showSamples ? [...entries, ...getSampleEntries()] : entries).filter((e) => sector === "all" || e.sector === sector);
   // Ranked by broker angle (decided 2026-11-17); the rating stays on every row.
   const byAngle = (type: FeedEntry["angle"]["type"]) => all.filter((e) => e.angle.type === type).sort(byUrgency);
   const groups = ANGLE_ORDER.filter((t) => t !== "monitor_only").map((t) => ({ type: t, entries: byAngle(t) }));
@@ -61,7 +71,7 @@ export default async function FeedPage({ searchParams }: PageProps<"/">) {
           </>
         )}
         <Link
-          href={showSamples ? "/" : "/?samples=1"}
+          href={feedHref({ samples: !showSamples })}
           role="switch"
           aria-checked={showSamples}
           className="inline-flex items-center gap-2 text-[0.9375rem] font-medium"
@@ -82,6 +92,19 @@ export default async function FeedPage({ searchParams }: PageProps<"/">) {
         </Link>
         </div>
       </PageHeader>
+
+      <nav aria-label="Sector" className="flex flex-wrap gap-2">
+        {(["all", ...SECTORS] as const).map((s) => (
+          <Link
+            key={s}
+            href={feedHref({ sector: s })}
+            aria-current={sector === s ? "page" : undefined}
+            className={`btn ${sector === s ? "btn-primary" : ""}`}
+          >
+            {s === "all" ? "All sectors" : SECTOR_LABEL[s]} · <span className="mono">{(showSamples ? [...entries, ...getSampleEntries()] : entries).filter((e) => s === "all" || e.sector === s).length}</span>
+          </Link>
+        ))}
+      </nav>
 
       {invalid.length > 0 && (
         <div role="alert" className="border-l-4 border-[var(--error-fg)] bg-[var(--error-bg)] px-4 py-3 text-[0.9375rem]">

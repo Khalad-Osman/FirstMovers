@@ -17,6 +17,7 @@ export type SignalForCandidate = {
   event_at: string | null;
   location: string | null;
   raw: unknown;
+  sector?: string | null; // "industrial" (default) or "retail"
 };
 
 export type Candidate = {
@@ -85,7 +86,29 @@ export function isMajorFitOut(raw: unknown): boolean {
   return (value !== null && value >= MAJOR_FITOUT_VALUE) || (area !== null && area >= MAJOR_FITOUT_AREA_M2);
 }
 
+// Retail weights (added 2026-11-23): a named store sign or tenant fit-out is
+// usually a new or rebranded store, the core retail signal.
+function retailWeight(s: SignalForCandidate): { weight: number; label: string } | null {
+  if (s.sector !== "retail") return null;
+  switch (s.signal_strength) {
+    case "new_building":
+      return isSmallWorks(s.raw) ? { weight: 2, label: "retail: small new structure" } : { weight: 5, label: "retail: new building" };
+    case "addition":
+      return { weight: 4, label: "retail: store addition" };
+    case "change_of_use":
+      return { weight: 4, label: "retail: change of use to a store or restaurant" };
+    case "alteration":
+      return isMajorFitOut(s.raw) ? { weight: 4, label: "retail: major store fit-out" } : { weight: 3, label: "retail: store fit-out" };
+    case "sign":
+      return s.raw_entity_name ? { weight: 3, label: "retail: store sign (new or rebranded store)" } : { weight: 0.5, label: "sign permit" };
+    default:
+      return null; // grants and others score as for industrial
+  }
+}
+
 export function signalWeight(s: SignalForCandidate): { weight: number; label: string } {
+  const retail = retailWeight(s);
+  if (retail) return retail;
   switch (s.signal_strength) {
     case "new_building":
       return isSmallWorks(s.raw) ? { weight: 2, label: "small new structure" } : { weight: 5, label: "new building permit" };
@@ -181,9 +204,14 @@ function pickDisplayName(names: string[]): string {
   })[0][0];
 }
 
+// Not retail occupiers (offices, professional services, places of worship,
+// property companies), recognised from the name.
+export const NON_RETAIL =
+  /\b(law|legal|lawyers?|barristers?|solicitors?|notary|professional corporation|immigration|visa|accounting|cpa|tax services|insurance|realty|real estate|mortgage|church|ministr(?:y|ies)|mosque|temple|consulting|engineering|architects?|software|holdings|properties|developments?)\b/i;
+
 export function buildCandidates(
   signals: SignalForCandidate[],
-  opts: { today: string; skipKeys: Set<string> },
+  opts: { today: string; skipKeys: Set<string>; sector?: "industrial" | "retail" },
 ): { candidates: Candidate[]; skipped: { key: string; displayName: string; reason: string }[] } {
   const groups = new Map<string, SignalForCandidate[]>();
   for (const s of signals) {
@@ -205,7 +233,7 @@ export function buildCandidates(
       continue;
     }
     // Permits in industrial buildings also name offices, clinics and schools.
-    if (list.every((s) => s.source_type.startsWith("permit_")) && NON_INDUSTRIAL.test(displayName)) {
+    if (opts.sector === "retail" ? NON_RETAIL.test(displayName) : list.every((s) => s.source_type.startsWith("permit_")) && NON_INDUSTRIAL.test(displayName)) {
       skipped.push({ key, displayName, reason: "not an industrial occupier (business type in the name)" });
       continue;
     }

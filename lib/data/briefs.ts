@@ -1,4 +1,5 @@
 import "server-only";
+import type { Sector } from "@/lib/sector";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { briefAnalysisSchema, type BriefAnalysis, type Origin, type Rating, type Stage } from "@/lib/brief/schema";
@@ -33,22 +34,25 @@ export type FeedEntry = {
   fit?: FitLevel; // past deal fit; absent when no deals are uploaded
   angle: BrokerAngle; // stored, or derived for briefs saved before angles
   dealSummary: string | null; // deal potential summary (briefs from 2026-11-23)
+  sector: Sector;
 };
 
 export type InvalidBrief = { briefId: string; companyName: string; analyzedAt: string };
 
 const BRIEF_COLUMNS =
-  "id, company_id, version, origin, trigger_query, rating, stage, analysis, model, analyzed_at, dismissed, companies(display_name), signals(title)" as const;
+  "id, company_id, version, origin, trigger_query, rating, stage, analysis, model, analyzed_at, dismissed, sector, companies(display_name), signals(title)" as const;
 
 function toEntry(
   analysis: BriefAnalysis,
-  meta: Omit<FeedEntry, "companyName" | "localConnection" | "whatChanged" | "facilityPressure" | "countercase" | "rating" | "stage" | "vacancy" | "angle" | "dealSummary">,
+  meta: Omit<FeedEntry, "companyName" | "localConnection" | "whatChanged" | "facilityPressure" | "countercase" | "rating" | "stage" | "vacancy" | "angle" | "dealSummary" | "sector">,
   companyName: string,
+  sector: Sector = "industrial",
 ): FeedEntry {
   const op = analysis.otherPremises;
   return {
     angle: effectiveAngle(analysis, meta.analyzedAt),
     dealSummary: analysis.dealPotential?.summary ?? null,
+    sector,
     vacancy: op && op.assessment !== "not_indicated" && op.address ? { assessment: op.assessment, address: op.address } : null,
     ...meta,
     companyName,
@@ -89,7 +93,8 @@ export async function getFeed(): Promise<{ entries: FeedEntry[]; invalid: Invali
   if (error) throw new Error(`Could not load briefs: ${error.message}`);
 
   const latest = new Map<string, (typeof data)[number]>();
-  for (const row of data) if (!latest.has(row.company_id)) latest.set(row.company_id, row);
+  // Latest per company and sector (a company can be researched for both).
+  for (const row of data) if (!latest.has(`${row.company_id}:${row.sector}`)) latest.set(`${row.company_id}:${row.sector}`, row);
 
   const entries: FeedEntry[] = [];
   const invalid: InvalidBrief[] = [];
@@ -116,6 +121,7 @@ export async function getFeed(): Promise<{ entries: FeedEntry[]; invalid: Invali
           surfacedBy: row.signals?.title ?? row.trigger_query,
         },
         companyName,
+        row.sector,
       ),
     );
     if (deals.length) entries[entries.length - 1].fit = dealFit(parsed.data, deals).level;
@@ -139,6 +145,7 @@ export type BriefRecord = {
   dismissed: boolean;
   analysis: BriefAnalysis | null; // null = failed validation
   versions: { id: string; version: number; analyzedAt: string }[];
+  sector: Sector;
 };
 
 export async function getBrief(id: string): Promise<BriefRecord | null> {
@@ -152,6 +159,7 @@ export async function getBrief(id: string): Promise<BriefRecord | null> {
     .from("briefs")
     .select("id, version, analyzed_at")
     .eq("company_id", row.company_id)
+    .eq("sector", row.sector)
     .order("version", { ascending: false });
   if (vErr) throw new Error(`Could not load versions: ${vErr.message}`);
 
@@ -168,6 +176,7 @@ export async function getBrief(id: string): Promise<BriefRecord | null> {
     dismissed: row.dismissed,
     analysis: parsed.success ? parsed.data : null,
     versions: versions.map((v) => ({ id: v.id, version: v.version, analyzedAt: v.analyzed_at })),
+    sector: row.sector,
   };
 }
 

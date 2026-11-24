@@ -1,6 +1,7 @@
 import { arcgisQuery } from "./arcgis";
 import { resolveOccupier } from "./occupier";
 import { strengthFrom } from "./permits";
+import { RETAIL_USE } from "@/lib/sector";
 import { isoFromEpoch, money, type IngestContext, type IngestItem, type IngestSource } from "./types";
 
 // Caledon and Oakville building permits (added 2026-11-23). Both publish
@@ -54,6 +55,9 @@ export function mapCaledon(a: Record<string, unknown>, ctx: Pick<IngestContext, 
   const description = str(a.FOLDERDESCRIPTION);
   const address = str(a.FOLDERNAME) || str(a.FULLADDRESS);
   const occupier = resolveOccupier(description);
+  // Commercial (retail) records are kept only when a business is named (added 2026-11-23).
+  const retail = str(a.FOLDERTYPE) === "COMM";
+  if (retail && !occupier.name) return { skip: "retail: no business named" };
   const value = num(a.CONSTVALUE);
   const area = num(a.WORKAREA);
   return {
@@ -73,6 +77,7 @@ export function mapCaledon(a: Record<string, unknown>, ctx: Pick<IngestContext, 
       event_at: null,
       location: address ? `${address}, Caledon, Ontario` : "Caledon, Ontario",
       raw: { ...a, stage, applied_at: applied, issued_at: issued },
+      sector: retail ? "retail" : "industrial",
     },
   };
 }
@@ -80,7 +85,7 @@ export function mapCaledon(a: Record<string, unknown>, ctx: Pick<IngestContext, 
 async function* runCaledon(ctx: IngestContext): AsyncGenerator<IngestItem> {
   await ctx.progress("Querying Caledon permits and applications");
   for await (const a of arcgisQuery(ctx.fetchImpl, CALEDON, {
-    where: `FOLDERTYPE = 'INDU' AND (ISSUEDATE >= DATE '${ctx.cutoff}' OR INDATE >= DATE '${ctx.cutoff}')`,
+    where: `FOLDERTYPE IN ('INDU', 'COMM') AND (ISSUEDATE >= DATE '${ctx.cutoff}' OR INDATE >= DATE '${ctx.cutoff}')`,
     outFields: ["OBJECTID", "CUSTOMFOLDERNUMBER", "STATUSDESC", "WORKDESC", "FOLDERTYPE", "SUBDESC", "INDATE", "ISSUEDATE", "FOLDERNAME", "FULLADDRESS", "FOLDERDESCRIPTION", "CONSTVALUE", "WORKAREA", "NOSTOREY", "STATCANBUILDINGCODEDESC", "STATCANWORKCODEDESC", "CANCELDATE", "REVOKEDATE"],
     orderBy: "OBJECTID",
     pageSize: 1000,
@@ -100,6 +105,11 @@ const OAK_INDUSTRIAL = /industr|warehous|manufactur|factory|distribution (?:cent
 const OAK_NOT = /dwelling|\bhouse\b|town ?house|apartment|restaurant|school|daycare|medical|dental|hospital|retirement|retail|stores?\b|supermarket|gymnas|fitness|community hall|beauty|barber|physio/i;
 const OAK_NOT_TEXT = /wastewater|water treatment|garden cent|nursery stock/i;
 
+// Retail subtypes (added 2026-11-23); kept only when a business is named.
+export function isOakvilleRetail(a: Record<string, unknown>): boolean {
+  return RETAIL_USE.test(str(a.Subtype)) || /department stores|supermarkets|stores \(|restaurants/i.test(str(a.Subtype));
+}
+
 export function isOakvilleIndustrial(a: Record<string, unknown>): boolean {
   const subtype = str(a.Subtype);
   const text = `${subtype} ${str(a.FOLDERDESCRIPTION)}`;
@@ -109,7 +119,8 @@ export function isOakvilleIndustrial(a: Record<string, unknown>): boolean {
 export function mapOakville(a: Record<string, unknown>, ctx: Pick<IngestContext, "today" | "cutoff">): IngestItem {
   const id = str(a.CUSTOMFOLDERNUMBER);
   if (!id) return { skip: "no permit number" };
-  if (!isOakvilleIndustrial(a)) return { skip: "not industrial" };
+  const industrial = isOakvilleIndustrial(a);
+  if (!industrial && !isOakvilleRetail(a)) return { skip: "not industrial or retail" };
   const status = str(a.Status);
   if (CLOSED_OUT.test(status)) return { skip: "cancelled or revoked" };
   const work = str(a.Worktype) || str(a.AdjustedWorktype);
@@ -121,9 +132,10 @@ export function mapOakville(a: Record<string, unknown>, ctx: Pick<IngestContext,
   if (!date) return { skip: "no date" };
   if (date < ctx.cutoff) return { skip: "older than 12 months" };
   if (date > ctx.today) return { skip: "dated in the future" };
-  const description = str(a.FOLDERDESCRIPTION).replace(/&ndash;/g, "–").replace(/&[lr]dquo;/g, '"');
+  const description = str(a.FOLDERDESCRIPTION).replace(/&ndash;/g, "–").replace(/&[lr]dquo;/g, '"').replace(/&apos;|&#39;/g, "'").replace(/&amp;/g, "&");
   const address = str(a.FOLDERNAME);
   const occupier = resolveOccupier(description);
+  if (!industrial && !occupier.name) return { skip: "retail: no business named" };
   const value = num(a.Construction_Value);
   const gfa = num(a.GFA);
   return {
@@ -143,6 +155,7 @@ export function mapOakville(a: Record<string, unknown>, ctx: Pick<IngestContext,
       event_at: null,
       location: address ? `${address}, Oakville, Ontario` : "Oakville, Ontario",
       raw: { ...a, FOLDERDESCRIPTION: description, stage, applied_at: applied, issued_at: issued },
+      sector: industrial ? "industrial" : "retail",
     },
   };
 }

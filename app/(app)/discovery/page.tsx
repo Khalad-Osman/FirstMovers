@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SECTOR_LABEL } from "@/lib/sector";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -16,7 +17,7 @@ export default async function DiscoveryPage() {
   const user = await getCurrentUser();
   const supabase = await createClient();
   const [{ data: runs, error }, { data: settings }] = await Promise.all([
-    supabase.from("discovery_runs").select("id, status, trigger, started_at, finished_at, candidates_found, analyzed, usage, profiles:started_by(full_name)").order("started_at", { ascending: false }).limit(30),
+    supabase.from("discovery_runs").select("id, status, trigger, sector, started_at, finished_at, candidates_found, analyzed, usage, profiles:started_by(full_name)").order("started_at", { ascending: false }).limit(30),
     supabase.from("settings").select("discovery_cap, sources_per_candidate, skip_window_days, firecrawl_monthly_budget, schedule_discovery_enabled, discovery_frequency, discovery_weekdays, discovery_month_day").maybeSingle(),
   ]);
   const monthCredits = await monthToDateCredits(supabase);
@@ -57,6 +58,7 @@ export default async function DiscoveryPage() {
                     {formatTime(r.started_at)}
                   </Link>
                   <RunStatusBadge status={r.status} />
+                  <span className="badge badge-stage">{SECTOR_LABEL[r.sector]}</span>
                   {r.trigger === "scheduled" && <span className="badge badge-stage">Scheduled</span>}
                   <span className="mono text-[0.8125rem] text-meta">
                     {r.candidates_found} candidates · {r.analyzed} briefs · ~{u.firecrawl_credits ?? 0} Firecrawl credits · {u.llm_calls ?? 0} LLM calls

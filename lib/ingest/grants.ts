@@ -16,6 +16,9 @@ const MAX_PAGES = 40; // safety stop (~40k rows)
 
 // Industrial sectors by NAICS prefix: manufacturing, wholesale, transport and warehousing.
 const INDUSTRIAL_NAICS = /^(31|32|33|41|48|49)/;
+// Retail (added 2026-11-23): retail trade, food services, fitness, personal
+// services, and ambulatory health care (clinics).
+const RETAIL_NAICS = /^(44|45|72|7139|812|621)/;
 
 // What the project funds, from its title and description (no AI).
 const FACILITY =
@@ -52,7 +55,8 @@ export function mapGrant(r: Record<string, unknown>, ctx: Pick<IngestContext, "c
   if (start < ctx.cutoff) return { skip: "older than 12 months" };
   if (start > ctx.today) return { skip: "starts in the future" };
   const naics = first(r.naics_identifier);
-  if (!INDUSTRIAL_NAICS.test(naics)) return { skip: "not an industrial sector" };
+  const sector = INDUSTRIAL_NAICS.test(naics) ? "industrial" : RETAIL_NAICS.test(naics) ? "retail" : null;
+  if (!sector) return { skip: "not an industrial or retail sector" };
   const value = Number(r.agreement_value) || 0;
   if (value < ctx.grantsMinValue) return { skip: "below minimum grant value" };
   const names = all(r.recipient_legal_name);
@@ -83,6 +87,7 @@ export function mapGrant(r: Record<string, unknown>, ctx: Pick<IngestContext, "c
       event_at: null,
       location: [city, "Ontario", first(r.recipient_postal_code)].filter(Boolean).join(", "),
       raw: { ...raw, operating_names: names.slice(1), grant_kind: kind },
+      sector,
     },
   };
 }

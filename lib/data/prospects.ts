@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import type { Sector } from "@/lib/sector";
 import { createClient } from "@/lib/supabase/server";
 import { buildProspects, briefKey, type LatestBrief, type Prospect } from "@/lib/prospects";
 import type { RecordSignal } from "@/lib/research/records";
@@ -8,15 +9,16 @@ import { monthsBefore } from "@/lib/ingest/types";
 import { briefAnalysisSchema } from "@/lib/brief/schema";
 import { effectiveAngle } from "@/lib/brief/angle";
 
-// All prospects (unfiltered), built from the last 12 months of named signals.
-export const getProspects = cache(async (): Promise<Prospect[]> => {
+// All prospects of one sector (unfiltered), built from the last 12 months of named signals.
+export const getProspects = cache(async (sector: Sector = "industrial"): Promise<Prospect[]> => {
   const supabase = await createClient();
   const today = todayInToronto();
   const signals: RecordSignal[] = [];
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supabase
       .from("signals")
-      .select("id, source_type, source_record_id, raw_entity_name, entity_key, signal_strength, title, summary, url, published_at, event_at, location, raw")
+      .select("id, source_type, source_record_id, raw_entity_name, entity_key, signal_strength, title, summary, url, published_at, event_at, location, raw, sector")
+      .eq("sector", sector)
       .not("entity_key", "is", null)
       .gte("published_at", monthsBefore(today, 12))
       .order("id")
@@ -28,7 +30,8 @@ export const getProspects = cache(async (): Promise<Prospect[]> => {
 
   const { data: briefs, error: bErr } = await supabase
     .from("latest_briefs")
-    .select("id, rating, analyzed_at, analysis, companies(display_name, normalized_key, aliases)");
+    .select("id, rating, analyzed_at, analysis, companies(display_name, normalized_key, aliases)")
+    .eq("sector", sector);
   if (bErr) throw new Error(`Could not load briefs: ${bErr.message}`);
   const briefsByKey = new Map<string, LatestBrief>();
   for (const b of briefs ?? []) {
@@ -40,5 +43,5 @@ export const getProspects = cache(async (): Promise<Prospect[]> => {
     for (const name of [c.display_name, ...(c.aliases ?? [])]) briefsByKey.set(briefKey(name), entry);
     briefsByKey.set(c.normalized_key, entry);
   }
-  return buildProspects(signals, { today, briefsByKey });
+  return buildProspects(signals, { today, briefsByKey, sector });
 });

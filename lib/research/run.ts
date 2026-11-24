@@ -17,7 +17,7 @@ export async function runResearchJob(sessionId: string): Promise<void> {
   const store = createDbStore();
   const { data: session } = await db
     .from("research_sessions")
-    .select("mode, query, company_id, filters")
+    .select("mode, query, company_id, filters, sector")
     .eq("id", sessionId)
     .single();
   if (!session) return;
@@ -57,5 +57,5 @@ export async function runResearchJob(sessionId: string): Promise<void> {
     // Records are a bonus; web research still runs without them.
     console.error("attachRecords failed", e instanceof Error ? e.message : e);
   }
-  await runCompanyResearch(sessionId, name, { ...deps, recordSourceIds });
+  await runCompanyResearch(sessionId, name, { ...deps, recordSourceIds, sector: session.sector });
 }

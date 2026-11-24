@@ -16,6 +16,7 @@ export type StartState = { error?: string } | undefined;
 
 const startSchema = z.object({
   mode: z.enum(["company", "theme"]),
+  sector: z.enum(["industrial", "retail"]).default("industrial"),
   query: z.string().trim().min(2, "Enter at least 2 characters.").max(200, "Keep it under 200 characters."),
   companyId: z.uuid().optional(),
 });
@@ -26,6 +27,7 @@ export async function startResearch(_prev: StartState, formData: FormData): Prom
   const user = await requireUser();
   const parsed = startSchema.safeParse({
     mode: formData.get("mode"),
+    sector: formData.get("sector") || undefined,
     query: formData.get("query"),
     companyId: formData.get("companyId") || undefined,
   });
@@ -47,6 +49,7 @@ export async function startResearch(_prev: StartState, formData: FormData): Prom
       status: "searching",
       progress: "Starting",
       filters: hasFilters(filters.data) ? (JSON.parse(JSON.stringify(filters.data)) as Json) : null,
+      sector: parsed.data.sector,
     })
     .select("id")
     .single();

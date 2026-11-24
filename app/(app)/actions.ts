@@ -56,7 +56,7 @@ export async function reanalyzeFromStoredSources(briefId: string) {
   const admin = await requireAdmin();
   const id = uuid.parse(briefId);
   const db = createAdminClient();
-  const { data: brief } = await db.from("briefs").select("company_id, analysis, companies(display_name)").eq("id", id).maybeSingle();
+  const { data: brief } = await db.from("briefs").select("company_id, analysis, sector, companies(display_name)").eq("id", id).maybeSingle();
   if (!brief) return { error: "Brief not found." };
   const parsed = briefAnalysisSchema.safeParse(brief.analysis);
   if (!parsed.success) return { error: "This brief's stored analysis is invalid, so its sources can't be reused. Use Re-analyze instead." };
@@ -84,6 +84,7 @@ export async function reanalyzeFromStoredSources(briefId: string) {
       status: "analyzing",
       progress: "Re-analyzing stored sources",
       source_ids: sourceIds,
+      sector: brief.sector,
     })
     .select("id")
     .single();

@@ -3,12 +3,14 @@
 import { useActionState, useState } from "react";
 import { COMPANY_TYPES, COMPANY_TYPE_KEYS, DEAL_TYPES, DEAL_TYPE_KEYS, REGIONS, REGION_KEYS } from "@/lib/research/filters";
 import { startResearch, type StartState } from "./actions";
+import { SECTORS, SECTOR_LABEL, type Sector } from "@/lib/sector";
 
 type Props = {
   initialMode?: "company" | "theme";
   initialQuery?: string;
   companyId?: string; // re-analysis of an existing company
   compact?: boolean;
+  initialSector?: Sector;
 };
 
 const HINT = {
@@ -16,9 +18,10 @@ const HINT = {
   theme: "Runs 1 search and lists the results. Uses about 2 Firecrawl credits. Nothing is read or analyzed.",
 };
 
-export function ResearchForm({ initialMode = "company", initialQuery = "", companyId, compact }: Props) {
+export function ResearchForm({ initialMode = "company", initialQuery = "", companyId, compact, initialSector = "industrial" }: Props) {
   const [state, action, pending] = useActionState<StartState, FormData>(startResearch, undefined);
   const [mode, setMode] = useState<"company" | "theme">(companyId ? "company" : initialMode);
+  const [sector, setSector] = useState<Sector>(initialSector);
 
   return (
     <form action={action} className={`grid gap-3 ${compact ? "" : "border border-line bg-panel p-4"}`}>
@@ -34,6 +37,19 @@ export function ResearchForm({ initialMode = "company", initialQuery = "", compa
         </fieldset>
       )}
       {(companyId || compact) && <input type="hidden" name="mode" value="company" />}
+      {compact ? (
+        <input type="hidden" name="sector" value={sector} />
+      ) : (
+        <fieldset className="flex flex-wrap gap-4">
+          <legend className="label mb-1">Sector</legend>
+          {SECTORS.map((s) => (
+            <label key={s} className="inline-flex items-center gap-2 text-[0.9375rem]">
+              <input type="radio" name="sector" value={s} checked={sector === s} onChange={() => setSector(s)} />
+              {SECTOR_LABEL[s]}
+            </label>
+          ))}
+        </fieldset>
+      )}
       {companyId && <input type="hidden" name="companyId" value={companyId} />}
 
       <div className="flex flex-wrap gap-2">
@@ -46,7 +62,13 @@ export function ResearchForm({ initialMode = "company", initialQuery = "", compa
             maxLength={200}
             defaultValue={initialQuery}
             readOnly={Boolean(companyId)}
-            placeholder={mode === "company" ? "e.g. full legal name, Inc. / Ltd. included" : "e.g. switchgear manufacturing Ontario"}
+            placeholder={
+              mode === "company"
+                ? "e.g. full legal name, Inc. / Ltd. included"
+                : sector === "retail"
+                  ? "e.g. quick-service restaurant expansion Ontario"
+                  : "e.g. switchgear manufacturing Ontario"
+            }
             className="input"
           />
         </label>
@@ -55,7 +77,7 @@ export function ResearchForm({ initialMode = "company", initialQuery = "", compa
         </button>
       </div>
       <p className="text-[0.8125rem] text-meta">{HINT[mode]}</p>
-      {!compact && !companyId && <FilterFields mode={mode} />}
+      {!compact && !companyId && <FilterFields mode={mode} sector={sector} />}
       {state?.error && (
         <p role="alert" className="form-error">
           {state.error}
@@ -81,7 +103,7 @@ function Chips({ name, title, options }: { name: string; title: string; options:
   );
 }
 
-function FilterFields({ mode }: { mode: "company" | "theme" }) {
+function FilterFields({ mode, sector }: { mode: "company" | "theme"; sector: Sector }) {
   return (
     <details className="group border-t border-line pt-3">
       <summary className="cursor-pointer list-none text-[0.9375rem] font-semibold">
@@ -95,7 +117,11 @@ function FilterFields({ mode }: { mode: "company" | "theme" }) {
           Property criteria are checked against what the sources state, never searched for or assumed.
         </p>
         <Chips name="filter_region" title="Region" options={REGION_KEYS.map((k) => ({ value: k, label: REGIONS[k].label }))} />
-        <Chips name="filter_company_type" title="Company type" options={COMPANY_TYPE_KEYS.map((k) => ({ value: k, label: COMPANY_TYPES[k].label }))} />
+        <Chips
+          name="filter_company_type"
+          title="Company type"
+          options={COMPANY_TYPE_KEYS.filter((k) => COMPANY_TYPES[k].sector === sector || COMPANY_TYPES[k].sector === "both").map((k) => ({ value: k, label: COMPANY_TYPES[k].label }))}
+        />
         <Chips name="filter_deal_type" title="Deal type" options={DEAL_TYPE_KEYS.map((k) => ({ value: k, label: DEAL_TYPES[k] }))} />
         <fieldset className="grid gap-1.5">
           <legend className="field-label mb-1">Property criteria · checked against sources, not searched</legend>

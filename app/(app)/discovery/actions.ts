@@ -1,6 +1,7 @@
 "use server";
 
 import { after } from "next/server";
+import { parseSector } from "@/lib/sector";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -21,8 +22,9 @@ async function origin(): Promise<string> {
 export type StartDiscoveryState = { error?: string } | undefined;
 
 // Admin only. Spends Firecrawl and LLM credits within the configured caps.
-export async function startDiscovery(): Promise<StartDiscoveryState> {
+export async function startDiscovery(_prev: StartDiscoveryState, formData: FormData): Promise<StartDiscoveryState> {
   const admin = await requireAdmin();
+  const sector = parseSector(formData.get("sector"));
   try {
     jobSecret();
     await realDiscoveryDeps(); // keys + models configured?
@@ -34,7 +36,7 @@ export async function startDiscovery(): Promise<StartDiscoveryState> {
   const { data: active } = await db.from("discovery_runs").select("id").in("status", ["queued", "running"]).limit(1);
   if (active?.length) return { error: "A discovery run is already in progress. Wait for it to finish." };
 
-  const runId = await createDiscoveryRun(db, admin.id);
+  const runId = await createDiscoveryRun(db, admin.id, "manual", sector);
   const base = await origin();
   after(() => triggerStep(base, runId).catch((e) => failRun(db, runId, e instanceof Error ? e.message : String(e))));
   redirect(`/discovery/${runId}`);

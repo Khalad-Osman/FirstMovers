@@ -150,7 +150,7 @@ describe("permits", () => {
   it("skips unissued, old and non-industrial Toronto permits", () => {
     expect(mapToronto({ PERMIT_NUM: "a", ISSUED_DATE: null }, ctx)).toEqual({ skip: "not issued (read in the applications pass)" });
     expect(mapToronto({ PERMIT_NUM: "a", ISSUED_DATE: "2025-01-01", INDUSTRIAL: 5 }, ctx)).toEqual({ skip: "older than 12 months" });
-    expect(mapToronto({ PERMIT_NUM: "a", ISSUED_DATE: "2026-10-01", PROPOSED_USE: "Apartment" }, ctx)).toEqual({ skip: "not industrial" });
+    expect(mapToronto({ PERMIT_NUM: "a", ISSUED_DATE: "2026-10-01", PROPOSED_USE: "Apartment" }, ctx)).toEqual({ skip: "not industrial or retail" });
   });
 
   it("keeps a live Toronto application, dated when received, in the applications pass", () => {

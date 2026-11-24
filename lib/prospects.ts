@@ -1,3 +1,4 @@
+import { parseSector, type Sector } from "@/lib/sector";
 import { buildCandidates, groupKey, signalWeight, type SignalForCandidate } from "@/lib/discovery/candidates";
 import { REGIONS, regionsIn, type RegionKey } from "@/lib/research/filters";
 import { toRecordSource, type RecordSignal } from "@/lib/research/records";
@@ -86,6 +87,7 @@ export type Prospect = {
 };
 
 export type ProspectFilters = {
+  sector: Sector;
   regions: RegionKey[] | "all";
   families: SignalFamily[]; // empty = any
   neverAnalyzed: boolean;
@@ -96,9 +98,9 @@ export const GTA_REGIONS: RegionKey[] = ["peel", "york", "halton", "durham", "to
 
 export function buildProspects(
   signals: RecordSignal[],
-  opts: { today: string; briefsByKey: Map<string, LatestBrief> },
+  opts: { today: string; briefsByKey: Map<string, LatestBrief>; sector?: Sector },
 ): Prospect[] {
-  const { candidates } = buildCandidates(signals as SignalForCandidate[], { today: opts.today, skipKeys: new Set() });
+  const { candidates } = buildCandidates(signals as SignalForCandidate[], { today: opts.today, skipKeys: new Set(), sector: opts.sector });
   const out: Prospect[] = [];
   for (const c of candidates) {
     const sigs = c.signals as RecordSignal[];
@@ -157,7 +159,7 @@ export function parseProspectFilters(params: Record<string, string | string[] | 
       : GTA_REGIONS;
   const families = list(params.type).filter((t): t is SignalFamily => ["permit", "grant", "award", "news", "approval"].includes(t));
   const min = Number(String(params.min ?? "").replace(/[^0-9]/g, ""));
-  return { regions, families, neverAnalyzed: params.new === "1", minValue: min > 0 ? min : null };
+  return { sector: parseSector(params.sector), regions, families, neverAnalyzed: params.new === "1", minValue: min > 0 ? min : null };
 }
 
 // Brief lookup key: the same grouping discovery uses.

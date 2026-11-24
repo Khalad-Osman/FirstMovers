@@ -17,10 +17,13 @@ const NOT_A_NAME =
 // Landlords and property companies appear on leasing signs and base-building
 // work; they are not the occupier.
 const LANDLORD =
-  /\b(?:propert(?:y|ies)|realty|reit|developments?|leasing|for lease|real estate|asset management|investments?|capital|dream industrial|twofer)\b/i;
+  /\b(?:propert(?:y|ies)|realty|reit|developments?|leasing|for lease|real estate|asset management|investments?|capital|dream industrial|twofer|cadillac fairview|riocan|smartcentres|smart centres|first capital|primaris|crombie|morguard|ivanhoe ?cambridge|bentall|quadreal|oxford)\b/i;
 
-// Placeholders and sentence fragments that are not business names.
-const NOT_A_BUSINESS = /^(?:a|an)\s|^(?:future|prospective|new|potential)\s+tenants?\b|\b(?:scope of work|work is limited|designer'?s)\b/i;
+// Placeholders and sentence fragments that are not business names, and a bare
+// type of business ("Beauty Salon", "DENTAL") rather than its name (retail
+// permits, added 2026-11-23).
+const NOT_A_BUSINESS =
+  /^(?:a|an)\s|^(?:future|prospective|new|potential)\s+tenants?\b|\b(?:scope of work|work is limited|designer'?s|tenant fit[- ]?(?:up|out)|ground floor|at grade|playground)\b|^(?:the\s)?(?:beauty salon|hair salon|nail salon|salon|spa|dental(?: office| clinic)?|dentist|medical(?: office| clinic)?|clinic|pharmacy|restaurant|cafe|daycare|barbershop|barber shop|gym|fitness(?: centre| center)?|retail(?: store)?|store|convenience store|office)\.?$/i;
 
 const LEGAL_END = new RegExp(String.raw`\s${LEGAL}$`, "i");
 // A phrase ending in a kind of premises, or "with accessory …", is a use description.

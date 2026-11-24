@@ -97,7 +97,24 @@ export const modelLedgerEntrySchema = z.object({
 
 // Company type and deal indicators (added 2026-11-17, for Live Research
 // filters): set only from what the sources show; "unknown" / [] otherwise.
-export const companyTypeSchema = z.enum(["manufacturer", "logistics_3pl", "food_beverage", "energy_nuclear", "data_centre_tech", "other", "unknown"]);
+export const companyTypeSchema = z.enum([
+  "manufacturer",
+  "logistics_3pl",
+  "food_beverage",
+  "energy_nuclear",
+  "data_centre_tech",
+  // retail (added 2026-11-23)
+  "retailer",
+  "restaurant_food_service",
+  "grocery",
+  "franchise",
+  "cannabis_retail",
+  "auto_dealership",
+  "fitness_personal_services",
+  "medical_clinic",
+  "other",
+  "unknown",
+]);
 export const dealIndicatorSchema = z.enum(["lease", "sale_purchase", "expansion_in_place", "new_build"]);
 
 // Broker angle (added 2026-11-17): the reason for a conversation (the

@@ -6,14 +6,16 @@ import type { ParsedAnalysisInput } from "./types";
 // The intelligence model and the §7 rules are used word for word. Never
 // summarize or paraphrase them here; edit the files in docs/ instead.
 export const MODEL_FILE = "docs/intelligence-model.md";
+export const RETAIL_MODEL_FILE = "docs/retail-intelligence-model.md"; // added 2026-11-23
 export const RULES_FILE = "docs/analysis-rules.md";
 export const EXCERPT_LIMIT = 6000; // characters per source
 
-let cached: { model: string; rules: string } | null = null;
+let cached: { model: string; retailModel: string; rules: string } | null = null;
 export function loadPromptDocs(root = process.cwd()) {
   if (!cached) {
     cached = {
       model: readFileSync(path.join(root, MODEL_FILE), "utf8"),
+      retailModel: readFileSync(path.join(root, RETAIL_MODEL_FILE), "utf8"),
       rules: readFileSync(path.join(root, RULES_FILE), "utf8"),
     };
   }
@@ -59,7 +61,7 @@ Other premises (space likely to be vacated)
 - This does not change the rating: a company that has already secured its new facility can be no_meaningful_signal for a new requirement and still have likely vacated space. When nothing applies, use assessment "not_indicated", address null, a short text and empty sourceIds.
 
 Company type and deal indicators
-- companyType is the company's main business as the sources show it: manufacturer, logistics_3pl (logistics, 3PL, distribution, warehousing), food_beverage (food or beverage production or processing), energy_nuclear (energy or nuclear supply chain), data_centre_tech (data centres or tech hardware), other, or unknown when the sources don't establish it.
+- companyType is the company's main business as the sources show it: manufacturer, logistics_3pl (logistics, 3PL, distribution, warehousing), food_beverage (food or beverage production or processing), energy_nuclear (energy or nuclear supply chain), data_centre_tech (data centres or tech hardware), retailer (stores and chains), restaurant_food_service (restaurants, quick-service food, cafés), grocery, franchise (a franchise system or franchisee where that is the defining fact), cannabis_retail, auto_dealership, fitness_personal_services (gyms, studios, salons, spas), medical_clinic (medical, dental or health clinics), other, or unknown when the sources don't establish it.
 - dealIndicators lists only the property actions a source directly indicates for this company: lease (leasing or a tenancy), sale_purchase (buying or selling property), expansion_in_place (adding to or fitting out premises it already occupies), new_build (constructing a new building). Use an empty list when none is stated. Never infer one from the rating or from general growth.
 
 Broker angle
@@ -95,8 +97,19 @@ Writing style
 Length
 - For no_meaningful_signal, keep the brief short: at most three countercase points and three unknowns, commercialValue null, workingHypothesis null unless there is a real one.`;
 
-export function buildSystemPrompt(root?: string): string {
-  const { model, rules } = loadPromptDocs(root);
+// Retail briefs use the same JSON contract; these notes say how its industrial
+// field names read for stores (added 2026-11-23).
+export const RETAIL_NOTES = `# Retail briefs
+
+This brief is for a retail real-estate broker. The company is a retail occupier: a store or chain, restaurant or quick-service food, grocery, franchise, cannabis store, car dealership, gym or personal service, or medical or dental clinic.
+- Read the contract's industrial terms for stores: "facility" means a store, restaurant, clinic or other location; "facility pressure" in the chain means location pressure (a need for new, larger, smaller or better-placed locations); "operational consequence" means the consequence for the store network; "existingFacilityInvestment" is true when the sources show a refresh, renovation or fit-out of a store the business already operates.
+- A store sign or tenant fit-out permit for a business at an address usually means that store is site-controlled: stage site_controlled or construction_fit_out. It is evidence of a network pattern (where the next stores may go) or of a store the business may leave, not an undiscovered requirement for that store.
+- Distinguish the brand or franchisor from a franchisee; say which one the sources describe. A franchisor's development plan is not a specific franchisee's lease.
+- Write for a retail broker; offer retail brokerage services (site selection, tenant representation, lease negotiation, renewal or relocation, sublease or disposition of closing stores, backfill).`;
+
+export function buildSystemPrompt(root?: string, sector: "industrial" | "retail" = "industrial"): string {
+  const { model, retailModel, rules } = loadPromptDocs(root);
+  if (sector === "retail") return `${retailModel}\n\n---\n\n${rules}\n\n---\n\n${OUTPUT_INSTRUCTIONS}\n\n${RETAIL_NOTES}\n`;
   return `${model}\n\n---\n\n${rules}\n\n---\n\n${OUTPUT_INSTRUCTIONS}\n`;
 }
 

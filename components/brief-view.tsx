@@ -17,6 +17,7 @@ import { COMPANY_TYPES, DEAL_TYPES } from "@/lib/research/filters";
 import { FIT_LABEL, type FitLevel } from "@/lib/deals/fit";
 import { formatDate, normalAddressCase, stripLabel } from "@/lib/format";
 import { Cited, SourceLinks } from "./cited-text";
+import { SECTOR_LABEL, type Sector } from "@/lib/sector";
 import {
   ChainStatusBadge,
   EvidenceBadge,
@@ -54,9 +55,10 @@ type Props = {
   aside?: React.ReactNode; // versions list, notices
   // Past deal fit (code, not AI). `matches` (deal descriptions) only for admins.
   fit?: { level: FitLevel; reason: string; matches?: string[] } | null;
+  sector?: Sector;
 };
 
-export function BriefView({ analysis, companyName, isSample, analyzedAt, origin, surfacedBy, version, actions, aside, fit }: Props) {
+export function BriefView({ analysis, companyName, isSample, analyzedAt, origin, surfacedBy, version, actions, aside, fit, sector = "industrial" }: Props) {
   const counts = ledgerCounts(analysis);
   const ids = new Set(analysis.ledger.map((e) => e.id));
   const t = (text: string, label?: string) => <Cited text={label ? stripLabel(text, label) : text} ids={ids} />;
@@ -84,6 +86,7 @@ export function BriefView({ analysis, companyName, isSample, analyzedAt, origin,
       <header className="grid gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {isSample && <SampleBadge />}
+          <span className="badge badge-stage">{SECTOR_LABEL[sector]}</span>
           <RatingBadge rating={analysis.rating} />
           <StageBadge stage={analysis.stage} />
         </div>

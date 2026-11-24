@@ -19,12 +19,21 @@ export type RegionKey = keyof typeof REGIONS;
 export const REGION_KEYS = Object.keys(REGIONS) as RegionKey[];
 
 export const COMPANY_TYPES = {
-  manufacturer: { label: "Manufacturer", terms: ["manufacturer", "manufacturing", "plant", "factory"] },
-  logistics_3pl: { label: "Logistics/3PL", terms: ["logistics", "3PL", "distribution centre", "distribution center", "warehouse", "fulfillment"] },
-  food_beverage: { label: "Food & beverage", terms: ["food", "beverage", "dairy", "meat", "bakery", "processing"] },
-  energy_nuclear: { label: "Energy/nuclear supply chain", terms: ["nuclear", "energy", "SMR", "utility", "power"] },
-  data_centre_tech: { label: "Data-centre/tech hardware", terms: ["data centre", "data center", "semiconductor", "electronics", "hardware"] },
-  other: { label: "Other", terms: [] as string[] },
+  manufacturer: { label: "Manufacturer", terms: ["manufacturer", "manufacturing", "plant", "factory"], sector: "industrial" },
+  logistics_3pl: { label: "Logistics/3PL", terms: ["logistics", "3PL", "distribution centre", "distribution center", "warehouse", "fulfillment"], sector: "industrial" },
+  food_beverage: { label: "Food & beverage", terms: ["food", "beverage", "dairy", "meat", "bakery", "processing"], sector: "industrial" },
+  energy_nuclear: { label: "Energy/nuclear supply chain", terms: ["nuclear", "energy", "SMR", "utility", "power"], sector: "industrial" },
+  data_centre_tech: { label: "Data-centre/tech hardware", terms: ["data centre", "data center", "semiconductor", "electronics", "hardware"], sector: "industrial" },
+  // Retail (added 2026-11-23)
+  retailer: { label: "Retailer", terms: ["retailer", "store", "stores", "retail"], sector: "retail" },
+  restaurant_food_service: { label: "Restaurant/food service", terms: ["restaurant", "quick service", "cafe", "franchise restaurant"], sector: "retail" },
+  grocery: { label: "Grocery", terms: ["grocery", "supermarket", "food store"], sector: "retail" },
+  franchise: { label: "Franchise", terms: ["franchise", "franchisee", "franchisor"], sector: "retail" },
+  cannabis_retail: { label: "Cannabis retail", terms: ["cannabis store", "cannabis retail"], sector: "retail" },
+  auto_dealership: { label: "Car dealership", terms: ["dealership", "car dealer"], sector: "retail" },
+  fitness_personal_services: { label: "Gym/personal services", terms: ["gym", "fitness", "salon", "spa"], sector: "retail" },
+  medical_clinic: { label: "Medical/dental clinic", terms: ["clinic", "medical clinic", "dental"], sector: "retail" },
+  other: { label: "Other", terms: [] as string[], sector: "both" },
 } as const;
 export type CompanyTypeKey = keyof typeof COMPANY_TYPES;
 export const COMPANY_TYPE_KEYS = Object.keys(COMPANY_TYPES) as CompanyTypeKey[];

@@ -44,6 +44,7 @@ export default async function BriefPage({ params }: PageProps<"/briefs/[id]">) {
         ← Opportunity Feed
       </Link>
       <BriefView
+        sector={brief.sector}
         analysis={brief.analysis}
         companyName={brief.companyName}
         isSample={false}
@@ -64,7 +65,7 @@ export default async function BriefPage({ params }: PageProps<"/briefs/[id]">) {
               />
             )}
             <Link
-              href={`/research?company=${encodeURIComponent(brief.companyName)}&companyId=${brief.companyId}`}
+              href={`/research?company=${encodeURIComponent(brief.companyName)}&companyId=${brief.companyId}&sector=${brief.sector}`}
               className="btn"
             >
               Re-analyze

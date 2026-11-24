@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SECTOR_LABEL } from "@/lib/sector";
 import { ANGLE_LABEL, ORIGIN_LABEL, URGENCY_LABEL, VACANCY_LABEL } from "@/lib/brief/schema";
 import { URGENCY_CLASS } from "./brief-view";
 import type { FeedEntry } from "@/lib/data/briefs";
@@ -26,6 +27,7 @@ export function FeedRow({ entry, watched, isAdmin }: Props) {
           </Link>
         </h3>
         {entry.isSample && <SampleBadge />}
+        <span className="badge badge-stage">{SECTOR_LABEL[entry.sector]}</span>
         <RatingBadge rating={entry.rating} />
         <StageBadge stage={entry.stage} />
         {entry.vacancy && <span className="badge badge-inferred">{VACANCY_LABEL[entry.vacancy.assessment]}</span>}

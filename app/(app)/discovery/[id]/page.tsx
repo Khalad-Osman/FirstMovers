@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SECTOR_LABEL } from "@/lib/sector";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
@@ -52,6 +53,7 @@ export default async function DiscoveryRunPage({ params }: PageProps<"/discovery
       <header className="grid gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <RunStatusBadge status={run.status} />
+          <span className="badge badge-stage">{SECTOR_LABEL[run.sector]}</span>
           {run.trigger === "scheduled" && <span className="badge badge-stage">Scheduled</span>}
           <span className="mono text-[0.875rem] text-meta">
             Started {formatTime(run.started_at)}

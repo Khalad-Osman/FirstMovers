@@ -52,8 +52,14 @@ These rules apply on top of `docs/intelligence-model.md`.
 - List the company's website, main phone, named people and known Ontario addresses only when a source states them, each with the source. Never guess a contact, a title or an address.
 
 **Writing for brokers**
-- Write for an industrial real-estate broker: plain words, the opportunity first. The countercase and unknowns carry the caveats; don't repeat them in every section.
-- Offer only brokerage services (site search, land acquisition, build-to-suit, lease or buy analysis, lease negotiation and renewal, sublease, disposition, backfill), never operations, engineering or facility-planning consulting.
+- Write for the broker the brief is for (industrial or retail): plain words, the opportunity first. The countercase and unknowns carry the caveats; don't repeat them in every section.
+- Offer only brokerage services (site search, land acquisition, build-to-suit, lease or buy analysis, lease negotiation and renewal, sublease, disposition, backfill), never operations, engineering or facility-planning consulting. Retail briefs offer retail brokerage (site selection, tenant representation, renewal or relocation, sublease or disposition of closing stores, backfill).
+
+**Retail**
+- Retail briefs apply these rules to retail occupiers (stores, restaurants and food service, grocery, franchises, cannabis stores, car dealerships, gyms and personal services, medical and dental clinics), using the retail intelligence model.
+- A store already open, or a store whose fit-out or sign permit is issued, is site-controlled: context for that location, and evidence of a network pattern or of space the business may leave, not an undiscovered requirement.
+- Distinguish the brand or franchisor from a franchisee. A franchise system's growth is not a specific franchisee's commitment, and a national or US chain's activity is not an Ontario signal without an Ontario store, permit or announcement.
+- Closures, banner changes, acquisitions and insolvency are vacated-space signals; never name the stores that close unless a source lists them.
 
 **Output**
 - The LLM returns structured JSON validated with Zod. On validation failure, retry once, then record an error. Never show unvalidated output.

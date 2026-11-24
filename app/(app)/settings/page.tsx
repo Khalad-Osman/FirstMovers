@@ -41,6 +41,7 @@ export default async function SettingsPage() {
           discovery_weekdays: s.discovery_weekdays,
           discovery_month_day: s.discovery_month_day,
           firecrawl_monthly_budget: s.firecrawl_monthly_budget,
+          discovery_sector: s.discovery_sector,
         }}
       />
       <p className="text-[0.8125rem] text-meta">

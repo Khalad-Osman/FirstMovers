@@ -1,7 +1,15 @@
 // Search queries for company research. Kept small: each search costs credits.
 
-export function companyQueries(name: string): string[] {
+export function companyQueries(name: string, sector: "industrial" | "retail" = "industrial"): string[] {
   const q = `"${name.replace(/"/g, "")}"`;
+  if (sector === "retail") {
+    // Retail (added 2026-11-23): store network changes.
+    return [
+      `${q} Ontario new store OR location OR opening OR closing`,
+      `${q} expansion OR franchise OR relocation OR lease`,
+      `${q} news release`,
+    ];
+  }
   return [
     `${q} Ontario plant OR warehouse OR facility OR distribution`,
     `${q} expansion OR contract OR investment OR hiring`,

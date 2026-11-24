@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
     const values = request.nextUrl.searchParams.getAll(key);
     params[key] = values.length > 1 ? values : values[0];
   }
-  const list = filterProspects(await getProspects(), parseProspectFilters(params));
+  const filters = parseProspectFilters(params);
+  const list = filterProspects(await getProspects(filters.sector), filters);
   return new Response("﻿" + prospectsCsv(list), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",

@@ -19,6 +19,7 @@ export type SignalRow = {
   event_at: string | null;
   location: string | null;
   raw: Record<string, unknown>;
+  sector?: "industrial" | "retail"; // default industrial (lib/sector.ts)
 };
 
 export type IngestItem = { row: SignalRow } | { skip: string };
