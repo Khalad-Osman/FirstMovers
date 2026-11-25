@@ -50,6 +50,7 @@ export function mapColumns(headers: string[]): Partial<Record<keyof PastDealDraf
 export function companyTypeFrom(v: string): CompanyTypeKey | null {
   const t = v.toLowerCase();
   if (!t.trim()) return null;
+  if (/developer|landlord|property owner|realty|reit|real estate/.test(t)) return "developer_landlord";
   if (/food|beverage|dairy|meat|bakery|brew|grocery|produce|confection/.test(t)) return "food_beverage";
   if (/logistic|3pl|distribut|warehous|fulfil|freight|courier|transport|cold storage/.test(t)) return "logistics_3pl";
   if (/nuclear|energy|power|utility|smr|solar|battery/.test(t)) return "energy_nuclear";

@@ -30,6 +30,7 @@ export function FeedRow({ entry, watched, isAdmin }: Props) {
         <span className="badge badge-stage">{SECTOR_LABEL[entry.sector]}</span>
         <RatingBadge rating={entry.rating} />
         <StageBadge stage={entry.stage} />
+        {entry.landlordLead && <span className="badge badge-landlord">Landlord lead</span>}
         {entry.vacancy && <span className="badge badge-inferred">{VACANCY_LABEL[entry.vacancy.assessment]}</span>}
         {entry.fit && entry.fit !== "none" && <span className={`badge ${FIT_CLASS[entry.fit]}`}>Past deal fit: {FIT_LABEL[entry.fit]}</span>}
       </div>

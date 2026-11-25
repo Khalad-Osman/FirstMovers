@@ -89,6 +89,7 @@ export function BriefView({ analysis, companyName, isSample, analyzedAt, origin,
           <span className="badge badge-stage">{SECTOR_LABEL[sector]}</span>
           <RatingBadge rating={analysis.rating} />
           <StageBadge stage={analysis.stage} />
+          {analysis.companyType === "developer_landlord" && <span className="badge badge-landlord">Landlord lead</span>}
         </div>
         <h1 className="text-2xl font-bold text-balance sm:text-[1.75rem]">{companyName}</h1>
         <div className="mono flex flex-wrap gap-x-5 gap-y-1 text-[0.8125rem] text-meta">

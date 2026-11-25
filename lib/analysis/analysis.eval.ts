@@ -32,12 +32,12 @@ type Row = {
 describe.skipIf(!ready)("live analysis evaluation", () => {
   const rows: Row[] = [];
   const results: { model: string; fixture: string; result: AnalysisResult }[] = [];
-  const system = buildSystemPrompt();
+  const system = { industrial: buildSystemPrompt(), retail: buildSystemPrompt(undefined, "retail") };
 
   for (const model of models) {
     for (const f of fixtures) {
       it(`${model} · ${f.name}`, async () => {
-        const result = await analyzeCompany(f.input, { provider: getProvider(), model, systemPrompt: system });
+        const result = await analyzeCompany(f.input, { provider: getProvider(), model, systemPrompt: system[f.sector ?? "industrial"] });
         results.push({ model, fixture: f.name, result });
         const problems: string[] = [];
         if (!result.ok) problems.push(...result.errors.map((e) => `invalid: ${e}`));

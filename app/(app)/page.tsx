@@ -24,6 +24,7 @@ function byUrgency(a: FeedEntry, b: FeedEntry) {
 
 const GROUP_NOTE: Partial<Record<FeedEntry["angle"]["type"], string>> = {
   new_requirement: "An external space need the evidence supports (Worth Monitoring or Strong Signal).",
+  leasing_mandate: "A developer or landlord has new or redeveloped retail space with no tenant named: a leasing or listing conversation.",
   vacated_space: "The company has committed to a new facility and the sources place it at another address that may come to market.",
   capacity_conversation: "Investment or expansion at premises the company already occupies: a reason to ask about future space needs.",
   relationship: "A funding, ownership, leadership or contract trigger: a reason to reconnect, not a property need.",

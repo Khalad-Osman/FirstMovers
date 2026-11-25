@@ -40,12 +40,12 @@ These rules apply on top of `docs/intelligence-model.md`.
 - Never invent the other site's size, lease terms, tenure, timing or use. A directory listing establishes an address, not occupancy or tenure.
 
 **Broker angle**
-- Every brief states a broker angle: the most useful reason for a conversation that the evidence supports. Types: **new requirement** (an external space need; only when the rating is Worth Monitoring or Strong Signal), **vacated space** (only when vacated space is likely or possible), **capacity conversation** (investment or expansion at existing premises: ask about future space needs), **relationship** (funding, ownership, leadership or similar trigger to reconnect, without implying a property need), or **monitor only**.
+- Every brief states a broker angle: the most useful reason for a conversation that the evidence supports. Types: **new requirement** (an external space need; only when the rating is Worth Monitoring or Strong Signal), **vacated space** (only when vacated space is likely or possible), **capacity conversation** (investment or expansion at existing premises: ask about future space needs), **relationship** (funding, ownership, leadership or similar trigger to reconnect, without implying a property need), **leasing mandate** (retail developer or landlord leads only: space to fill; only when the rating is Worth Monitoring or Strong Signal), or **monitor only**.
 - The angle is a reason to talk, not a claim. It must not imply a requirement the rating doesn't support, and every talking point cites the sources it rests on. Never state timing; urgency is computed from the sources' dates.
 
 **Deal potential**
 - Every brief states its deal potential: the transactions a broker could pursue if the evidence holds (site search, land purchase, build-to-suit, lease, purchase, sublease, disposition, backfill, lease renewal, expansion in place). It is separate from the rating and is not a claim that a deal exists.
-- New-space deals (site search, land purchase, build-to-suit, lease, purchase) only when the rating is Worth Monitoring or Strong Signal, and not for a facility the sources show is already site-controlled, built or open. Sublease, disposition or backfill only when vacated space is likely or possible.
+- New-space deals (site search, land purchase, build-to-suit, lease, purchase) only when the rating is Worth Monitoring or Strong Signal, and not for a facility the sources show is already site-controlled, built or open. Sublease, disposition or backfill only when vacated space is likely or possible. For a developer or landlord lead: lease-up or disposition only, never a new-space deal.
 - State a size or a location only as a cited source states it.
 
 **Contacts and premises**
@@ -60,6 +60,7 @@ These rules apply on top of `docs/intelligence-model.md`.
 - A store already open, or a store whose fit-out or sign permit is issued, is site-controlled: context for that location, and evidence of a network pattern or of space the business may leave, not an undiscovered requirement.
 - Distinguish the brand or franchisor from a franchisee. A franchise system's growth is not a specific franchisee's commitment, and a national or US chain's activity is not an Ontario signal without an Ontario store, permit or announcement.
 - Closures, banner changes, acquisitions and insolvency are vacated-space signals; never name the stores that close unless a source lists them.
+- **Developer and landlord leads:** a developer or landlord with new or redeveloped retail space and no tenant named is a leasing or listing lead (company type developer / landlord), never a space need: its angle is leasing mandate, relationship or monitor only, never new requirement. **Worth Monitoring** needs a specific, recent Ontario application or permit for that space; **Strong Signal** also needs a forcing event (approval, construction start or stated completion). The countercase considers a leasing partner or tenants already in place and the owner keeping the space. When a source names the tenant, the tenant is the occupier lead.
 
 **Output**
 - The LLM returns structured JSON validated with Zod. On validation failure, retry once, then record an error. Never show unvalidated output.

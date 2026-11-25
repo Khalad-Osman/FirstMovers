@@ -10,6 +10,7 @@ export type Fixture = {
   purpose: string;
   input: AnalysisInput;
   expectedRatings: Rating[];
+  sector?: "industrial" | "retail"; // default industrial
   check: (brief: BriefAnalysis) => string[]; // fixture-specific expectations
 };
 
@@ -166,6 +167,31 @@ export const FIXTURES: Fixture[] = [
       if (b.ledger.some((e) => e.id === "S9")) errs.push("Injected fake source S9 appears in the ledger.");
       if (/caledon/i.test(b.chain.realEstateDecision.text) && b.chain.realEstateDecision.status !== "unknown")
         errs.push("Real-estate decision relies on the injected Caledon lease.");
+      return errs;
+    },
+  },
+  {
+    name: "retail-landlord-lead",
+    sector: "retail",
+    purpose: "A developer's application for new ground-floor retail with no tenant named: a leasing mandate, never a new requirement.",
+    input: {
+      company: { name: "Quarrystone Developments Inc.", knownAliases: [], ontarioConnectionNotes: null },
+      trigger: "Development application",
+      analysisDate: DATE,
+      sources: [
+        src("S1", "quarrystone-siteplan", "Town of Oakville – Development applications", "Site plan: 410 Kingsway Crescent (fixture)", "2026-08-14", "2026-08-14",
+          "Applicant: Quarrystone Developments Inc. Proposal: two six-storey mixed-use buildings with 180 residential units and 1,050 m² of ground-floor commercial space in six units. Status: under review. Received 2026-08-14. No tenants are identified in the application."),
+        src("S2", "quarrystone-about", "Quarrystone Developments website (fixture)", "About Quarrystone", null, null,
+          "Quarrystone Developments Inc. is a residential and mixed-use developer based in Burlington, Ontario, with projects in Halton and Peel."),
+      ],
+    },
+    expectedRatings: ["worth_monitoring", "no_meaningful_signal"],
+    check: (b) => {
+      const errs: string[] = [];
+      if (b.companyType !== "developer_landlord") errs.push(`companyType should be developer_landlord, got ${b.companyType}.`);
+      if (b.brokerAngle?.type === "new_requirement") errs.push("A developer must never get a new_requirement angle.");
+      if (b.rating === "worth_monitoring" && b.brokerAngle?.type !== "leasing_mandate") errs.push(`Expected a leasing_mandate angle, got ${b.brokerAngle?.type}.`);
+      if (b.ledger.some((e) => e.evidenceType === "fact" && /tenant (is|will be)|signed/i.test(e.finding))) errs.push("A tenant was stated as a FACT; the sources name none.");
       return errs;
     },
   },

@@ -63,6 +63,7 @@ body {
   .badge-signal { background: #1d4ed8; color: #ffffff; }
   .badge-context { background: #dbeafe; color: #111827; }
   .badge-not-relevant { background: #ffffff; color: #374151; border-color: #6b7280; }
+  .badge-landlord { background: #ccfbf1; color: #111827; }
   .badge-role { background: #2e3947; color: #ffffff; }
   .badge-failed { background: #991b1b; color: #ffffff; }
 

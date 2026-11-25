@@ -55,5 +55,5 @@ export function effectiveAngle(a: BriefAnalysis, analyzedAt: string): BrokerAngl
 }
 
 // Feed order: what a broker can act on first.
-export const ANGLE_ORDER: BrokerAngle["type"][] = ["new_requirement", "vacated_space", "capacity_conversation", "relationship", "monitor_only"];
+export const ANGLE_ORDER: BrokerAngle["type"][] = ["new_requirement", "leasing_mandate", "vacated_space", "capacity_conversation", "relationship", "monitor_only"];
 export const URGENCY_ORDER: BrokerAngle["urgency"][] = ["act_now", "follow_up", "watch"];

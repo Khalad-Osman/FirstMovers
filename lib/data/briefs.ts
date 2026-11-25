@@ -34,6 +34,7 @@ export type FeedEntry = {
   fit?: FitLevel; // past deal fit; absent when no deals are uploaded
   angle: BrokerAngle; // stored, or derived for briefs saved before angles
   dealSummary: string | null; // deal potential summary (briefs from 2026-11-23)
+  landlordLead: boolean; // a developer or landlord with space to fill (added 2026-11-25)
   sector: Sector;
 };
 
@@ -44,7 +45,7 @@ const BRIEF_COLUMNS =
 
 function toEntry(
   analysis: BriefAnalysis,
-  meta: Omit<FeedEntry, "companyName" | "localConnection" | "whatChanged" | "facilityPressure" | "countercase" | "rating" | "stage" | "vacancy" | "angle" | "dealSummary" | "sector">,
+  meta: Omit<FeedEntry, "companyName" | "localConnection" | "whatChanged" | "facilityPressure" | "countercase" | "rating" | "stage" | "vacancy" | "angle" | "dealSummary" | "sector" | "landlordLead">,
   companyName: string,
   sector: Sector = "industrial",
 ): FeedEntry {
@@ -52,6 +53,7 @@ function toEntry(
   return {
     angle: effectiveAngle(analysis, meta.analyzedAt),
     dealSummary: analysis.dealPotential?.summary ?? null,
+    landlordLead: analysis.companyType === "developer_landlord",
     sector,
     vacancy: op && op.assessment !== "not_indicated" && op.address ? { assessment: op.assessment, address: op.address } : null,
     ...meta,

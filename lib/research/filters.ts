@@ -37,6 +37,7 @@ export const COMPANY_TYPES = {
   auto_dealership: { label: "Car dealership", terms: ["dealership", "car dealer"], sector: "retail" },
   fitness_personal_services: { label: "Gym/personal services", terms: ["gym", "fitness", "salon", "spa"], sector: "retail" },
   medical_clinic: { label: "Medical/dental clinic", terms: ["clinic", "medical clinic", "dental"], sector: "retail" },
+  developer_landlord: { label: "Developer/landlord", terms: ["retail development", "plaza", "commercial units", "developer"], sector: "retail" },
   other: { label: "Other", terms: [] as string[], sector: "both" },
 } as const;
 export type CompanyTypeKey = keyof typeof COMPANY_TYPES;

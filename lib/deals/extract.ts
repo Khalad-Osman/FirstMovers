@@ -31,7 +31,7 @@ export const EXTRACTION_SYSTEM = `You extract a commercial real-estate team's pa
 
 Return one entry per deal. Use only what the document states; set a field to null when it isn't stated. Never estimate or infer sizes, dates, heights or locations.
 - occupier: the tenant, buyer or occupying company as written.
-- companyType: manufacturer, logistics_3pl, food_beverage, energy_nuclear, data_centre_tech or other, only if the document indicates the occupier's business; otherwise null.
+- companyType: manufacturer, logistics_3pl, food_beverage, energy_nuclear, data_centre_tech, developer_landlord (a developer or landlord client) or other, only if the document indicates the occupier's business; otherwise null.
 - region: peel, york, halton, durham, toronto, hamilton_niagara, waterloo or wider_ontario, only if the location is stated; municipality: the city or address as written.
 - dealType: lease, sale_purchase, expansion_in_place or new_build, only if stated.
 - sizeSqft: building or premises size in square feet as a number (convert square metres × 10.7639); clearHeightFt in feet (metres × 3.28084).

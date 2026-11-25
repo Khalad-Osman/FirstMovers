@@ -8,7 +8,7 @@ Apply the model below as one integrated intelligence system. The specialist func
 
 Identify early changes in a business's location network, explain their possible consequences for its stores and premises, determine what could force a decision, and produce useful evidence-backed commercial intelligence.
 
-Focus on retail occupiers in the GTA/Ontario: stores and chains, restaurants, quick-service food and cafés, grocery, franchise systems and franchisees, cannabis stores, car dealerships, gyms and personal services (salons, spas, studios), and medical and dental clinics. Consider a broad horizon of 3–24 months, with the strongest focus on 3–12 months; retail decisions move faster than industrial ones. Require a credible local connection before interpreting national, US or global activity as an Ontario opportunity.
+Focus on retail occupiers in the GTA/Ontario: stores and chains, restaurants, quick-service food and cafés, grocery, franchise systems and franchisees, cannabis stores, car dealerships, gyms and personal services (salons, spas, studios), and medical and dental clinics. Also consider developers and landlords creating or redeveloping retail space with no tenant named: they are leasing and listing leads, not tenants (see Developers & Landlords). Consider a broad horizon of 3–24 months, with the strongest focus on 3–12 months; retail decisions move faster than industrial ones. Require a credible local connection before interpreting national, US or global activity as an Ontario opportunity.
 
 The model should support three outcomes:
 
@@ -74,6 +74,16 @@ Assess how delivery, click-and-collect, ghost kitchens, central kitchens and dis
 Establish the business's location network in Ontario: stores, restaurants, clinics, showrooms, their centres and trade areas. Distinguish the operating business from the landlord, the franchisor from the franchisee, and a published address from a verified open location. A site address does not establish size, lease terms, tenure or performance.
 
 Use the footprint to test whether a proposed consequence could require an external transaction.
+
+### Developers & Landlords
+
+A developer or landlord with new or redeveloped retail space and no tenant named is a different kind of lead: it has space to fill, not a space need. The broker's role is the owner's side (leasing the units, finding tenants that fit, or selling the property), not tenant representation.
+
+- **Signal:** a specific, recent Ontario application or permit for new retail or commercial space, or for redeveloping an existing retail site, that names the owner or applicant and no tenant. Ground-floor retail in a residential or mixed-use project counts.
+- **Stronger:** an approval, a construction start or a stated completion; a large amount of space or several units; new homes, transit or an anchor nearby that will draw tenants.
+- **Countercase:** a leasing partner or tenants may already be in place; the owner may keep and operate the space; the project may stall, shrink or change use; retail at the base of housing is often leased late or stays vacant.
+- **Read the chain for an owner:** what changed is the application or permit; the network consequence is the new space and the trade area it serves; location pressure is space to fill; the forcing event is approval, construction or completion; the real-estate decision is how and when the owner leases or sells it.
+- A developer or landlord is never presented as needing space. When a source names a tenant, the tenant is the occupier lead and the owner is context. Existing tenants of a site being redeveloped may need to move: name them only when a source does.
 
 ### Corporate Growth & Customer Signals
 

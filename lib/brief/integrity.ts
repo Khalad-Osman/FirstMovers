@@ -1,10 +1,14 @@
 import type { BriefAnalysis, LedgerEntry } from "./schema";
 import { CHAIN_STEPS, NEW_SPACE_DEALS, RELEASE_DEALS } from "./schema";
 
+// A developer or landlord lead (added 2026-11-25): space to fill, never a space need.
+export const isLandlordLead = (brief: Pick<BriefAnalysis, "companyType">) => brief.companyType === "developer_landlord";
+
 // Code-level enforcement of CLAUDE.md §7 on a stored brief. Each message names
 // the rule so it can be fed back to the model on retry.
 export function checkBriefIntegrity(brief: BriefAnalysis): string[] {
   const errors: string[] = [];
+  const landlord = isLandlordLead(brief);
   const byId = new Map(brief.ledger.map((e) => [e.id, e]));
 
   if (byId.size !== brief.ledger.length) errors.push("Ledger: each source id may appear only once.");
@@ -125,6 +129,15 @@ export function checkBriefIntegrity(brief: BriefAnalysis): string[] {
     if (angle.type === "new_requirement" && brief.rating === "no_meaningful_signal") {
       errors.push('Broker angle: "new_requirement" is inconsistent with a No Meaningful Signal rating. Use vacated_space, capacity_conversation, relationship or monitor_only.');
     }
+    if (angle.type === "new_requirement" && landlord) {
+      errors.push('Broker angle: a developer or landlord has space to fill, not a space need. Use leasing_mandate (or relationship / monitor_only), never new_requirement.');
+    }
+    if (angle.type === "leasing_mandate" && !landlord) {
+      errors.push('Broker angle: "leasing_mandate" is only for companyType developer_landlord.');
+    }
+    if (angle.type === "leasing_mandate" && brief.rating === "no_meaningful_signal") {
+      errors.push('Broker angle: "leasing_mandate" is inconsistent with a No Meaningful Signal rating. Use relationship or monitor_only.');
+    }
     if (angle.type === "vacated_space" && !(brief.otherPremises && brief.otherPremises.assessment !== "not_indicated")) {
       errors.push('Broker angle: "vacated_space" requires otherPremises to be likely or possible.');
     }
@@ -139,10 +152,17 @@ export function checkBriefIntegrity(brief: BriefAnalysis): string[] {
       o.sourceIds.forEach((id) => {
         if (!byId.has(id)) errors.push(`${label}: cites ${id}, which is not in the ledger.`);
       });
+      if (landlord && (NEW_SPACE_DEALS as readonly string[]).includes(o.dealType)) {
+        errors.push(`${label}: a developer or landlord is offering space, not looking for it. Use lease_up or disposition.`);
+      }
+      if (o.dealType === "lease_up" && !landlord) errors.push(`${label}: lease_up is only for companyType developer_landlord.`);
+      if (o.dealType === "lease_up" && brief.rating === "no_meaningful_signal") {
+        errors.push(`${label}: lease_up is inconsistent with a No Meaningful Signal rating.`);
+      }
       if ((NEW_SPACE_DEALS as readonly string[]).includes(o.dealType) && brief.rating === "no_meaningful_signal") {
         errors.push(`${label}: a new-space deal is inconsistent with a No Meaningful Signal rating. Use sublease, disposition, backfill, lease renewal or expansion in place, or leave opportunities empty.`);
       }
-      if ((RELEASE_DEALS as readonly string[]).includes(o.dealType) && !(brief.otherPremises && brief.otherPremises.assessment !== "not_indicated")) {
+      if ((RELEASE_DEALS as readonly string[]).includes(o.dealType) && !(landlord && o.dealType === "disposition") && !(brief.otherPremises && brief.otherPremises.assessment !== "not_indicated")) {
         errors.push(`${label}: requires otherPremises to be likely or possible.`);
       }
     }

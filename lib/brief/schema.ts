@@ -112,6 +112,8 @@ export const companyTypeSchema = z.enum([
   "auto_dealership",
   "fitness_personal_services",
   "medical_clinic",
+  // a developer or landlord with new or redeveloped retail space (added 2026-11-25)
+  "developer_landlord",
   "other",
   "unknown",
 ]);
@@ -120,7 +122,9 @@ export const dealIndicatorSchema = z.enum(["lease", "sale_purchase", "expansion_
 // Broker angle (added 2026-11-17): the reason for a conversation (the
 // intelligence model's "Connect" outcome). The model chooses type, headline and
 // points; urgency is computed in code from the cited sources' dates.
-export const angleTypeSchema = z.enum(["new_requirement", "vacated_space", "capacity_conversation", "relationship", "monitor_only"]);
+// leasing_mandate (added 2026-11-25): a developer or landlord has new or
+// redeveloped retail space to fill; only for companyType developer_landlord.
+export const angleTypeSchema = z.enum(["new_requirement", "leasing_mandate", "vacated_space", "capacity_conversation", "relationship", "monitor_only"]);
 export const angleUrgencySchema = z.enum(["act_now", "follow_up", "watch"]);
 const talkingPointSchema = z.object({ text: z.string().min(1), sourceIds: z.array(z.string()) });
 export const modelBrokerAngleSchema = z.object({
@@ -149,9 +153,12 @@ export const dealTypeSchema = z.enum([
   "backfill",
   "lease_renewal",
   "expansion_in_place",
+  "lease_up", // leasing an owner's new or vacant units (developer / landlord leads, added 2026-11-25)
 ]);
 export const NEW_SPACE_DEALS = ["site_search", "land_purchase", "build_to_suit", "lease", "purchase"] as const;
 export const RELEASE_DEALS = ["sublease", "disposition", "backfill"] as const;
+// Developer / landlord leads (added 2026-11-25): what a broker can do for an owner.
+export const LANDLORD_DEALS = ["lease_up", "disposition"] as const;
 export const dealPotentialSchema = z.object({
   summary: z.string().min(1), // one sentence a broker reads first
   opportunities: z
@@ -230,10 +237,12 @@ export const DEAL_TYPE_LABEL: Record<z.infer<typeof dealTypeSchema>, string> = {
   backfill: "Backfill / re-leasing",
   lease_renewal: "Lease renewal",
   expansion_in_place: "Expansion in place",
+  lease_up: "Lease-up",
 };
 
 export const ANGLE_LABEL: Record<z.infer<typeof angleTypeSchema>, string> = {
   new_requirement: "New requirement",
+  leasing_mandate: "Leasing mandate",
   vacated_space: "Vacated space",
   capacity_conversation: "Capacity conversation",
   relationship: "Relationship",
