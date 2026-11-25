@@ -9,6 +9,7 @@ import { agcoCannabis } from "./agco";
 import { agcoLiquor } from "./agco-liquor";
 import { ccaaFilings } from "./ccaa";
 import { newswireReleases } from "./newswire";
+import { hamiltonDevApps, oakvilleDevApps } from "./devapps";
 import { barriePermits, kingstonPermits, kitchenerPermits, ottawaPermits, waterlooPermits } from "./permits-ontario";
 import type { IngestSource, SourceType } from "./types";
 
@@ -36,6 +37,9 @@ export const INGEST_SOURCES: IngestSource[] = [
   agcoLiquor,
   ccaaFilings,
   newswireReleases,
+  // Added 2026-11-25
+  oakvilleDevApps,
+  hamiltonDevApps,
 ];
 
 export function getIngestSource(source: string): IngestSource | undefined {

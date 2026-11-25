@@ -7,7 +7,7 @@ import { toRecordSource, type RecordSignal } from "@/lib/research/records";
 // the stored signals with recent physical activity, ranked with the discovery
 // rule score. Discovery and Live Research are the deep dive; this is the wide view.
 
-export type SignalFamily = "permit" | "grant" | "award" | "news" | "approval" | "licence" | "insolvency";
+export type SignalFamily = "permit" | "grant" | "award" | "news" | "approval" | "licence" | "insolvency" | "development";
 export const familyOf = (s: { source_type: string }): SignalFamily =>
   s.source_type.startsWith("permit_")
     ? "permit"
@@ -21,7 +21,9 @@ export const familyOf = (s: { source_type: string }): SignalFamily =>
             ? "licence"
             : s.source_type === "ccaa_filing"
               ? "insolvency"
-              : "award";
+              : s.source_type.startsWith("devapp_")
+                ? "development"
+                : "award";
 
 // Space-related activity: permits that score 2+ (new building, addition, change
 // of use, major fit-out, racking/equipment, small structures) and facility or
@@ -35,7 +37,7 @@ export function isPhysical(s: RecordSignal): boolean {
   }
   if (s.source_type === "ontario_news") return true; // a named company's investment or facility
   if (s.source_type === "agco_cannabis" || s.source_type === "agco_liquor") return Boolean(s.published_at);
-  if (s.source_type === "newswire_release" || s.source_type === "ccaa_filing") return true; // a facility, store or restructuring // a store opening or closing (undated closures are older)
+  if (s.source_type === "newswire_release" || s.source_type === "ccaa_filing" || s.source_type.startsWith("devapp_")) return true; // a facility, store or restructuring // a store opening or closing (undated closures are older)
   if (s.source_type === "ero_approval") {
     // A production change or growth; administrative renewals alone don't count.
     const kind = s.raw && typeof s.raw === "object" ? (s.raw as Record<string, unknown>).kind : null;
@@ -163,7 +165,7 @@ export function parseProspectFilters(params: Record<string, string | string[] | 
     : regionParam.length
       ? (regionParam.filter((r) => r in REGIONS) as RegionKey[])
       : GTA_REGIONS;
-  const families = list(params.type).filter((t): t is SignalFamily => ["permit", "grant", "award", "news", "approval", "licence", "insolvency"].includes(t));
+  const families = list(params.type).filter((t): t is SignalFamily => ["permit", "grant", "award", "news", "approval", "licence", "insolvency", "development"].includes(t));
   const min = Number(String(params.min ?? "").replace(/[^0-9]/g, ""));
   return { sector: parseSector(params.sector), regions, families, neverAnalyzed: params.new === "1", minValue: min > 0 ? min : null };
 }

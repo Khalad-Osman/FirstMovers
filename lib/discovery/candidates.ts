@@ -113,6 +113,13 @@ function retailWeight(s: SignalForCandidate): { weight: number; label: string } 
       if (kind === "liquor_change") return { weight: 1, label: "retail: liquor licence change" };
       return { weight: 4, label: "retail: new store application" };
     }
+    case "development": {
+      // Development applications (lib/ingest/devapps.ts): before permits.
+      const kind = s.raw && typeof s.raw === "object" ? (s.raw as Record<string, unknown>).kind : null;
+      if (kind === "named_store") return { weight: 4, label: "retail: new store in development review" };
+      if (kind === "displacement") return { weight: 3, label: "retail: existing commercial site being redeveloped" };
+      return { weight: 3, label: "retail: new commercial space in development review" };
+    }
     default:
       return null; // grants and others score as for industrial
   }
@@ -152,6 +159,11 @@ function baseWeight(s: SignalForCandidate): { weight: number; label: string } {
       if (kind === "closing") return { weight: 3, label: `${src}: closing (space may be released)` };
       if (kind === "acquisition") return { weight: 2, label: `${src}: acquisition` };
       return kind === "new_facility" ? { weight: 5, label: `${src}: new facility` } : { weight: 4, label: `${src}: investment or expansion` };
+    }
+    case "development": {
+      const kind = s.raw && typeof s.raw === "object" ? (s.raw as Record<string, unknown>).kind : null;
+      if (kind === "industrial_space") return isSmallWorks(s.raw) ? { weight: 2, label: "small industrial project in development review" } : { weight: 4, label: "new industrial space in development review" };
+      return { weight: 2, label: "development application" };
     }
     case "insolvency": {
       return { weight: 3, label: "creditor protection (CCAA): plants or stores may be released" };

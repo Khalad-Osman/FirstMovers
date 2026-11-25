@@ -3,6 +3,7 @@ import { CALEDON, OAKVILLE } from "@/lib/ingest/permits-halton-peel";
 import { BARRIE, KINGSTON, KITCHENER, WATERLOO } from "@/lib/ingest/permits-ontario";
 import { AGCO_LAYERS, type AgcoLayer } from "@/lib/ingest/agco";
 import { addressMatchOf } from "@/lib/discovery/address";
+import { HAMILTON_DEV_APPS } from "@/lib/ingest/devapps";
 import { signalWeight, type SignalForCandidate } from "@/lib/discovery/candidates";
 
 // Stored signals (building permits, contract awards) as analysis evidence.
@@ -45,6 +46,8 @@ const PUBLISHER: Record<string, string> = {
   agco_liquor: "AGCO – Liquor licence applications",
   ccaa_filing: "Office of the Superintendent of Bankruptcy – CCAA records",
   newswire_release: "Newswire.ca – News release",
+  devapp_oakville: "Town of Oakville – Development applications",
+  devapp_hamilton: "City of Hamilton – Development applications",
 };
 
 const KIND: Record<string, string> = {
@@ -66,7 +69,9 @@ const KIND: Record<string, string> = {
   agco_cannabis: "Cannabis retail store authorization status (AGCO store map). The list has no application or cancellation dates: the date shown is the public notice start or the day the store was first seen in the list",
   agco_liquor: "Liquor sales licence application in public notice (AGCO list). The list has no filing date: the date shown is the day the application was first seen in the list",
   ccaa_filing: "Creditor protection under the Companies' Creditors Arrangement Act (OSB CCAA records). A restructuring may close or sell plants and stores; the record does not say which",
-  newswire_release: "Company news release distributed on newswire.ca, issued by the company named in its SOURCE line",
+  newswire_release: "Company news release distributed on newswire.ca (title and first sentence from the listing)",
+  devapp_oakville: "Development application (site plan, rezoning or official plan amendment) under review by the Town of Oakville; nothing is approved or built unless the status says so. The name is the applicant or project as the Town lists it, which may be a developer rather than the future occupant",
+  devapp_hamilton: "Development application or pre-application consultation under review by the City of Hamilton; nothing is approved or built unless the status says so. The record names no applicant",
 };
 
 const STRENGTH_LABEL: Record<string, string> = {
@@ -82,6 +87,7 @@ const STRENGTH_LABEL: Record<string, string> = {
   env_approval: "Environmental approval",
   store_licence: "Store or liquor licence",
   insolvency: "Creditor protection (CCAA)",
+  development: "Development application",
   other: "Other",
 };
 
@@ -108,7 +114,10 @@ export function recordUrl(s: RecordSignal): string | null {
     case "agco_liquor": // daily list; no page per application
     case "ccaa_filing": // the monitor's page for the proceeding, else the dataset
     case "newswire_release":
+    case "devapp_oakville": // the Town's page for the application
       return s.url;
+    case "devapp_hamilton":
+      return q(`${HAMILTON_DEV_APPS}/query`, { where: `FILE_NUM='${id.replace(/'/g, "''")}'`, outFields: "*", f: "html" });
     case "agco_cannabis": {
       const layer = str(raw(s).layer) as AgcoLayer;
       const url = AGCO_LAYERS[layer];
@@ -236,6 +245,8 @@ export function recordExcerpt(s: RecordSignal): string {
               ? `Initial order: ${s.published_at}`
               : s.source_type === "newswire_release"
                 ? `Published: ${s.published_at}`
+                : s.source_type.startsWith("devapp_")
+                  ? `Application received: ${s.published_at} (under review; the proposal can change or be refused)`
             : r.stage === "application"
             ? `Application received: ${s.published_at} (in review, not issued yet; the work may not go ahead as described)`
             : `${s.source_type === "canadabuys_award" || s.source_type === "ontario_news" || s.source_type === "feddev_news" ? "Published" : "Issued"}: ${s.published_at}`
