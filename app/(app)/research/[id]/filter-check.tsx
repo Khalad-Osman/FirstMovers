@@ -34,7 +34,7 @@ export function FilterCheck({ rows, analyzed }: { rows: CheckRow[]; analyzed: bo
     <section className="grid gap-3">
       <h2 className="label border-b border-line pb-1.5">Fits your filters?</h2>
       <p className="text-[0.8125rem] text-meta">
-        Checked in code against {analyzed ? "the brief and " : ""}the collected sources. &quot;Not stated&quot; means the sources don&apos;t say; nothing is assumed.
+        Checked against {analyzed ? "the brief and " : ""}the collected sources. &quot;Not stated&quot; means the sources don&apos;t say; nothing is assumed.
       </p>
       <ul className="grid">
         {rows.map((r) => (

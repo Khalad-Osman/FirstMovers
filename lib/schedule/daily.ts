@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { INGEST_SOURCES } from "@/lib/ingest/sources";
 import { runIngestionJob } from "@/lib/ingest/run";
 import { createDiscoveryRun, failRun } from "@/lib/discovery/run";
+import { sendWeeklyDigest } from "@/lib/email/dispatch";
+import { emailStatus } from "@/lib/email/sender";
 import { jobSecret, realDiscoveryDeps, triggerStep } from "@/lib/discovery/job";
 import { dailyOrder, decideScheduledDiscovery, torontoParts } from "./plan";
 import { monthToDateCredits } from "./usage-db";
@@ -18,6 +20,7 @@ export type DailySummary = {
   date: string;
   ingestion: { source: string; status: string; detail?: string }[];
   discovery: { started: boolean; runId?: string; reason?: string };
+  digest?: { sent: boolean; detail: string };
 };
 
 // The daily scheduled job. Ingestion runs inline (fast, free); discovery is
@@ -72,6 +75,17 @@ export async function runDaily(origin: string, now = new Date()): Promise<DailyS
         detail: done?.status === "completed" ? `new ${done.inserted}, updated ${done.updated}` : JSON.stringify(done?.errors ?? []),
       });
     }
+  }
+
+  // 1b. Weekly email digest, Mondays (Toronto). Without a provider the emails
+  // are recorded in the outbox as not sent.
+  if (today.weekday === 1) {
+    const d = await sendWeeklyDigest(db, now);
+    const status = emailStatus();
+    summary.digest = {
+      sent: d.sent > 0,
+      detail: d.recipients === 0 ? "No one subscribed, or no new briefs this week." : status.configured ? `sent ${d.sent}, failed ${d.failed}, already sent ${d.skipped}` : `Email isn't connected: ${d.notConfigured} recorded in the outbox.`,
+    };
   }
 
   // 2. Discovery

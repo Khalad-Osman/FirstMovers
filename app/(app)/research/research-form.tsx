@@ -14,8 +14,8 @@ type Props = {
 };
 
 const HINT = {
-  company: "Runs 3 searches and reads up to 5 pages. Uses about 10–13 Firecrawl credits.",
-  theme: "Runs 1 search and lists the results. Uses about 2 Firecrawl credits. Nothing is read or analyzed.",
+  company: "Searches the web and stored public records, and reads up to 5 pages.",
+  theme: "Lists matching results; pick a company from them to research.",
 };
 
 export function ResearchForm({ initialMode = "company", initialQuery = "", companyId, compact, initialSector = "industrial" }: Props) {

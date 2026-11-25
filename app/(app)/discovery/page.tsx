@@ -28,7 +28,7 @@ export default async function DiscoveryPage() {
     <div className="grid gap-6">
       <PageHeader
         title="Discovery"
-        description={`Builds candidates from stored signals, screens them with the cheap model, then researches and analyzes up to ${cap} per run. Companies analyzed in the last ${settings?.skip_window_days ?? 7} days are skipped.`}
+        description={`Finds candidates in the public-record signals, screens them, then researches and writes briefs on the strongest ${cap} per run. Companies analyzed in the last ${settings?.skip_window_days ?? 7} days are skipped.`}
       />
       {user?.role === "admin" ? (
         <StartDiscovery cap={cap} sourcesPerCandidate={settings?.sources_per_candidate ?? 5} topK={SCREEN_TOP_K} monthCredits={monthCredits} budget={settings?.firecrawl_monthly_budget ?? 800} />
@@ -51,7 +51,6 @@ export default async function DiscoveryPage() {
         ) : (
           <ul>
             {runs.map((r) => {
-              const u = (r.usage ?? {}) as Record<string, number>;
               return (
                 <li key={r.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-line py-2.5">
                   <Link href={`/discovery/${r.id}`} className="mono font-semibold hover:underline">
@@ -61,7 +60,7 @@ export default async function DiscoveryPage() {
                   <span className="badge badge-stage">{SECTOR_LABEL[r.sector]}</span>
                   {r.trigger === "scheduled" && <span className="badge badge-stage">Scheduled</span>}
                   <span className="mono text-[0.8125rem] text-meta">
-                    {r.candidates_found} candidates · {r.analyzed} briefs · ~{u.firecrawl_credits ?? 0} Firecrawl credits · {u.llm_calls ?? 0} LLM calls
+                    {r.candidates_found} candidates · {r.analyzed} briefs
                   </span>
                   <span className="ml-auto text-[0.8125rem] text-meta">{r.trigger === "scheduled" ? "Daily job" : (r.profiles?.full_name ?? "")}</span>
                 </li>

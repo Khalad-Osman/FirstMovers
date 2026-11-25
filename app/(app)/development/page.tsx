@@ -13,8 +13,9 @@ export const metadata: Metadata = { title: "Development watch · First Movers" }
 // before any permit. Public records only, no AI. Many name no company, so they
 // don't appear on Prospects; this page lists them by area and kind.
 
-const AREAS = { all: "All", oakville: "Oakville", hamilton: "Hamilton" } as const;
-type Area = keyof typeof AREAS;
+// Every development source; the page has no city filter (decided 2026-11-25:
+// listing only the cities covered so far made the page look incomplete).
+const DEV_SOURCES = ["devapp_oakville", "devapp_hamilton"] as const;
 const KINDS = Object.keys(DEV_KIND_LABEL) as DevKind[];
 const KIND_HINT: Record<DevKind, string> = {
   named_store: "A named store or business is proposing a new building or use.",
@@ -37,14 +38,13 @@ const str = (v: unknown) => (typeof v === "string" ? v.trim() : v == null ? "" :
 
 export default async function DevelopmentPage({ searchParams }: PageProps<"/development">) {
   const params = await searchParams;
-  const area: Area = (Object.keys(AREAS) as Area[]).find((a) => a === one(params.area)) ?? "all";
   const kind = KINDS.find((k) => k === one(params.kind));
 
   const supabase = await createClient();
   let query = supabase
     .from("signals")
     .select("id, source_type, source_record_id, raw_entity_name, entity_key, signal_strength, title, summary, url, published_at, event_at, location, raw, sector")
-    .in("source_type", area === "all" ? ["devapp_oakville", "devapp_hamilton"] : [area === "oakville" ? "devapp_oakville" : "devapp_hamilton"])
+    .in("source_type", [...DEV_SOURCES])
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(400);
   if (kind) query = query.eq("raw->>kind", kind);
@@ -57,11 +57,9 @@ export default async function DevelopmentPage({ searchParams }: PageProps<"/deve
     const k = str((s.raw as Record<string, unknown>)?.kind) as DevKind;
     counts.set(k, (counts.get(k) ?? 0) + 1);
   }
-  const href = (over: { area?: Area; kind?: DevKind | null }) => {
+  const href = (over: { kind?: DevKind | null }) => {
     const p = new URLSearchParams();
-    const a = over.area ?? area;
     const k = over.kind === null ? undefined : (over.kind ?? kind);
-    if (a !== "all") p.set("area", a);
     if (k) p.set("kind", k);
     const s = p.toString();
     return s ? `/development?${s}` : "/development";
@@ -71,18 +69,10 @@ export default async function DevelopmentPage({ searchParams }: PageProps<"/deve
     <div className="grid gap-6">
       <PageHeader
         title="Development watch"
-        description="Development applications in Oakville and Hamilton from the last 24 months: new commercial or industrial space, existing commercial sites being redeveloped, and named new stores, before any building permit. Public records only, no AI. Each item links to the municipality's own record."
+        description="Development applications from the last 24 months: new commercial or industrial space, existing commercial sites being redeveloped, and named new stores, before any building permit. Each item links to the municipality's own record."
       />
 
       <div className="grid gap-3 border border-line bg-panel p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="field-label mr-1">Area</span>
-          {(Object.keys(AREAS) as Area[]).map((a) => (
-            <Link key={a} href={href({ area: a })} className={`btn ${a === area ? "btn-primary" : ""}`} aria-current={a === area ? "page" : undefined}>
-              {AREAS[a]}
-            </Link>
-          ))}
-        </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="field-label mr-1">Kind</span>
           <Link href={href({ kind: null })} className={`btn ${!kind ? "btn-primary" : ""}`}>
@@ -106,7 +96,7 @@ export default async function DevelopmentPage({ searchParams }: PageProps<"/deve
       {items.length === 0 ? (
         <div className="border border-dashed border-[#9ca3af] bg-panel px-5 py-6">
           <p className="font-semibold">No development applications yet.</p>
-          <p className="mt-1 text-meta">They appear after an admin runs the Oakville or Hamilton development sources on the Data sources page (or after the daily job).</p>
+          <p className="mt-1 text-meta">They appear after an admin runs the development application sources on the Data sources page, or after the daily job.</p>
         </div>
       ) : (
         <ul>

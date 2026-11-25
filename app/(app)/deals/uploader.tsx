@@ -49,7 +49,7 @@ export function DealsUploader() {
       if ("error" in r) return setMessage({ kind: "error", text: r.error });
       setRows(r.drafts.map((d) => ({ ...d, include: true })));
       setSource({ kind: "pdf", filename: file.name });
-      setMessage({ kind: "info", text: `AI read ${r.drafts.length} deals${r.dropped ? ` (${r.dropped} without an occupier dropped)` : ""}. Check every field against the PDF, then save.` });
+      setMessage({ kind: "info", text: `Read ${r.drafts.length} deals${r.dropped ? ` (${r.dropped} without an occupier dropped)` : ""}. Check every field against the PDF, then save.` });
     });
   }
 
@@ -76,7 +76,7 @@ export function DealsUploader() {
       <div className="grid gap-1">
         <h2 className="font-semibold">Upload deals</h2>
         <p className="text-[0.875rem] text-meta">
-          CSV files are read in your browser with no AI. A PDF is read once by the analysis model (about $0.02–0.05). Either way you review every field before saving; values the file doesn&apos;t give stay blank.
+          CSV files are read in your browser. A PDF is read once by the analysis model. Either way you review every field before saving; values the file doesn&apos;t give stay blank.
         </p>
       </div>
       <div
@@ -127,7 +127,7 @@ export function DealsUploader() {
       {confirmPdf && (
         <div role="alert" className="flex flex-wrap items-center gap-2 border-l-4 border-[#b45309] bg-[#fffbeb] px-3 py-2 text-[0.9375rem]">
           <span>
-            Read <strong>{confirmPdf.name}</strong> with AI? One analysis-model call (about $0.02–0.05).
+            Read <strong>{confirmPdf.name}</strong> ? The analysis model reads it once.
           </span>
           <button type="button" className="btn btn-primary" onClick={() => readPdf(confirmPdf)}>
             Read PDF

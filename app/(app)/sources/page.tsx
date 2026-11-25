@@ -46,7 +46,7 @@ export default async function SourcesPage() {
       {anyRunning && <Poller intervalMs={4000} />}
       <PageHeader
         title="Data sources"
-        description="Structured public sources ingested into signals. Each run reads the last 12 months; re-running updates records in place and never creates duplicates. No Firecrawl or LLM credits are used."
+        description="Structured public sources ingested into signals. Each run reads the last 12 months; re-running updates records in place and never creates duplicates."
       />
 
       <ul className="grid gap-4 lg:grid-cols-2">

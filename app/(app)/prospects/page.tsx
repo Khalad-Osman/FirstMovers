@@ -35,8 +35,8 @@ export default async function ProspectsPage({ searchParams }: PageProps<"/prospe
         title="Prospects"
         description={
           filters.sector === "retail"
-            ? "Every named retail business (stores, restaurants, clinics, studios…) in the stored permits, grants, cannabis and liquor licence applications, news releases and creditor-protection filings with recent store activity: new store fit-outs, store signs, changes of use, new buildings, store openings and closings. Ranked by the rule score. Public records only: no AI, no credits. Use Research for a full brief."
-            : "Every named company in the stored permits, grants and contract awards with recent physical activity, ranked by the discovery rule score. Public records only: no AI, no credits. Use Research for a full brief."
+            ? "Every named retail business (stores, restaurants, clinics, studios…) in the stored permits, grants, cannabis and liquor licence applications, news releases and creditor-protection filings with recent store activity: new store fit-outs, store signs, changes of use, new buildings, store openings and closings. Ranked by signal strength. Use Research for a full brief."
+            : "Every named company in the stored permits, grants and contract awards with recent physical activity, ranked by signal strength. Use Research for a full brief."
         }
       >
         <a href={`/prospects/export?${query}`} className="btn">
@@ -119,7 +119,7 @@ export default async function ProspectsPage({ searchParams }: PageProps<"/prospe
             <li key={p.key} className="grid gap-2 border-b border-line py-4">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="mr-auto min-w-0 text-[1.0625rem] font-semibold">{p.name}</h2>
-                <span className="mono text-[0.875rem]" title="Discovery rule score">
+                <span className="mono text-[0.875rem]" title="Signal score">
                   Score {p.score}
                 </span>
                 {p.families.map((f) => (

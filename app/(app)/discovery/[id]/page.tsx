@@ -82,14 +82,20 @@ export default async function DiscoveryRunPage({ params }: PageProps<"/discovery
           <Stat label="Screened" value={candidates.filter((c) => c.screened).length} />
           <Stat label="Shortlisted" value={shortlisted.length} />
           <Stat label="Briefs" value={run.analyzed} />
-          <Stat label="Firecrawl credits" value={`~${usage.firecrawl_credits ?? 0}`} />
-          <Stat label="Firecrawl requests" value={usage.firecrawl_requests ?? 0} />
-          <Stat label="LLM calls" value={usage.llm_calls ?? 0} />
-          <Stat label="Tokens in / out" value={`${(usage.input_tokens ?? 0).toLocaleString("en-CA")} / ${(usage.output_tokens ?? 0).toLocaleString("en-CA")}`} />
         </dl>
-        <p className="mono text-[0.8125rem] text-meta">
-          Caps: {settings.discovery_cap ?? 3} companies · {settings.sources_per_candidate ?? 5} sources each · screened top {settings.screening_top_k ?? 30} · skip window {settings.skip_window_days ?? 7} days
-        </p>
+        {/* Run usage and caps, collapsed so the summary reads cleanly (2026-11-25). */}
+        <details className="grid gap-2">
+          <summary className="mono w-fit cursor-pointer text-[0.8125rem] text-meta">Usage and caps</summary>
+          <dl className="mono mt-2 flex flex-wrap gap-2 text-[0.875rem]">
+            <Stat label="Firecrawl credits" value={`~${usage.firecrawl_credits ?? 0}`} />
+            <Stat label="Firecrawl requests" value={usage.firecrawl_requests ?? 0} />
+            <Stat label="LLM calls" value={usage.llm_calls ?? 0} />
+            <Stat label="Tokens in / out" value={`${(usage.input_tokens ?? 0).toLocaleString("en-CA")} / ${(usage.output_tokens ?? 0).toLocaleString("en-CA")}`} />
+          </dl>
+          <p className="mono mt-2 text-[0.8125rem] text-meta">
+            Caps: {settings.discovery_cap ?? 3} companies · {settings.sources_per_candidate ?? 5} sources each · screened top {settings.screening_top_k ?? 30} · skip window {settings.skip_window_days ?? 7} days
+          </p>
+        </details>
       </header>
 
       {errors.length > 0 && (

@@ -145,6 +145,46 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"email_outbox": {
+                  Row: {
+                    "body_html": string,"body_text": string,"created_at": string,"dedupe_key": string,"error": string | null,"id": string,"kind": string,"provider_message_id": string | null,"sent_at": string | null,"status": string,"subject": string,"to_address": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body_html": string,"body_text": string,"created_at"?: string,"dedupe_key": string,"error"?: string | null,"id"?: string,"kind": string,"provider_message_id"?: string | null,"sent_at"?: string | null,"status": string,"subject": string,"to_address": string,"user_id": string
+                  }
+                  Update: {
+                    "body_html"?: string,"body_text"?: string,"created_at"?: string,"dedupe_key"?: string,"error"?: string | null,"id"?: string,"kind"?: string,"provider_message_id"?: string | null,"sent_at"?: string | null,"status"?: string,"subject"?: string,"to_address"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "email_outbox_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"email_preferences": {
+                  Row: {
+                    "discovery_runs": boolean,"enabled": boolean,"strong_signals": boolean,"updated_at": string,"user_id": string,"watchlist_briefs": boolean,"weekly_digest": boolean
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "discovery_runs"?: boolean,"enabled"?: boolean,"strong_signals"?: boolean,"updated_at"?: string,"user_id": string,"watchlist_briefs"?: boolean,"weekly_digest"?: boolean
+                  }
+                  Update: {
+                    "discovery_runs"?: boolean,"enabled"?: boolean,"strong_signals"?: boolean,"updated_at"?: string,"user_id"?: string,"watchlist_briefs"?: boolean,"weekly_digest"?: boolean
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "email_preferences_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: true
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"ingestion_runs": {
                   Row: {
                     "errors": NonNullable<Json>,"fetched": number,"finished_at": string | null,"id": string,"inserted": number,"linked": number,"progress": string | null,"settings": NonNullable<Json>,"skip_reasons": NonNullable<Json>,"skipped": number,"source": Database["public"]['Enums']["signal_source_type"],"started_at": string,"started_by": string | null,"status": Database["public"]['Enums']["run_status"],"trigger": Database["public"]['Enums']["run_trigger"],"unchanged": number,"updated": number

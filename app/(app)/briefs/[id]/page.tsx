@@ -75,7 +75,7 @@ export default async function BriefPage({ params }: PageProps<"/briefs/[id]">) {
                 action={reanalyzeFromStoredSources.bind(null, brief.id)}
                 label="Re-analyze from stored sources"
                 pendingLabel="Starting…"
-                confirmLabel="Confirm: one model call (~$0.05), no Firecrawl credits"
+                confirmLabel="Confirm re-analysis"
               />
             )}
             {user?.role === "admin" && !brief.dismissed && (

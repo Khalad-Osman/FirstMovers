@@ -1,6 +1,7 @@
 import "server-only";
 import { RATING_LABEL, type Rating } from "@/lib/brief/schema";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { emailDiscoveryRun } from "@/lib/email/dispatch";
 
 // In-app notifications (shared team workspace; read state per user).
 // Written by server code with the secret key; never breaks the job that calls it.
@@ -66,6 +67,8 @@ export async function notifyDiscoveryRun(db: Db, runId: string, kind: Notificati
       .from("notifications")
       .upsert({ kind, title, body, link: `/discovery/${runId}`, discovery_run_id: runId }, { onConflict: "discovery_run_id,kind", ignoreDuplicates: true });
     if (error) console.error("notification insert failed", error.message);
+    const link = `/discovery/${runId}`;
+    await emailDiscoveryRun(db, { runId, kind, title, body, link }); // one per user and run; never throws
   } catch (e) {
     console.error("notification failed", e instanceof Error ? e.message : e);
   }

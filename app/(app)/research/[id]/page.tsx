@@ -108,13 +108,19 @@ ${s.excerpt ?? ""}` })),
         {filters && <FilterSummary filters={filters} />}
         <div className="mono flex flex-wrap gap-x-5 gap-y-1 text-[0.8125rem] text-meta">
           <span>Started {formatDate(session.created_at)}</span>
-          <span>Firecrawl: {usage.firecrawl_requests ?? 0} requests · ~{usage.firecrawl_credits ?? 0} credits</span>
-          {(usage.llm_calls ?? 0) > 0 && (
-            <span>
-              LLM: {usage.llm_calls} calls · {usage.input_tokens ?? 0} in / {usage.output_tokens ?? 0} out tokens
-            </span>
-          )}
         </div>
+        {/* Usage is kept, collapsed, so the page reads cleanly (2026-11-25). */}
+        <details className="mono text-[0.8125rem] text-meta">
+          <summary className="w-fit cursor-pointer">Usage</summary>
+          <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1">
+            <span>Firecrawl: {usage.firecrawl_requests ?? 0} requests · ~{usage.firecrawl_credits ?? 0} credits</span>
+            {(usage.llm_calls ?? 0) > 0 && (
+              <span>
+                LLM: {usage.llm_calls} calls · {usage.input_tokens ?? 0} in / {usage.output_tokens ?? 0} out tokens
+              </span>
+            )}
+          </div>
+        </details>
         {running && !stale && (
           <p role="status" className="flex items-center gap-2 text-[0.9375rem]">
             <span className="inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-accent" aria-hidden="true" />

@@ -158,7 +158,7 @@ export function BriefView({ analysis, companyName, isSample, analyzedAt, origin,
               )}
               <p className="text-[0.8125rem] text-meta">
                 {angle.derived
-                  ? "Worked out in code from this older brief. Re-analyze to get one written from the sources."
+                  ? "Summarized from this brief's findings."
                   : "A reason for a conversation, not a claim of a requirement. Urgency comes from the cited sources' dates."}
               </p>
             </div>
@@ -437,7 +437,7 @@ export function BriefView({ analysis, companyName, isSample, analyzedAt, origin,
               ))}
             </ul>
           )}
-          <p className="mt-1 text-[0.8125rem] text-meta">Compared in code with the team&apos;s past deals. Separate from the signal rating.</p>
+          <p className="mt-1 text-[0.8125rem] text-meta">Compared with the team&apos;s past deals. Separate from the signal rating.</p>
         </Section>
       )}
     </article>

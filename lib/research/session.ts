@@ -7,6 +7,7 @@ import type { LLMProvider } from "@/lib/llm";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json, TablesInsert } from "@/lib/supabase/database.types";
 import { normalizeCompanyName } from "./normalize";
+import { emailNewBrief } from "@/lib/email/dispatch";
 
 type Db = ReturnType<typeof createAdminClient>;
 type JsonObject = { [key: string]: Json | undefined };
@@ -204,5 +205,6 @@ export async function saveSessionToFeed(sessionId: string, userId: string | null
   }
 
   await db.from("research_sessions").update({ status: "saved", brief_id: saved.id, company_id: companyId }).eq("id", sessionId);
+  await emailNewBrief(db, saved.id); // Watchlist / Strong Signal emails; never throws
   return { ok: true, briefId: saved.id };
 }
