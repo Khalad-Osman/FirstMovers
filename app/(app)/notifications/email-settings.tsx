@@ -24,11 +24,6 @@ export function EmailSettings({ prefs, email, connected }: { prefs: EmailPrefere
         </h2>
         <span className={`badge ${connected ? "badge-strong" : "badge-stage"}`}>{connected ? "Connected" : "Not connected yet"}</span>
       </div>
-      {!connected && (
-        <p className="text-[0.9375rem]">
-          Email sending isn&apos;t set up yet. Your choices are saved now and take effect as soon as the team&apos;s sending address is connected.
-        </p>
-      )}
 
       <form action={action} className="grid gap-4">
         <div className="grid gap-1">
